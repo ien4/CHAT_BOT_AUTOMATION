@@ -1,5 +1,44 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 03 Static Validation Update
+
+Ngày cập nhật: 2026-07-08
+
+| Nhóm | Kết quả thật | Trạng thái cập nhật | Bằng chứng kiểm tra | Hành động tiếp theo |
+|---|---|---|---|---|
+| Backend architecture shell | Đã tạo shell `domain/application/infrastructure/presentation` | Static validation pass | README layer + `node --check` wrapper mới | Prompt 05 mới bắt đầu tách route/controller nhỏ. |
+| Backend Prisma wrapper | Re-export singleton cũ, không tạo PrismaClient thứ hai | Static validation pass | `backend/src/infrastructure/persistence/prisma/client.js` | Prompt 06 dùng wrapper này cho repository layer. |
+| Backend config helper | Đã tạo helper env an toàn, chưa migrate code cũ | Static validation pass | `backend/src/infrastructure/services/config.js` | Prompt 04 mở rộng config policy. |
+| Dashboard architecture shell | Đã tạo feature/component/lib shell | Static validation pass | `dashboard/src/features/**`, `dashboard/src/components/**`, `dashboard/src/lib/**` | Prompt 09 mới tách page lớn. |
+| Dashboard API helper | `api.ts` dùng factory mới nhưng giữ interceptor cũ | Static validation pass | `dashboard/src/lib/api.ts`, `dashboard/src/lib/api/client.ts` | Theo dõi auth header và tenantScope khi tách API theo feature. |
+| Dashboard config helper | `http://localhost:3001` trong dashboard source còn duy nhất ở helper fallback | Static validation pass | `rg "http://localhost:3001" dashboard/src` | Prompt 04 xử lý phần backend/scripts/root còn lại. |
+| Backend validation | Syntax check + Prisma validate dummy pass | Static validation pass | `node --check`, `npx prisma validate` với `DATABASE_URL` dummy | Chưa runtime verified. |
+| Dashboard validation | TypeScript + Next build pass | Static validation pass | `npx --no-install tsc --noEmit`, `npm run build` | Chưa browser/runtime verified. |
+| Behavior-critical modules | Không move webhook, tenant handoff, RAG, bot engine | Risk controlled | Git diff không đổi các file này | Cần checklist riêng trước khi refactor sâu. |
+
+## Prompt 02B Validation Update
+
+Ngày cập nhật: 2026-07-07
+
+| Nhóm | Kết quả thật | Trạng thái cập nhật | Bằng chứng kiểm tra | Hành động tiếp theo |
+|---|---|---|---|---|
+| Git safety | Đã có `.git` và checkpoint local | PASS | Commit `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` | Giữ checkpoint trước mọi refactor source. |
+| `.gitignore` | Đã bổ sung rule bảo vệ secret/build artifact | PASS | `.gitignore`, `git diff --cached --name-only`, bộ lọc staged file cấm | Không commit `.env`, `node_modules`, `.next`, log, build output. |
+| Backend dependencies | `npm ci` pass | PASS WITH WARNINGS | `backend/package-lock.json`, `npm ci` | Audit vulnerability sau, không dùng `npm audit fix` trong prompt refactor. |
+| Dashboard dependencies | `npm ci` pass | PASS WITH WARNINGS | `dashboard/package-lock.json`, `npm ci` | Audit vulnerability sau, không tự upgrade package. |
+| Backend syntax | Các file JS trọng yếu pass `node --check` | PASS | `src/index.js`, `src/api/dashboard.js`, webhook/tenant/bot/RAG files | Prompt 03 có thể tạo shell/wrapper nhưng phải validate lại sau mỗi nhóm. |
+| Backend lint/typecheck | Không có script lint/typecheck | Needs verification | `backend/package.json` | Không đánh dấu backend quality gate là full pass. |
+| Prisma schema | Fail khi thiếu `DATABASE_URL`, pass với dummy local URL | PASS WITH ENV WARNING | `npx prisma validate` | Cần env local an toàn trước validation chuẩn; không migrate/db push. |
+| Dashboard lint | `next lint` yêu cầu cấu hình ESLint tương tác | Risk confirmed | `dashboard/package.json`, `npm run lint` | Prompt riêng cần cấu hình ESLint có kiểm soát hoặc thay script phù hợp. |
+| Dashboard typecheck | `tsc --noEmit` pass | PASS | `npx --no-install tsc --noEmit` | Tiếp tục chạy sau từng thay đổi TS/TSX. |
+| Dashboard build | `next build` pass | PASS | `npm run build` | Build là guardrail chính hiện tại cho dashboard. |
+| Raw SQL unsafe | Nhiều điểm `$queryRawUnsafe` xác nhận | Risk confirmed | `backend/src/api/dashboard.js`, `backend/src/tenants/handoff.js`, `backend/src/rag/pipeline.js`, `backend/scripts/seed.js` | Audit từng query, ưu tiên input người dùng và tenant scope. |
+| Hard-code localhost | Xác nhận ở backend, dashboard, script, webhook URL file | Risk confirmed | `dashboard/src/lib/api.ts`, `dashboard/src/app/dashboard/settings/page.tsx`, `campaigns/page.tsx`, `tenants/page.tsx`, `start-all.bat` | Prompt config hardening sau khi architecture shell ổn. |
+| Default credential/fallback | Xác nhận `admin/admin123`, standalone fallback, placeholder provider key | Risk confirmed | `backend/src/index.js`, `dashboard/src/lib/auth.tsx`, `dashboard/src/app/login/page.tsx`, `start-all.bat` | Không dùng production; cần env policy và login regression test. |
+| DevOps destructive command | Xác nhận `prisma db push --accept-data-loss` | Risk confirmed | `start-all.bat` | Không chạy script này trên dữ liệu thật. |
+| Container migration on start | Xác nhận `prisma migrate deploy` trong backend container | Risk confirmed | `backend/Dockerfile` | Cần migration/deploy policy riêng. |
+| Chatwoot local folder | `chatwoot/` không tồn tại tại root | Risk confirmed | `Test-Path chatwoot` trả `False` | Không chạy `start-all.bat`/`stop-all.bat` nếu chưa xác minh môi trường. |
+
 Ngày cập nhật: 2026-07-07  
 Phạm vi: bảng kiểm tính năng hiện tại, rủi ro ẩn và cách kiểm tra an toàn trước refactor. File này chỉ phục vụ audit/tài liệu, không xác nhận tính năng đã chạy thành công trong runtime.
 

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { tenantsApi } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/config/env';
 import {
   Plus, Trash2, Edit3, Building2, Users, Link2, Copy, Check,
   ChevronDown, ChevronUp, ToggleLeft, ToggleRight, HelpCircle, X, Globe, Server,
@@ -62,10 +63,10 @@ export default function TenantsPage() {
     finally { setLoading(false); }
   };
 
-  // Lấy base URL từ tenant đầu tiên, fallback về localhost:3001
+  // Lấy base URL từ tenant đầu tiên, fallback về API_BASE_URL để giữ behavior dev hiện tại.
   const baseWebhookUrl = tenants[0]?.webhookUrl
     ? tenants[0].webhookUrl.replace(/\/chatwoot-webhook\/[^/]+$/, '')
-    : 'http://localhost:3001';
+    : API_BASE_URL;
 
   const handleDelete = async (tenant: Tenant) => {
     if (!confirm(`Xóa tenant "${tenant.name}"? Tất cả staff và cấu hình sẽ bị xóa.`)) return;
@@ -1372,4 +1373,3 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
     </div>
   );
 }
-

@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { providersApi, telegramDestinationsApi } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/config/env';
 import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, MessageSquare, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -34,7 +35,7 @@ export default function SettingsPage() {
   const [embeddingSaving, setEmbeddingSaving] = useState(false);
   const [embeddingTesting, setEmbeddingTesting] = useState<string | null>(null);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_BASE = API_BASE_URL;
 
   useEffect(() => { load(); }, []);
 
@@ -748,7 +749,7 @@ export default function SettingsPage() {
               <button onClick={() => setShowFbPageForm(false)} className="btn-secondary text-sm">Hủy</button>
               <button onClick={async () => {
                 try {
-                  await fetch('http://localhost:3001/api/facebook-pages', {
+                  await fetch(`${API_BASE}/api/facebook-pages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
                     body: JSON.stringify(fbForm),

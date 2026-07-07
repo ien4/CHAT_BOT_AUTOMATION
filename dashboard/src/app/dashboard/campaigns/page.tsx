@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { campaignsApi } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/config/env';
 import { Plus, Edit3, Trash2, Megaphone, Package, Upload, FileText, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -120,7 +121,7 @@ export default function CampaignsPage() {
                     <div key={i} className="flex items-center gap-2 bg-gray-50 p-2 rounded text-sm">
                       {a.url ? <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" /> : <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                       <span className="flex-1 truncate">{a.name || a.prompt?.substring(0, 40) || 'Asset ' + (i+1)}</span>
-                      {a.url && <a href={`http://localhost:3001${a.url}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex-shrink-0">Xem</a>}
+                      {a.url && <a href={`${API_BASE_URL}${a.url}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex-shrink-0">Xem</a>}
                       <button type="button" onClick={() => removeAsset(i)} className="text-red-500 hover:text-red-700 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   ))}

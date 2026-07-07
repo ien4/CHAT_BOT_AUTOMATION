@@ -1,9 +1,6 @@
-import axios from 'axios';
+import createApiClient from './api/client';
 
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
-  headers: { 'Content-Type': 'application/json' },
-});
+const api = createApiClient();
 
 // Auth interceptor
 api.interceptors.request.use((config) => {
