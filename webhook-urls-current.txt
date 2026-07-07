@@ -1,0 +1,22 @@
+Chat Automation - Current Webhook URLs
+Generated at: 16/06/2026  8:55:15.21
+
+LOCAL
+Chatwoot: http://localhost:3000
+Backend:  http://localhost:3001
+Dashboard:http://localhost:3002
+
+FACEBOOK -> CHATWOOT
+Meta Callback URL: https://wan-locally-identifier-confirmed.trycloudflare.com/bot
+Verify Token: facebook_booteam
+
+CHATWOOT -> BACKEND AI
+Agent Bot Name: BBOTECH
+Agent Bot URL:  https://undepreciable-donna-pronely.ngrok-free.dev/chatwoot-webhook/bbotech
+Local Docker URL alternative: http://host.docker.internal:3001/chatwoot-webhook/bbotech
+
+FLOW
+Facebook Messenger -> Chatwoot /bot -> Backend /chatwoot-webhook/bbotech -> AI reply via Chatwoot
+
+NOTE
+trycloudflare.com va ngrok URL co the doi moi lan start-all. Neu Facebook mat ket noi, cap nhat Meta Callback URL bang dong o tren.

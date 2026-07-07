@@ -1,0 +1,7 @@
+node_modules
+.env
+uploads
+*.log
+server.log
+scripts
+src/_backup_pre_chatwoot

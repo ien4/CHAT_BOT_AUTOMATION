@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables - NEVER commit
+**/.env
+.env
+.env.*
+!.env.example
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
+backend/server.log
+backend-err.txt
+backend-out.txt
+handoff-debug.log
+
+# Uploads (user files)
+uploads/
+backend/uploads/
+
+# Next.js build output
+.next/
+dashboard/.next/
+dashboard/.next/
+dashboard/tsconfig.tsbuildinfo
+dist/
+build/
+coverage/
+.vercel/
+
+# Editor / IDE
+.vscode/
+.idea/
+.claude/
+.continue/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+*.temp
+
+# Chatwoot (not deploying)
+/chatwoot/
