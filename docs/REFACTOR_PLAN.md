@@ -1,5 +1,19 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05R — Feature inventory + local run + runtime smoke (BLOCKED)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05R đã:
+
+- Tạo `docs/FEATURE_INVENTORY.md` và `docs/LOCAL_RUN_GUIDE.md`.
+- Chạy static validation đầy đủ: backend `node --check` + `prisma validate` dummy PASS; dashboard `tsc --noEmit` + `next build` PASS.
+- Kiểm tra readiness: dependency đã có; nhưng `backend/.env` và `dashboard/.env(.local)` KHÔNG tồn tại và chưa có DB local/test.
+
+Kết quả: runtime smoke test 3 route (`GET /settings/webhook`, `GET /settings/telegram-destinations`, `GET /prompts`) **BLOCKED — needs local/test env**. Không start app server, không gọi API, không migration/db push/Docker/start-all.
+
+Bước tiếp theo: người dùng chuẩn bị `backend/.env` + `dashboard/.env.local` local/test và PostgreSQL local/test, sau đó chạy lại Prompt 05R để thực hiện Phase 5. Chỉ khi 3 route runtime PASS mới tiếp tục Prompt 05D (tách thêm route read-only nhỏ) hoặc Prompt 06 (repository layer cho prompts/settings).
+
 ## Prompt 05C đã hoàn thành phase 3
 
 Ngày cập nhật: 2026-07-08

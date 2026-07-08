@@ -1,5 +1,29 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05R Update - Feature Inventory + Local Run + Runtime Smoke
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Feature inventory | Done | `docs/FEATURE_INVENTORY.md` | 9 nhóm chức năng; không mục nào đánh dấu runtime PASS. |
+| Local run guide | Done | `docs/LOCAL_RUN_GUIDE.md` | Trạng thái readiness + checklist thủ công + lệnh an toàn. |
+| Preflight | Done | `git status` clean, commit 05C `5e51bf7...` tồn tại | Không có source runtime change lạ. |
+| Backend static validation | PASS | `node --check` 9 file trọng yếu + `prisma validate` dummy | Không start server, không migrate/db push. |
+| Dashboard static validation | PASS | `tsc --noEmit` exit 0, `next build` PASS | Không sửa dashboard frontend. |
+| Dependency | Có sẵn | `backend/node_modules`, `dashboard/node_modules` EXISTS | Node v22.18.0, npm 11.6.0. |
+| Env file | Thiếu | `backend/.env`, `dashboard/.env(.local)` MISSING | Chỉ kiểm tra tồn tại, không mở nội dung. |
+| DB local/test | Chưa xác nhận | Không có `DATABASE_URL` | Cần chuẩn bị thủ công. |
+| Runtime smoke test 3 route | BLOCKED | Thiếu env/DB local/test + không có token test | `GET /api/settings/webhook`, `/telegram-destinations`, `/prompts` chưa runtime verified. |
+| Behavior-critical modules | Không đổi | Git diff guardrail | Không đụng source runtime/schema/webhook/RAG/tenant handoff/DevOps. |
+
+Rủi ro còn lại sau Prompt 05R:
+
+- Runtime của 3 route đã tách vẫn chưa verify (BLOCKED — thiếu `.env`/DB local/test).
+- `backend/src/api/dashboard.js` còn 2.408 dòng, 98 route trực tiếp.
+- `$queryRawUnsafe`, tenant scope, DevOps script risk, default credential, npm audit vulnerabilities (backend 10, dashboard 3) vẫn mở.
+- Sau khi người dùng chuẩn bị env/DB local/test, chạy lại Prompt 05R (Phase 5) để runtime verify.
+
 ## Prompt 05C Update - Backend API Route/Controller Split Phase 3
 
 Ngày cập nhật: 2026-07-08
