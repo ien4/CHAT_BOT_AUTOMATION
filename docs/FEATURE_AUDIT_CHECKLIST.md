@@ -1,5 +1,21 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 06B Update - Telegram Destinations Repository (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Telegram destinations repository | Done | `backend/src/infrastructure/repositories/telegramDestinations.repository.js` | Method: `findAll`; giữ `orderBy: purpose asc, name asc`. |
+| Controller dùng repository | Done | `createGetTelegramDestinations` nhận `telegramDestinationsRepository` | Response `{destinations, envFallback}` giữ nguyên; `envFallback.statusGroupIdConfigured` vẫn xử lý ở controller. |
+| Route inject dependency | Done | `settings.routes.js` tạo repository từ `prisma` được truyền vào | Không tạo PrismaClient mới; giữ `createSettingsRoutes({ authMiddleware, prisma })`. |
+| Dependency rule | PASS | Repository không import Express/process.env/domain; domain không phụ thuộc Prisma | Đây là bước infrastructure repository, chưa tạo use case/domain interface. |
+| Static validation | PASS | `node --check` 11 file backend gồm repository mới, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime telegram destinations | PASS | no-token GET → 401; có token local ký trong memory → 200 `{destinations, envFallback}` | Không in credential/token. |
+| Regression routes | PASS | `webhook` 200, handoff GET/PUT 200, `prompts` 200 array len=7 | Không đổi public API contract. |
+| Telegram write/test routes | Không đổi | `POST/PUT/DELETE /settings/telegram-destinations` và `POST /settings/telegram-destinations/:id/test` còn trong `dashboard.js` | Không gọi route test Telegram trong smoke. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/dashboard FE/DevOps/package | Chỉ sửa repository/controller/route settings read. |
+
 ## Prompt 06 Update - Repository Layer Phase 1 (PASS)
 
 Ngày cập nhật: 2026-07-08

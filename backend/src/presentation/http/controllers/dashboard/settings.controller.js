@@ -7,12 +7,10 @@ function getWebhookSettings(req, res) {
   });
 }
 
-function createGetTelegramDestinations({ prisma }) {
+function createGetTelegramDestinations({ telegramDestinationsRepository }) {
   return async function getTelegramDestinations(req, res) {
     try {
-      const destinations = await prisma.telegramDestination.findMany({
-        orderBy: [{ purpose: 'asc' }, { name: 'asc' }],
-      });
+      const destinations = await telegramDestinationsRepository.findAll();
       res.json({
         destinations,
         envFallback: {

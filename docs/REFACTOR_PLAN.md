@@ -1,5 +1,26 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 06B — Telegram destinations repository read (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 06B tiếp tục repository layer trong phạm vi nhỏ, read-only:
+
+- Tạo `backend/src/infrastructure/repositories/telegramDestinations.repository.js`.
+- `settings.controller.js` đã dùng `telegramDestinationsRepository` cho `GET /settings/telegram-destinations`.
+- `settings.routes.js` tạo repository từ Prisma singleton được truyền qua `createSettingsRoutes({ authMiddleware, prisma })`; không tạo PrismaClient thứ hai.
+- Public API contract giữ nguyên: `/api/settings/telegram-destinations`, method GET, `authMiddleware`, status code, response shape `{destinations, envFallback}` và query order không đổi.
+- Runtime smoke PASS: no-token `telegram-destinations`/`handoff` → 401; có token local ký trong memory → `telegram-destinations`, `webhook`, handoff GET/PUT, `prompts` đều 200 đúng shape.
+- Không sửa Prisma schema/migrations, webhook handlers, tenant handoff, RAG pipeline, bot engine/tools, dashboard frontend, package hoặc DevOps scripts.
+- Các route write/test Telegram destination vẫn ở `dashboard.js` và không thuộc phạm vi Prompt 06B.
+
+Backend startup trong local env có log Telegram bot polling vì token local tồn tại; smoke test không gọi route test Telegram và `GET /settings/telegram-destinations` chỉ đọc DB.
+
+Tiếp theo khuyến nghị:
+
+- **Prompt 06C**: repository cho `GET /prompts`; bắt buộc giữ tenant scope chính xác và có regression smoke.
+- **Prompt 07**: tenant safety audit nếu muốn ưu tiên permission/scope trước khi đưa thêm query có tenant vào repository.
+
 ## Prompt 06 — Repository layer phase 1 for settings/prompts (PASS)
 
 Ngày cập nhật: 2026-07-08

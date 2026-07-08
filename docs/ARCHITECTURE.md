@@ -1,5 +1,23 @@
 # ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 06B bổ sung
+
+Prompt 06B mở rộng repository layer cho Telegram destinations read mà không đổi public API:
+
+- Tạo `backend/src/infrastructure/repositories/telegramDestinations.repository.js`.
+- Repository nhận Prisma dependency từ route factory; không tạo PrismaClient thứ hai.
+- Repository chỉ chứa DB operation `findAll` cho `TelegramDestination`, giữ `orderBy` theo `purpose` rồi `name`.
+- `settings.controller.js` vẫn giữ HTTP response/error concern và `envFallback` từ `process.env`, nhưng không gọi Prisma trực tiếp cho `GET /settings/telegram-destinations`.
+- `settings.routes.js` tạo `telegramDestinationsRepository` từ Prisma singleton được truyền qua `createSettingsRoutes({ authMiddleware, prisma })`.
+- Các route write/test Telegram destinations trong `dashboard.js` không đổi; Prompt 06B không gọi external Telegram send/test route.
+
+Dependency rule sau Prompt 06B:
+
+- `presentation/http/routes` wire dependency infrastructure cho controller trong giai đoạn chuyển tiếp.
+- `presentation/http/controllers` gọi repository abstraction được inject; phần env fallback vẫn ở presentation/controller vì là response config concern hiện hữu.
+- `infrastructure/repositories` được phép dùng Prisma nhưng không đọc env, không xử lý HTTP response, không import Express.
+- `domain` vẫn không phụ thuộc Prisma/Express.
+
 ## Prompt 06 bổ sung
 
 Prompt 06 đã bắt đầu repository layer phase 1 mà không đổi public API:

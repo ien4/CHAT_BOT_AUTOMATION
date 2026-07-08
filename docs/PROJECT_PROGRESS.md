@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **Prompt 06 đã hoàn tất — tạo repository layer phase 1 cho handoff settings; `GET/PUT /api/settings/handoff` đã dùng `handoffSettingsRepository` và runtime PASS trên DB local/test.**
-Lưu ý bắt buộc: các prompt 03 đến 06 đạt **Static validation pass**. Prompt 06 đã **runtime verified** `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`, `GET /api/settings/handoff`, `PUT /api/settings/handoff` (GET/PUT handoff không token → 401; có token → 200 + shape đúng). Các route/khu vực khác vẫn chưa runtime verified.
+Trạng thái hiện tại: **Prompt 06B đã hoàn tất — tạo repository layer cho `GET /api/settings/telegram-destinations`; controller settings không còn gọi Prisma trực tiếp cho Telegram destinations read và runtime PASS trên DB local/test.**
+Lưu ý bắt buộc: các prompt 03 đến 06B đạt **Static validation pass**. Prompt 06B đã **runtime verified** `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`, `GET /api/settings/handoff`, `PUT /api/settings/handoff` (settings không token → 401; có token → 200 + shape đúng). Các route/khu vực khác vẫn chưa runtime verified.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -31,7 +31,7 @@ Lưu ý bắt buộc: các prompt 03 đến 06 đạt **Static validation pass**
 | Phase 10b — Settings route split tiếp | ✅ Done with warnings | Prompt 05D tách `GET /settings/handoff` (behavior giữ nguyên); phát hiện bug pre-existing accessor cần Prompt 05D-FIX |
 | Phase 10c — Handoff settings accessor fix | ✅ Done | Prompt 05D-FIX sửa accessor + Prisma payload schema compatibility; `GET/PUT /settings/handoff` runtime PASS |
 | Phase 10d — PUT handoff settings route split | ✅ Done | Prompt 05E tách `PUT /settings/handoff` sang settings controller/routes; runtime GET/PUT PASS |
-| Phase 11 — Repository layer | ✅ Started | Prompt 06 tạo `handoffSettingsRepository` phase 1; runtime handoff GET/PUT PASS |
+| Phase 11 — Repository layer | ✅ Started | Prompt 06 tạo `handoffSettingsRepository`; Prompt 06B tạo `telegramDestinationsRepository`; runtime settings/prompts smoke PASS |
 | Phase 12 — Tenant safety audit | ⬜ Planned | Prompt 07 |
 | Phase 13 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
 | Phase 14 — Dashboard feature split | ⬜ Planned | Prompt 09 |
@@ -330,13 +330,33 @@ Trạng thái: **PASS — route split and runtime verified**. `dashboard.js` cò
 
 Trạng thái: **PASS — repository layer phase 1 and runtime verified**. `dashboard.js` không đổi so với 05E: 2382 dòng và khoảng 96 route direct.
 
+### Prompt 06B — Repository layer for Telegram destinations read
+
+- [x] Preflight Git; branch `chore/prompt-05r-docs-local-run`, working tree clean trước khi sửa, commit Prompt 06 `5b26b25` tồn tại.
+- [x] Secret safety: `.env`/`.env.local` được gitignore, không nằm trong tracked files, không stage/commit secret; remote trống nên không push.
+- [x] Đọc context bắt buộc: report Prompt 06/05E, progress/checklist/refactor plan/local run guide/architecture, Prisma schema, Prisma singleton wrapper, dashboard API, settings/prompts controller/routes.
+- [x] Baseline static validation PASS: `node --check` các file backend liên quan, `npx prisma validate`.
+- [x] Xác nhận candidate: `GET /settings/telegram-destinations` là read-only DB query đã tách route/controller; write/test Telegram routes còn trong `dashboard.js` và không thuộc phạm vi.
+- [x] Tạo `backend/src/infrastructure/repositories/telegramDestinations.repository.js`.
+- [x] Repository nhận `prisma` dependency rõ ràng; không tạo PrismaClient mới; không import Express/process.env; chỉ chứa DB operation `findAll`.
+- [x] Sửa `settings.controller.js`: `createGetTelegramDestinations` dùng `telegramDestinationsRepository`, response `{ destinations, envFallback }` giữ nguyên.
+- [x] Sửa `settings.routes.js`: tạo `telegramDestinationsRepository` từ Prisma singleton được truyền vào `createSettingsRoutes({ authMiddleware, prisma })`.
+- [x] Static validation sau thay đổi PASS: `node --check` 11 file backend gồm repository mới, `npx prisma validate`, `git diff --check`.
+- [x] Runtime smoke PASS trên `bbotech-pgvector-local`: no-token `GET /settings/telegram-destinations` và `GET /settings/handoff` → 401; có token local ký trong memory → `telegram-destinations` 200, `webhook` 200, handoff GET/PUT 200, `prompts` 200 array.
+- [x] Dừng backend process do prompt khởi động; giữ DB container/volume/env local.
+- [x] Khởi động backend có log Telegram bot polling vì local env có token; route `GET /settings/telegram-destinations` không gọi route test Telegram và không gửi external message.
+- [x] Không sửa webhook handlers, tenant handoff, RAG, bot engine/tools, dashboard frontend, Prisma schema/migrations, package hoặc DevOps scripts.
+- [x] Tạo report `report/PROMPT_06B_TELEGRAM_DESTINATIONS_REPOSITORY_REPORT.md`.
+
+Trạng thái: **PASS — telegram destinations repository layer and runtime verified**. `dashboard.js` không đổi so với 05E/06: 2382 dòng và khoảng 96 route direct.
+
 **Settings/Cài Đặt là khu vực mấu chốt** (webhook config, Telegram destinations, handoff, provider/API, channel/Chatwoot/Facebook config) → refactor phải an toàn, route-by-route, có runtime smoke test; không tách route external side effect khi chưa có test cô lập.
 
 ## 4. Next planned prompts
 
 | Prompt | Tên | Mục tiêu | Tool nên dùng |
 |---|---|---|---|
-| Prompt 06B | Repository layer tiếp theo | Tách repository cho `telegram-destinations` read hoặc `prompts` với tenant scope giữ nguyên | Codex |
+| Prompt 06C | Repository layer cho prompts | Tách repository cho `GET /prompts`, bắt buộc giữ tenant scope chính xác và regression smoke | Codex |
 | Prompt 05F | Settings external/write isolated tests | Nếu chưa sang repository layer, tạo test cô lập cho Telegram/Chatwoot/Facebook settings route còn lại, không gọi external thật | Codex |
 | Prompt 07 | Tenant safety audit | Trace tenant scope, không sửa lớn nếu chưa chắc | Codex |
 | Prompt 08 | RAG/raw SQL hardening | Audit `$queryRawUnsafe`, pgvector query và input source | Codex |
@@ -347,12 +367,13 @@ Trạng thái: **PASS — repository layer phase 1 and runtime verified**. `dash
 
 | Rủi ro | Trạng thái | Ưu tiên | Prompt xử lý |
 |---|---|---|---|
-| `backend/src/api/dashboard.js` quá lớn | Open (2382 dòng, khoảng 96 route direct sau 05E) | P0 | Prompt 06/05F |
+| `backend/src/api/dashboard.js` quá lớn | Open (2382 dòng, khoảng 96 route direct sau 05E; không đổi ở 06/06B) | P0 | Prompt 06C/05F |
 | Bug handoff: sai Prisma accessor `handoffSettings` (đúng `handoffSetting`) → `/settings/handoff` trả 500 | Closed ở Prompt 05D-FIX | P1 | Đã sửa + runtime verified GET/PUT 200 |
 | Handoff settings payload có field ngoài schema `botGracePeriodSeconds` | Closed ở Prompt 05D-FIX | P1 | Đã bỏ khỏi Prisma payload `HandoffSetting`; không đổi schema |
 | `PUT /settings/handoff` còn nằm trong `dashboard.js` | Closed ở Prompt 05E | P1 | Đã tách sang `settings.controller.js`/`settings.routes.js`; runtime verified |
 | Handoff settings controller gọi Prisma trực tiếp | Closed ở Prompt 06 | P1 | Đã tạo `handoffSettingsRepository`; GET/PUT handoff dùng repository |
-| Repository coverage còn ít | Open | P1 | Prompt 06B |
+| Telegram destinations GET controller gọi Prisma trực tiếp | Closed ở Prompt 06B | P1 | Đã tạo `telegramDestinationsRepository`; `GET /settings/telegram-destinations` dùng repository |
+| Repository coverage còn ít | Open | P1 | Prompt 06C hoặc Prompt 07 trước khi mở rộng |
 | `$queryRawUnsafe` | Open | P0 | Prompt 08 |
 | Tenant scope chưa runtime verified | Open | P0 | Prompt 07 |
 | Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
@@ -401,7 +422,8 @@ Trạng thái: **PASS — repository layer phase 1 and runtime verified**. `dash
 | Prompt 05D | PASS | PASS | Not run | Not run | PASS WITH WARNINGS (3 route 200; handoff 500 giữ nguyên — bug pre-existing) | `a2fa5da` |
 | Prompt 05D-FIX | PASS | PASS | Not run | Not run | PASS (`webhook`/`telegram-destinations`/`prompts` 200; handoff GET/PUT 200) | `6a427d9` |
 | Prompt 05E | PASS | PASS | Not run | Not run | PASS (no-token GET/PUT handoff 401; 5 route smoke 200) | `9eb536a` |
-| Prompt 06 | PASS | PASS | Not run | Not run | PASS (handoff repository GET/PUT 200; regression routes 200) | Ghi sau commit 06 |
+| Prompt 06 | PASS | PASS | Not run | Not run | PASS (handoff repository GET/PUT 200; regression routes 200) | `5b26b25` |
+| Prompt 06B | PASS | PASS | Not run | Not run | PASS (`telegram-destinations` repository GET 200; settings/prompts regression 200; no-token 401) | Ghi sau commit 06B |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
@@ -416,11 +438,11 @@ Ghi chú: “PASS” ở các mốc trên là static validation/build validation
 
 ## 9. Bước tiếp theo rõ ràng
 
-Prompt 06 đã hoàn tất: `GET/PUT /api/settings/handoff` hiện đi qua `handoffSettingsRepository` trong `backend/src/infrastructure/repositories/`; nhóm route nhỏ `settings/prompts` vẫn runtime verified trên DB pgvector local/test, gồm `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`, `GET /api/settings/handoff`, `PUT /api/settings/handoff`. Auth không token vẫn trả 401; token local/test lấy qua login endpoint; không in credential/token.
+Prompt 06B đã hoàn tất: `GET /api/settings/telegram-destinations` hiện đi qua `telegramDestinationsRepository` trong `backend/src/infrastructure/repositories/`; `GET/PUT /api/settings/handoff` vẫn đi qua `handoffSettingsRepository`. Nhóm route nhỏ `settings/prompts` runtime verified trên DB pgvector local/test, gồm `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`, `GET /api/settings/handoff`, `PUT /api/settings/handoff`. Auth không token vẫn trả 401; token smoke được ký cục bộ trong memory từ admin user hiện có, không in credential/token.
 
-Bước tiếp theo (sau Prompt 06):
+Bước tiếp theo (sau Prompt 06B):
 
-- **Prompt 06B**: mở rộng repository layer cho `GET /settings/telegram-destinations` hoặc `GET /prompts`; nếu chọn prompts phải giữ tenant scope chính xác.
+- **Prompt 06C**: mở rộng repository layer cho `GET /prompts`; phải giữ tenant scope chính xác và có regression smoke.
 - **Prompt 07**: tenant safety audit nếu muốn ưu tiên scope/permission trước khi tách thêm route có tenant.
 
 Lưu ý tái chạy: Prompt 05R-LOCALDB-FIX đã dựng DB pgvector local **bền vững** (`bbotech-pgvector-local`, port 5433, volume `bbotech_pgvector_local_data`) và giữ `backend/.env`. User chạy lại backend bằng: `docker start bbotech-pgvector-local` → `cd backend` → `npm run dev` (xem `docs/LOCAL_RUN_GUIDE.md` mục 1c). Không chạy migration/db push/Docker compose/start-all trên dữ liệu production.
