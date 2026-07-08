@@ -1,5 +1,23 @@
 # ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 06 bổ sung
+
+Prompt 06 đã bắt đầu repository layer phase 1 mà không đổi public API:
+
+- Tạo `backend/src/infrastructure/repositories/handoffSettings.repository.js`.
+- Repository nhận Prisma dependency từ route factory; không tạo PrismaClient thứ hai.
+- Repository chỉ chứa DB operations cho singleton `HandoffSetting`: `findSingleton`, `createDefault`, `upsertSingleton`.
+- `settings.controller.js` vẫn giữ HTTP response/error concern nhưng không gọi Prisma handoff trực tiếp cho `GET/PUT /settings/handoff`.
+- `settings.routes.js` tạo repository từ Prisma singleton được truyền qua `createSettingsRoutes({ authMiddleware, prisma })`.
+- Chưa tạo application use case/domain interface trong Prompt 06; đây là bước trung gian an toàn để giảm Prisma access khỏi controller trước.
+
+Dependency rule sau Prompt 06:
+
+- `presentation/http/routes` có thể wire dependency infrastructure cho controller trong giai đoạn chuyển tiếp.
+- `presentation/http/controllers` gọi repository abstraction được inject, không import Prisma/Express vào repository.
+- `infrastructure/repositories` được phép dùng Prisma nhưng không đọc env, không xử lý HTTP response.
+- `domain` vẫn không phụ thuộc Prisma/Express.
+
 ## Prompt 04 bổ sung
 
 Prompt 04 đã harden phần config mà không thay đổi route/webhook/schema:

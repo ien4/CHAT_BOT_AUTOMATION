@@ -1,5 +1,25 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 06 — Repository layer phase 1 for settings/prompts (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 06 bắt đầu repository layer theo hướng nhỏ và có runtime baseline:
+
+- Tạo `backend/src/infrastructure/repositories/handoffSettings.repository.js`.
+- `settings.controller.js` đã dùng `handoffSettingsRepository` cho `GET /settings/handoff` và `PUT /settings/handoff`.
+- `settings.routes.js` tạo repository từ Prisma singleton được truyền qua `createSettingsRoutes({ authMiddleware, prisma })`; không tạo PrismaClient thứ hai.
+- Public API contract giữ nguyên: `/api/settings/handoff`, method GET/PUT, `authMiddleware`, status code, response shape và Prisma singleton behavior không đổi.
+- Runtime smoke PASS: no-token GET/PUT handoff → 401; handoff GET/PUT/GET-after-PUT → 200; regression `webhook`, `telegram-destinations`, `prompts` → 200.
+- Không sửa Prisma schema/migrations, webhook handlers, tenant handoff, RAG pipeline, bot engine/tools, dashboard frontend, package hoặc DevOps scripts.
+
+Đây là bước trung gian an toàn: chưa tạo application use case/domain interface để tránh mở rộng quá nhanh. Repository không import Express/process.env và chỉ chứa DB operations.
+
+Tiếp theo khuyến nghị:
+
+- **Prompt 06B**: repository cho `GET /settings/telegram-destinations` hoặc `GET /prompts`. Với prompts phải giữ tenant scope chính xác.
+- **Prompt 07**: tenant safety audit nếu muốn ưu tiên permission/scope trước khi đưa thêm query vào repository.
+
 ## Prompt 05E — Split PUT handoff settings route + runtime (PASS)
 
 Ngày cập nhật: 2026-07-08

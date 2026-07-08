@@ -26,14 +26,12 @@ function createGetTelegramDestinations({ prisma }) {
   };
 }
 
-function createGetHandoffSettings({ prisma }) {
+function createGetHandoffSettings({ handoffSettingsRepository }) {
   return async function getHandoffSettings(req, res) {
     try {
-      let settings = await prisma.handoffSetting.findUnique({ where: { id: 'singleton' } });
+      let settings = await handoffSettingsRepository.findSingleton();
       if (!settings) {
-        settings = await prisma.handoffSetting.create({
-          data: { id: 'singleton', pendingTimeoutSeconds: 30, sessionTimeoutSeconds: 30, offHoursPendingTimeout: 10, workHoursStart: 8, workHoursEnd: 22 },
-        });
+        settings = await handoffSettingsRepository.createDefault();
       }
       res.json(settings);
     } catch (error) {
@@ -42,14 +40,16 @@ function createGetHandoffSettings({ prisma }) {
   };
 }
 
-function createPutHandoffSettings({ prisma }) {
+function createPutHandoffSettings({ handoffSettingsRepository }) {
   return async function putHandoffSettings(req, res) {
     try {
       const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd } = req.body;
-      const settings = await prisma.handoffSetting.upsert({
-        where: { id: 'singleton' },
-        update: { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd },
-        create: { id: 'singleton', pendingTimeoutSeconds: pendingTimeoutSeconds ?? 30, sessionTimeoutSeconds: sessionTimeoutSeconds ?? 30, offHoursPendingTimeout: offHoursPendingTimeout ?? 10, workHoursStart, workHoursEnd },
+      const settings = await handoffSettingsRepository.upsertSingleton({
+        pendingTimeoutSeconds,
+        sessionTimeoutSeconds,
+        offHoursPendingTimeout,
+        workHoursStart,
+        workHoursEnd,
       });
       res.json(settings);
     } catch (error) {

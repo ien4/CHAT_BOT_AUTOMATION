@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 06 Update - Repository Layer Phase 1 (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Handoff settings repository | Done | `backend/src/infrastructure/repositories/handoffSettings.repository.js` | Methods: `findSingleton`, `createDefault`, `upsertSingleton`. |
+| Controller dùng repository | Done | `createGetHandoffSettings` và `createPutHandoffSettings` nhận `handoffSettingsRepository` | Controller vẫn giữ HTTP concern, không gọi Prisma handoff trực tiếp. |
+| Route inject dependency | Done | `settings.routes.js` tạo repository từ `prisma` được truyền vào | Không tạo PrismaClient mới; giữ `createSettingsRoutes({ authMiddleware, prisma })`. |
+| Dependency rule | PASS | Repository không import Express/process.env/domain; domain không phụ thuộc Prisma | Đây là bước trung gian infrastructure repository, chưa tạo use case. |
+| Static validation | PASS | `node --check` 10 file backend gồm repository mới, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime handoff | PASS | no-token GET/PUT → 401; GET/PUT/GET-after-PUT có token → 200 | PUT payload chỉ gồm field schema hợp lệ. |
+| Regression routes | PASS | `webhook` 200, `telegram-destinations` 200, `prompts` 200 array len=7 | Không đổi public API contract. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/dashboard FE/DevOps/package | Chỉ sửa repository/controller/route settings handoff. |
+
 ## Prompt 05E Update - Split PUT Handoff Settings Route (PASS)
 
 Ngày cập nhật: 2026-07-08
