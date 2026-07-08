@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **Prompt 05R-ENV đã chạy — runtime smoke test PASS cho 3 route đã tách trên DB local/test dùng một lần**
+Trạng thái hiện tại: **Prompt 05R-LOCALDB-FIX đã chạy — dựng DB pgvector local/test bền vững, backend `npm run dev` chạy OK, smoke test 3 route PASS lại; DB/env được giữ lại để user tự chạy**
 Lưu ý bắt buộc: các prompt 03 đến 05C đạt **Static validation pass**. Prompt 05R-ENV đã **runtime verified** 3 route `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts` (auth 401 khi thiếu token; 200 + shape đúng khi có token). Các route/khu vực khác vẫn chưa runtime verified.
 
 ## 1. Nguyên tắc cập nhật
@@ -244,6 +244,22 @@ Trạng thái: **BLOCKED — needs local/test env** (tại thời điểm 05R). 
 
 Trạng thái: **PASS — runtime smoke test passed**. 3 route đã tách runtime verified.
 
+### Prompt 05R-LOCALDB-FIX — Fix local pgvector + run backend safely
+
+- [x] Preflight Git; branch `chore/prompt-05r-docs-local-run`, working tree clean, không đụng master/main.
+- [x] Xác định 2 lỗi: `DATABASE_URL not found` (env hỏng/thiếu) và `type "vector" does not exist` (DB không có pgvector).
+- [x] Tạo lại `backend/.env` local-only nhất quán (PORT/NODE_ENV/ENCRYPTION_KEY/DATABASE_URL/JWT/ADMIN), `dashboard/.env.local` local-only; gitignored, không commit, không in secret.
+- [x] Dựng container **bền vững** `bbotech-pgvector-local` (`pgvector/pgvector:pg16`, port 5433, volume `bbotech_pgvector_local_data`); không đụng container Supabase dự án khác.
+- [x] `CREATE EXTENSION IF NOT EXISTS vector;` + verify.
+- [x] `npx prisma validate` PASS, `npx prisma migrate deploy` PASS (10 migration), `npx prisma generate` PASS; KHÔNG `db push --accept-data-loss`.
+- [x] `npm run dev` chạy OK trên port 3001.
+- [x] Smoke test 3 route PASS lại (401 no-token; 200 + shape đúng có token).
+- [x] Dừng backend; **giữ** container + volume + env để user chạy lại.
+- [x] Tạo report `report/PROMPT_05R_LOCALDB_PGVECTOR_FIX_REPORT.md`.
+- [x] Không sửa source runtime/schema/webhook/RAG/tenant handoff.
+
+Trạng thái: **PASS — backend local runs and smoke test passed**.
+
 ## 4. Next planned prompts
 
 | Prompt | Tên | Mục tiêu | Tool nên dùng |
@@ -304,7 +320,8 @@ Trạng thái: **PASS — runtime smoke test passed**. 3 route đã tách runtim
 | Prompt 05B | PASS | PASS | Not run | Not run | Not run | `29a97a6c3950dc73219bcf91b74b373614ff4d28` |
 | Prompt 05C | PASS | PASS | Not run | Not run | Not run | `5e51bf7eea53305b4800c1449f4dc60caf885f46` |
 | Prompt 05R | PASS | PASS | PASS | PASS | BLOCKED (thiếu env/DB local/test) | `2bf4386` / `7425777` |
-| Prompt 05R-ENV | PASS | PASS | PASS | PASS | PASS (3 route, DB local/test tạm) | Ghi sau commit Prompt 05R-ENV |
+| Prompt 05R-ENV | PASS | PASS | PASS | PASS | PASS (3 route, DB local/test tạm) | `c864390` |
+| Prompt 05R-LOCALDB-FIX | PASS | PASS | Not run | Not run | PASS (3 route, DB pgvector local bền vững) | Ghi sau commit |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
@@ -326,7 +343,7 @@ Bước tiếp theo: chọn một trong hai hướng —
 - **Prompt 05D**: tiếp tục tách thêm route read-only nhỏ khỏi `backend/src/api/dashboard.js` (đã có guardrail runtime tương đương), hoặc
 - **Prompt 06**: bắt đầu repository layer cho nhóm `prompts`/`settings` khi controller boundary đã đủ rõ.
 
-Lưu ý tái chạy: DB test là container tạm dùng một lần đã bị gỡ; muốn smoke test lại cần chuẩn bị lại env + DB local/test (xem `docs/LOCAL_RUN_GUIDE.md`). Không chạy migration/db push/Docker/start-all trên dữ liệu production.
+Lưu ý tái chạy: Prompt 05R-LOCALDB-FIX đã dựng DB pgvector local **bền vững** (`bbotech-pgvector-local`, port 5433, volume `bbotech_pgvector_local_data`) và giữ `backend/.env`. User chạy lại backend bằng: `docker start bbotech-pgvector-local` → `cd backend` → `npm run dev` (xem `docs/LOCAL_RUN_GUIDE.md` mục 1c). Không chạy migration/db push/Docker compose/start-all trên dữ liệu production.
 
 Điều kiện bắt buộc:
 

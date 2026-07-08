@@ -1,5 +1,18 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05R-LOCALDB-FIX — Local pgvector fix + run backend (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Sau Prompt 05R-ENV, môi trường tạm bị xóa nên backend fail (`DATABASE_URL not found`, `type "vector" does not exist`). Prompt 05R-LOCALDB-FIX đã:
+
+- Tạo lại `backend/.env` + `dashboard/.env.local` local-only (gitignored, không commit).
+- Dựng DB pgvector local **bền vững**: container `bbotech-pgvector-local` (`pgvector/pgvector:pg16`, port 5433, named volume `bbotech_pgvector_local_data`), bật extension `vector`, `prisma migrate deploy` (non-destructive).
+- `npm run dev` chạy OK; smoke test 3 route PASS lại (401 no-token; 200 + shape đúng có token).
+- Giữ lại container + volume + env để user tự chạy backend: `docker start bbotech-pgvector-local` → `cd backend` → `npm run dev`.
+
+Không sửa source runtime/schema/migrations/webhook/RAG/tenant handoff. Không dùng `db push`/`--accept-data-loss`/`start-all.bat`/Docker compose. Runtime vẫn PASS → tiếp tục **Prompt 05D** (tách route read-only nhỏ) hoặc **Prompt 06** (repository layer).
+
 ## Prompt 05R-ENV — Local test env + runtime smoke (PASS)
 
 Ngày cập nhật: 2026-07-08

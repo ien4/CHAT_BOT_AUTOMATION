@@ -32,6 +32,25 @@ Phạm vi: hướng dẫn chạy local an toàn + điều kiện cần cho runti
 
 Đây là môi trường **dùng một lần**; muốn chạy lại phải lặp lại các bước trên với DB local/test mới. Không dùng cho production.
 
+## 1c. DB pgvector local bền vững (Prompt 05R-LOCALDB-FIX)
+
+Đã dựng DB local/test **bền vững** (giữ lại sau prompt) để user chạy backend nhiều lần:
+
+- Container: `bbotech-pgvector-local` (image `pgvector/pgvector:pg16`), port host `5433`.
+- Database: `bbotech_local_db`, user `bbotech_local` (password local, không in/không commit).
+- Named volume: `bbotech_pgvector_local_data` (dữ liệu giữ khi restart container).
+- Extension `vector` đã bật; 10 migration đã áp bằng `npx prisma migrate deploy`.
+- `backend/.env` + `dashboard/.env.local` đã được tạo local-only (gitignored) và **giữ lại**.
+
+Hai lỗi thường gặp và cách tránh:
+- `Environment variable not found: DATABASE_URL` → thiếu/hỏng `backend/.env`. Đảm bảo `DATABASE_URL` là một URL hợp lệ trỏ `localhost:5433`.
+- `type "vector" does not exist` → DB không có pgvector. Phải dùng image `pgvector/pgvector` và chạy `CREATE EXTENSION IF NOT EXISTS vector;` trước khi migrate. **Không** dùng `prisma db push`/`--accept-data-loss`.
+
+Cách user chạy lại backend sau prompt:
+1. `docker start bbotech-pgvector-local` (nếu container đã dừng).
+2. `cd backend`
+3. `npm run dev` → `http://localhost:3001`.
+
 ## 2. Cách chạy local an toàn — khuyến nghị
 
 - **KHÔNG dùng `start-all.bat`.** Script này chạy `npm install`, `npx prisma db push --accept-data-loss` (có thể mất dữ liệu), khởi động cloudflared/ngrok, tham chiếu thư mục `chatwoot/` (không tồn tại ở root) và có hard-code path `C:\Users\Admin\cloudflared.exe`.

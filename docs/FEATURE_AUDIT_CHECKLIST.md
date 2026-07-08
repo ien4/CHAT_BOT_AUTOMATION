@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05R-LOCALDB-FIX Update - Local pgvector + Backend Run PASS
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Lỗi `DATABASE_URL not found` | Fixed | `backend/.env` tạo lại đầy đủ, gitignored | Env cũ hỏng/thiếu; không in secret. |
+| Lỗi `type "vector" does not exist` | Fixed | `CREATE EXTENSION IF NOT EXISTS vector;` + verify trên container pgvector | Dùng image `pgvector/pgvector:pg16`. |
+| DB pgvector local bền vững | Done (giữ lại) | container `bbotech-pgvector-local`, port 5433, volume `bbotech_pgvector_local_data` | Không xóa sau test; không đụng Supabase dự án khác. |
+| Prisma migrate deploy | PASS | 10 migration áp dụng | KHÔNG `db push --accept-data-loss`. |
+| Backend `npm run dev` | PASS | Log "Server running on port 3001", DB connected | Không dùng start-all/Docker compose. |
+| `GET /api/settings/webhook` | Runtime verified PASS | 200, secret mask/null | — |
+| `GET /api/settings/telegram-destinations` | Runtime verified PASS | 200, `{destinations:[],envFallback}` | — |
+| `GET /api/prompts` | Runtime verified PASS | 200, array len=7 | — |
+| Auth | Runtime verified | no-token → 401 | Không crash. |
+| Env commit | Không | `git check-ignore` xác nhận | KHÔNG commit `.env`. |
+| Source runtime | Không đổi | Không sửa src/schema/webhook/RAG/handoff | Chỉ tạo env + migrate DB local. |
+
 ## Prompt 05R-ENV Update - Local Test Env + Runtime Smoke PASS
 
 Ngày cập nhật: 2026-07-08
