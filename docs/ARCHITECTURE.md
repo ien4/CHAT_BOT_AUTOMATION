@@ -1,5 +1,25 @@
 # ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 06C bổ sung
+
+Prompt 06C mở rộng repository layer cho `GET /prompts` mà không đổi public API hoặc tenant scope hiện hữu:
+
+- Tạo `backend/src/infrastructure/repositories/promptTemplates.repository.js`.
+- Repository nhận Prisma dependency từ route factory; không tạo PrismaClient thứ hai.
+- Repository chỉ chứa DB read operation `findManyForScope({ tenantId, layer })` cho `PromptTemplate`.
+- `prompts.controller.js` vẫn giữ HTTP concern, đọc `req.query.layer`, gọi `getTenantScope(req)` và truyền scope đã tính vào repository.
+- Repository giữ query cũ: `where = { tenantId: tenantId ?? null }`, thêm `where.layer = layer` nếu có, `orderBy` theo `layer` rồi `intentType`.
+- `prompts.routes.js` tạo `promptTemplatesRepository` từ Prisma singleton được truyền qua `createPromptRoutes({ authMiddleware, getTenantScope, prisma })`.
+- Các route `GET /prompts/:id`, `POST /prompts`, `PUT /prompts/:id`, `DELETE /prompts/:id` trong `dashboard.js` không đổi.
+
+Dependency rule sau Prompt 06C:
+
+- `presentation/http/routes` wire repository infrastructure cho controller trong giai đoạn chuyển tiếp.
+- `presentation/http/controllers` vẫn xử lý request/response, query param và gọi `getTenantScope(req)`.
+- `infrastructure/repositories` được phép dùng Prisma nhưng không đọc env, không xử lý HTTP response, không import Express.
+- `domain` vẫn không phụ thuộc Prisma/Express.
+- Full tenant isolation chưa được đánh dấu PASS vì local DB không có tenant sample; Prompt 07 vẫn cần audit riêng.
+
 ## Prompt 06B bổ sung
 
 Prompt 06B mở rộng repository layer cho Telegram destinations read mà không đổi public API:

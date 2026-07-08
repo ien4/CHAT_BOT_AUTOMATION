@@ -1,5 +1,25 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 06C — Prompts repository with tenant scope checklist (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 06C tiếp tục repository layer cho route read-only có tenant scope:
+
+- Tạo `backend/src/infrastructure/repositories/promptTemplates.repository.js`.
+- `prompts.controller.js` đã dùng `promptTemplatesRepository` cho `GET /prompts`.
+- `prompts.routes.js` tạo repository từ Prisma singleton được truyền qua `createPromptRoutes({ authMiddleware, getTenantScope, prisma })`; không tạo PrismaClient thứ hai.
+- Tenant scope giữ nguyên theo code cũ: controller vẫn gọi `getTenantScope(req)`, truyền `tenantId` đã tính vào repository, repository dùng `where = { tenantId: tenantId ?? null }` và thêm `where.layer = layer` nếu có query `layer`.
+- Public API contract giữ nguyên: `/api/prompts`, method GET, `authMiddleware`, status code, response array, query filter `layer`, order `layer asc` rồi `intentType asc`.
+- Runtime smoke PASS cho default/local scope: no-token `/prompts` → 401; `/prompts` → 200 array len=7; `/prompts?layer=intent` → 200 array len=6; regression `webhook`, `telegram-destinations`, handoff GET/PUT → 200.
+- Local DB không có tenant sample (`tenant_count=0`, `tenant_prompt_count=0`), nên full tenant isolation chưa được chứng minh. Prompt 07 vẫn bắt buộc.
+- Không sửa prompt detail/write routes, Prisma schema/migrations, webhook handlers, tenant handoff, RAG pipeline, bot engine/tools, dashboard frontend, package hoặc DevOps scripts.
+
+Tiếp theo khuyến nghị:
+
+- **Prompt 07**: tenant safety audit toàn hệ thống trước khi refactor thêm route có tenant.
+- **Prompt 06D**: chỉ sau Prompt 07, cân nhắc repository cho prompt detail/write với tenant permission/ownership rõ ràng.
+
 ## Prompt 06B — Telegram destinations repository read (PASS)
 
 Ngày cập nhật: 2026-07-08

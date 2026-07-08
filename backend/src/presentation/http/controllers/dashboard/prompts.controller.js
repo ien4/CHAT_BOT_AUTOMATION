@@ -1,15 +1,9 @@
-function createListPromptTemplates({ getTenantScope, prisma }) {
+function createListPromptTemplates({ getTenantScope, promptTemplatesRepository }) {
   return async function listPromptTemplates(req, res) {
     try {
       const { layer } = req.query;
       const tenantId = getTenantScope(req);
-      const where = { tenantId: tenantId ?? null };
-      if (layer) where.layer = layer;
-
-      const templates = await prisma.promptTemplate.findMany({
-        where,
-        orderBy: [{ layer: 'asc' }, { intentType: 'asc' }],
-      });
+      const templates = await promptTemplatesRepository.findManyForScope({ tenantId, layer });
       res.json(templates);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });

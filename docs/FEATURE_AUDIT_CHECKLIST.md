@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 06C Update - Prompts Repository + Tenant Scope Checklist (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Prompt templates repository | Done | `backend/src/infrastructure/repositories/promptTemplates.repository.js` | Method: `findManyForScope({ tenantId, layer })`. |
+| Controller dùng repository | Done | `createListPromptTemplates` nhận `promptTemplatesRepository` | Controller vẫn lấy `layer` và gọi `getTenantScope(req)` như cũ; không gọi Prisma trực tiếp. |
+| Tenant filter giữ nguyên | PASS | `where = { tenantId: tenantId ?? null }`; nếu có `layer` thì thêm `where.layer = layer` | Không đổi default/global prompt behavior; không thêm filter tenant mới. |
+| Query/order giữ nguyên | PASS | `orderBy: [{ layer: 'asc' }, { intentType: 'asc' }]`; không select/include | Không raw SQL, không external API. |
+| Route inject dependency | Done | `prompts.routes.js` tạo repository từ `prisma` được truyền vào | Giữ `createPromptRoutes({ authMiddleware, getTenantScope, prisma })`. |
+| Dependency rule | PASS | Repository không import Express/process.env/domain; không tạo PrismaClient mới | Đây là bước infrastructure repository, chưa tạo use case/domain interface. |
+| Static validation | PASS | `node --check` 12 file backend gồm repository mới, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime prompts | PASS WITH WARNINGS | no-token `/prompts` → 401; `/prompts` 200 array len=7; `/prompts?layer=intent` 200 array len=6 | Runtime verified default/local scope only. |
+| Tenant isolation full | Not verified | Local DB: `tenant_count=0`, `tenant_prompt_count=0` | Prompt 07 vẫn bắt buộc để audit tenant scope toàn hệ thống. |
+| Regression routes | PASS | `webhook` 200, `telegram-destinations` 200, handoff GET/PUT 200 | Không đổi public API contract. |
+| Prompt detail/write routes | Không đổi | `GET /prompts/:id`, `POST/PUT/DELETE /prompts` còn trong `dashboard.js` | Không tách trong Prompt 06C. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/dashboard FE/DevOps/package | Chỉ sửa repository/controller/route prompts read. |
+
 ## Prompt 06B Update - Telegram Destinations Repository (PASS)
 
 Ngày cập nhật: 2026-07-08
