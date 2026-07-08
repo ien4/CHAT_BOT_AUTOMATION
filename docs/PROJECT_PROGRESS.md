@@ -1,5 +1,31 @@
 # PROJECT PROGRESS - BBOTECH BOT AUTOMATION
 
+## Prompt 04 Update - Config Hardening + Localhost Cleanup + Env Policy
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Kết quả | Ghi chú |
+|---|---|---|
+| Preflight Git | PASS | Working tree sạch trước Prompt 04; commit Prompt 03 `24ac487d1b406f06650ca942efb311619e6a7c47` tồn tại. |
+| Baseline validation trước thay đổi | PASS | Backend syntax + Prisma validate dummy pass; dashboard typecheck + build pass. |
+| Backend config helper | PASS | Mở rộng `backend/src/infrastructure/services/config.js` với URL normalize, env mode helpers, `getAppBaseUrl`, `getBackendPort`, placeholder warning helper; chưa gọi runtime để tránh đổi behavior. |
+| Dashboard config helper | PASS | Chuẩn hóa normalize URL trong `dashboard/src/lib/config/env.ts`; fallback local vẫn giữ tại helper tập trung. |
+| Dashboard settings localhost cleanup | PASS | `dashboard/src/app/dashboard/settings/page.tsx` dùng `CHATWOOT_BASE_URL` thay vì đọc trực tiếp `NEXT_PUBLIC_CHATWOOT_URL || localhost`. |
+| Env examples | PASS | Bổ sung biến còn thiếu trong `backend/.env.example`; tạo mới `dashboard/.env.example` cho `NEXT_PUBLIC_*`. |
+| Env policy | PASS | Tạo `docs/ENV_POLICY.md` với quy tắc secret/public env, local vs production, validation an toàn. |
+| DevOps scan read-only | WARNING | `start-all.bat`, `backend/Dockerfile`, `webhook-urls-current.txt` còn rủi ro local/migration/stale URL; Prompt 04 chỉ ghi nhận, không sửa. |
+| Source behavior | NO INTENTIONAL CHANGE | Không đổi Prisma schema/migrations, webhook URL, public route, tenant handoff, RAG pipeline hoặc Chatwoot crypto. |
+| Runtime verification | NOT RUN | Không chạy app server, Docker, start script, migration hoặc DB push. |
+| Final verdict | PASS WITH WARNINGS | Có thể sang Prompt 05: tách backend API route/controller nhỏ, giữ route/response contract. |
+
+Rủi ro còn lại sau Prompt 04:
+
+- Backend runtime cũ vẫn còn fallback localhost trong `backend/src/api/dashboard.js` và log startup của `backend/src/index.js`; chưa sửa để tránh đổi webhook/startup behavior.
+- `start-all.bat` vẫn có `prisma db push --accept-data-loss` và nhiều local tunnel/localhost hard-code.
+- `backend/Dockerfile` vẫn chạy `npx prisma migrate deploy` khi container start; cần Prompt DevOps/deploy riêng.
+- `webhook-urls-current.txt` có thể stale và không nên dùng làm nguồn production.
+- Backend vẫn chưa có lint/typecheck script thật; dashboard build/typecheck vẫn là guardrail chính.
+
 ## Prompt 03 Update - Architecture Shell Without Behavior Change
 
 Ngày cập nhật: 2026-07-08

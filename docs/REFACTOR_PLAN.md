@@ -1,5 +1,19 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 04 đã hoàn thành
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 04 đã xử lý phần config/env trong phạm vi an toàn:
+
+- Mở rộng backend config helper, chưa migrate runtime call site lớn.
+- Chuẩn hóa dashboard env helper và gom Chatwoot fallback trong settings về helper.
+- Bổ sung `backend/.env.example`, tạo `dashboard/.env.example`.
+- Tạo `docs/ENV_POLICY.md`.
+- Scan read-only các rủi ro DevOps/local URL nhưng chưa sửa `start-all.bat`, `backend/Dockerfile`, `webhook-urls-current.txt`.
+
+Prompt tiếp theo nên là Prompt 05: tách `backend/src/api/dashboard.js` theo route/controller domain nhỏ, giữ nguyên public route và response contract.
+
 Ngày cập nhật: 2026-07-08  
 Trạng thái: Prompt 03 đã tạo architecture shell và wrapper tối thiểu, chưa đổi behavior có chủ đích.
 

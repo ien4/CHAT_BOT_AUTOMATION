@@ -1,10 +1,10 @@
 const getPrisma = require('../db');
+const { getDashboardBaseUrl } = require('../infrastructure/services/config');
 
 const prisma = getPrisma();
 
 function dashboardUrl(path = '/dashboard/appointments') {
-  const base = process.env.DASHBOARD_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
-  return `${String(base).replace(/\/$/, '')}${path}`;
+  return `${getDashboardBaseUrl()}${path}`;
 }
 
 async function getStatusChatIds() {

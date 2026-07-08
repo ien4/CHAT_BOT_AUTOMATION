@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { providersApi, telegramDestinationsApi } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/config/env';
+import { API_BASE_URL, CHATWOOT_BASE_URL } from '@/lib/config/env';
 import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, MessageSquare, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -299,7 +299,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
           <div>
             <p className="text-gray-500">Base URL</p>
-            <p className="font-mono text-sm">{process.env.NEXT_PUBLIC_CHATWOOT_URL || 'http://localhost:3000'}</p>
+            <p className="font-mono text-sm">{CHATWOOT_BASE_URL}</p>
           </div>
           <div>
             <p className="text-gray-500">Webhook URL</p>

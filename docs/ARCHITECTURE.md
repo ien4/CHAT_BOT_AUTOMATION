@@ -1,5 +1,15 @@
 # ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 04 bổ sung
+
+Prompt 04 đã harden phần config mà không thay đổi route/webhook/schema:
+
+- Backend `backend/src/infrastructure/services/config.js` là helper tập trung cho env mode, URL normalize, `APP_BASE_URL`, `PORT` và cảnh báo placeholder secret.
+- Dashboard `dashboard/src/lib/config/env.ts` là helper tập trung cho `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_CHATWOOT_URL`, normalize URL và builder URL.
+- `dashboard/src/app/dashboard/settings/page.tsx` đã dùng `CHATWOOT_BASE_URL` từ helper thay vì fallback localhost trực tiếp.
+- `docs/ENV_POLICY.md`, `backend/.env.example`, `dashboard/.env.example` là nguồn policy/env example hiện tại.
+- Các fallback localhost còn trong `backend/src/api/dashboard.js` và log startup của `backend/src/index.js` chưa sửa vì có thể ảnh hưởng webhook/startup behavior.
+
 Ngày cập nhật: 2026-07-08  
 Trạng thái: Prompt 03 đã tạo architecture shell, chưa rewrite hệ thống và chưa đổi behavior runtime có chủ đích.
 

@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 04 Config/Env Validation Update
+
+Ngày cập nhật: 2026-07-08
+
+| Nhóm | Kết quả thật | Trạng thái cập nhật | Bằng chứng kiểm tra | Hành động tiếp theo |
+|---|---|---|---|---|
+| Backend config helper | Đã có helper normalize URL, mode env, app base URL, port và placeholder warning | Static validation pass | `backend/src/infrastructure/services/config.js`, `node --check` | Prompt sau mới cân nhắc migrate từng call site runtime nếu có regression checklist. |
+| Dashboard public env helper | `NEXT_PUBLIC_API_URL` và `NEXT_PUBLIC_CHATWOOT_URL` được normalize tại helper tập trung | Static validation pass | `dashboard/src/lib/config/env.ts`, `tsc`, `next build` | Không thêm fallback localhost mới trong page/component. |
+| Dashboard settings | Chatwoot base URL không còn hard-code trực tiếp trong settings page | Static validation pass | `dashboard/src/app/dashboard/settings/page.tsx` | Các fetch trực tiếp khác sẽ xử lý trong prompt dashboard/API cleanup riêng. |
+| Env example backend | Đã bổ sung `DASHBOARD_URL`, `FRONTEND_URL`, `TELEGRAM_MANAGER_CHAT_ID`, các biến `MESSAGE_*` | Documentation pass | `backend/.env.example` | Production phải đặt giá trị thật ngoài Git. |
+| Env example dashboard | Đã tạo `.env.example` riêng cho `NEXT_PUBLIC_*` | Documentation pass | `dashboard/.env.example` | Không đặt secret trong `NEXT_PUBLIC_*`. |
+| Env policy | Đã tạo quy tắc local vs production, public vs secret, validation an toàn | Documentation pass | `docs/ENV_POLICY.md` | Dùng làm guardrail cho Prompt 05+. |
+| DevOps/local URL | Chỉ scan read-only, chưa sửa script/Docker/webhook URL file | Risk confirmed | `start-all.bat`, `backend/Dockerfile`, `webhook-urls-current.txt` | Prompt 10 hoặc prompt DevOps riêng xử lý. |
+| Behavior-critical modules | Không sửa webhook, tenant handoff, RAG, Chatwoot crypto, Prisma schema/migrations | Risk controlled | Git diff sau Prompt 04 | Tiếp tục giữ ngoài phạm vi Prompt 05 trừ khi prompt ghi rõ. |
+
 ## Prompt 03 Static Validation Update
 
 Ngày cập nhật: 2026-07-08
