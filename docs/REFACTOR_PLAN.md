@@ -1,5 +1,22 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05C đã hoàn thành phase 3
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05C đã tiếp tục tách route nhỏ trong phạm vi an toàn:
+
+- Tách `GET /prompts` khỏi `backend/src/api/dashboard.js`.
+- Tạo `backend/src/presentation/http/controllers/dashboard/prompts.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/prompts.routes.js`.
+- Mount prompts route bằng `router.use('/prompts', createPromptRoutes({ authMiddleware, getTenantScope, prisma }))`.
+- Giữ nguyên public route `/api/prompts`, method `GET`, auth middleware, tenant scope, Prisma query, status code và response shape.
+- Không tách các route `GET /prompts/:id`, `POST /prompts`, `PUT /prompts/:id`, `DELETE /prompts/:id` vì các route này có detail/write behavior và nên xử lý riêng.
+- Không sửa webhook handlers, tenant handoff, RAG pipeline, bot engine, Prisma schema/migrations hoặc dashboard frontend.
+- Static validation pass — chưa runtime verified.
+
+Prompt tiếp theo nên là Prompt 05R: chạy runtime smoke test có kiểm soát cho 3 route đã tách (`GET /settings/webhook`, `GET /settings/telegram-destinations`, `GET /prompts`) trước khi tiếp tục Prompt 05D hoặc sang Prompt 06 repository layer.
+
 ## Prompt 05B đã hoàn thành phase 2
 
 Ngày cập nhật: 2026-07-08

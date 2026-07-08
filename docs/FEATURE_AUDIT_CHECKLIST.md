@@ -1,5 +1,26 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05C Update - Backend API Route/Controller Split Phase 3
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route group thứ ba | Done with warnings | `GET /prompts` | Public route vẫn là `/api/prompts`. |
+| Controller prompts mới | Done | `backend/src/presentation/http/controllers/dashboard/prompts.controller.js` | Move nguyên query list prompt template, tenant scope và response JSON từ `dashboard.js`. |
+| Route module prompts mới | Done | `backend/src/presentation/http/routes/dashboard/prompts.routes.js` | Mount `router.get('/')` dưới `/prompts`. |
+| `dashboard.js` mount route | Done | `router.use('/prompts', createPromptRoutes({ authMiddleware, getTenantScope, prisma }))` | Đặt tại vị trí route cũ, trước `GET /prompts/:id`, không đổi public path. |
+| Route write/detail còn lại | Không đổi | `GET /prompts/:id`, `POST/PUT/DELETE /prompts` | Không tách route write trong Prompt 05C. |
+| Validation backend | Static validation pass | `node --check`, Prisma validate dummy, route scan, `git diff --check` | Chưa chạy app server/API thật. |
+| Runtime verification | Not done | Không chạy server | Không đánh dấu route runtime là DONE. |
+| Behavior-critical modules | Không đổi | Git diff guardrail | Không đụng webhook, tenant handoff, RAG, bot engine, Prisma schema/migrations, dashboard frontend. |
+
+Rủi ro còn lại sau Prompt 05C:
+
+- `backend/src/api/dashboard.js` vẫn còn 2.408 dòng và 98 route trực tiếp.
+- Đã có 3 route read-only được tách nhưng chưa runtime verified, nên nên chạy Prompt 05R trước khi tách tiếp hoặc sang repository layer.
+- `$queryRawUnsafe`, analytics raw SQL, tenant scope, handoff, RAG và DevOps script risk vẫn mở.
+
 ## Prompt 05B Update - Backend API Route/Controller Split Phase 2
 
 Ngày cập nhật: 2026-07-08

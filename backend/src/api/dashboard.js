@@ -10,6 +10,7 @@ const facebookMenu = require('../facebook/menu');
 const getPrisma = require('../db');
 const { encryptIfPresent, decryptIfPresent } = require('../chatwoot/crypto');
 const tenantRegistry = require('../tenants/registry');
+const createPromptRoutes = require('../presentation/http/routes/dashboard/prompts.routes');
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
 
 const router = express.Router();
@@ -545,22 +546,7 @@ router.post('/knowledge/reindex', authMiddleware, platformAdminOnly, async (req,
 
 // ==================== PROMPT TEMPLATES ====================
 
-router.get('/prompts', authMiddleware, async (req, res) => {
-  try {
-    const { layer } = req.query;
-    const tenantId = getTenantScope(req);
-    const where = { tenantId: tenantId ?? null };
-    if (layer) where.layer = layer;
-
-    const templates = await prisma.promptTemplate.findMany({
-      where,
-      orderBy: [{ layer: 'asc' }, { intentType: 'asc' }],
-    });
-    res.json(templates);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.use('/prompts', createPromptRoutes({ authMiddleware, getTenantScope, prisma }));
 
 router.get('/prompts/:id', authMiddleware, async (req, res) => {
   try {
