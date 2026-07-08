@@ -1287,11 +1287,11 @@ router.delete('/staff/:id', authMiddleware, async (req, res) => {
 // GET /settings/handoff đã tách sang presentation/http/routes/dashboard/settings.routes.js
 router.put('/settings/handoff', authMiddleware, async (req, res) => {
   try {
-    const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd, botGracePeriodSeconds } = req.body;
-    const settings = await prisma.handoffSettings.upsert({
+    const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd } = req.body;
+    const settings = await prisma.handoffSetting.upsert({
       where: { id: 'singleton' },
-      update: { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd, botGracePeriodSeconds },
-      create: { id: 'singleton', pendingTimeoutSeconds: pendingTimeoutSeconds ?? 30, sessionTimeoutSeconds: sessionTimeoutSeconds ?? 30, offHoursPendingTimeout: offHoursPendingTimeout ?? 10, workHoursStart, workHoursEnd, botGracePeriodSeconds: botGracePeriodSeconds ?? 300 },
+      update: { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd },
+      create: { id: 'singleton', pendingTimeoutSeconds: pendingTimeoutSeconds ?? 30, sessionTimeoutSeconds: sessionTimeoutSeconds ?? 30, offHoursPendingTimeout: offHoursPendingTimeout ?? 10, workHoursStart, workHoursEnd },
     });
     res.json(settings);
   } catch (error) {
@@ -1508,7 +1508,7 @@ router.post('/handoff/:conversationId/assign', authMiddleware, async (req, res) 
     const [staff, conversation, settings] = await Promise.all([
       prisma.staff.findUnique({ where: { id: staffId } }),
       prisma.conversation.findUnique({ where: { id: req.params.conversationId } }),
-      prisma.handoffSettings.findUnique({ where: { id: 'singleton' } }),
+      prisma.handoffSetting.findUnique({ where: { id: 'singleton' } }),
     ]);
 
     if (!staff) return res.status(404).json({ error: 'Staff không tồn tại' });

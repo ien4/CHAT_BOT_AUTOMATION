@@ -1,5 +1,23 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05D-FIX — Handoff settings accessor + runtime (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05D-FIX đã xử lý bug pre-existing trong khu vực **Settings/Cài Đặt**:
+
+- Sửa accessor Prisma sai `prisma.handoffSettings` → `prisma.handoffSetting` trong `GET /settings/handoff`, `PUT /settings/handoff` và vị trí đọc settings liên quan khi assign handoff.
+- Bỏ `botGracePeriodSeconds` khỏi Prisma payload `HandoffSetting` vì schema hiện tại không có field này; đây là sửa tương thích schema để `PUT /settings/handoff` không còn 500. Không đổi Prisma schema/migrations.
+- Runtime smoke PASS trên DB pgvector local/test: no-token `GET /settings/handoff` → 401; `GET /settings/webhook`, `GET /settings/telegram-destinations`, `GET /prompts` → 200; `GET /settings/handoff` → 200; `PUT /settings/handoff` với payload tương đương current settings → 200; GET lại → 200.
+- Không sửa webhook handlers, tenant handoff, RAG pipeline, bot engine/tools, dashboard frontend, package hoặc DevOps scripts.
+
+Tác động behavior có chủ đích: `/api/settings/handoff` từ 500 do bug accessor thành 200 đúng contract; public route/method/auth/response shape giữ nguyên.
+
+Tiếp theo nên chọn một trong hai hướng:
+
+- **Prompt 05E**: test cô lập các route settings write/external side effect còn lại trước khi tách thêm.
+- **Prompt 06**: bắt đầu repository layer cho nhóm `settings`/`prompts` đã có runtime baseline.
+
 ## Prompt 05D — Settings route split + runtime (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-08

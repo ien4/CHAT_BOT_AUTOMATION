@@ -29,10 +29,10 @@ function createGetTelegramDestinations({ prisma }) {
 function createGetHandoffSettings({ prisma }) {
   return async function getHandoffSettings(req, res) {
     try {
-      let settings = await prisma.handoffSettings.findUnique({ where: { id: 'singleton' } });
+      let settings = await prisma.handoffSetting.findUnique({ where: { id: 'singleton' } });
       if (!settings) {
-        settings = await prisma.handoffSettings.create({
-          data: { id: 'singleton', pendingTimeoutSeconds: 30, sessionTimeoutSeconds: 30, offHoursPendingTimeout: 10, workHoursStart: 8, workHoursEnd: 22, botGracePeriodSeconds: 300 },
+        settings = await prisma.handoffSetting.create({
+          data: { id: 'singleton', pendingTimeoutSeconds: 30, sessionTimeoutSeconds: 30, offHoursPendingTimeout: 10, workHoursStart: 8, workHoursEnd: 22 },
         });
       }
       res.json(settings);

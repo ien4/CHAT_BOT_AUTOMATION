@@ -1,5 +1,21 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05D-FIX Update - Handoff Settings Accessor + Runtime (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Prisma accessor handoff settings | Fixed | `prisma.handoffSettings` → `prisma.handoffSetting` trong `settings.controller.js` và `dashboard.js` | Model schema là `HandoffSetting`, accessor đúng là số ít. |
+| Prisma payload `HandoffSetting` | Fixed | Bỏ `botGracePeriodSeconds` khỏi `create/update` payload | Field này không tồn tại trong schema; không đổi schema/migrations. |
+| Static validation | PASS | `node --check` 9 file backend, `npx prisma validate`, `git diff --check` | Không sửa package, dashboard FE, webhook/RAG/tenant handoff. |
+| Auth no-token | Runtime verified | `GET /api/settings/handoff` không token → 401 `{error}` | Không crash. |
+| Existing routes | Runtime verified PASS | `webhook` 200, `telegram-destinations` 200, `prompts` 200 array len=7 | Token lấy qua login endpoint local/test; không in credential/token. |
+| `GET /api/settings/handoff` | Runtime verified PASS | 200 object `{id,pendingTimeoutSeconds,sessionTimeoutSeconds,offHoursPendingTimeout,workHoursStart,workHoursEnd,updatedAt}` | Trước fix là 500 do accessor sai. |
+| `PUT /api/settings/handoff` | Runtime verified PASS | 200 object cùng shape; GET lại sau PUT vẫn 200 | Payload dùng current settings, chỉ gồm field có trong schema. |
+| Behavior/public contract | Preserved except intended bug fix | Route/method/auth giữ nguyên | Behavior fix có chủ đích: 500 → 200 đúng contract. |
+| Behavior-critical modules | Không đổi | Không sửa schema/migrations/webhook/RAG/tenant handoff/dashboard FE/DevOps | Chỉ sửa phạm vi handoff settings. |
+
 ## Prompt 05D Update - Settings Route Split + Runtime (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-08
