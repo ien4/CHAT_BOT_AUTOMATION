@@ -26,7 +26,24 @@ function createGetTelegramDestinations({ prisma }) {
   };
 }
 
+function createGetHandoffSettings({ prisma }) {
+  return async function getHandoffSettings(req, res) {
+    try {
+      let settings = await prisma.handoffSettings.findUnique({ where: { id: 'singleton' } });
+      if (!settings) {
+        settings = await prisma.handoffSettings.create({
+          data: { id: 'singleton', pendingTimeoutSeconds: 30, sessionTimeoutSeconds: 30, offHoursPendingTimeout: 10, workHoursStart: 8, workHoursEnd: 22, botGracePeriodSeconds: 300 },
+        });
+      }
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+}
+
 module.exports = {
   createGetTelegramDestinations,
+  createGetHandoffSettings,
   getWebhookSettings,
 };

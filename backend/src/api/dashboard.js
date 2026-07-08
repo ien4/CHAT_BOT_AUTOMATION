@@ -1284,20 +1284,7 @@ router.delete('/staff/:id', authMiddleware, async (req, res) => {
 
 // ==================== HANDOFF SETTINGS ====================
 
-router.get('/settings/handoff', authMiddleware, async (req, res) => {
-  try {
-    let settings = await prisma.handoffSettings.findUnique({ where: { id: 'singleton' } });
-    if (!settings) {
-      settings = await prisma.handoffSettings.create({
-        data: { id: 'singleton', pendingTimeoutSeconds: 30, sessionTimeoutSeconds: 30, offHoursPendingTimeout: 10, workHoursStart: 8, workHoursEnd: 22, botGracePeriodSeconds: 300 },
-      });
-    }
-    res.json(settings);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
+// GET /settings/handoff đã tách sang presentation/http/routes/dashboard/settings.routes.js
 router.put('/settings/handoff', authMiddleware, async (req, res) => {
   try {
     const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd, botGracePeriodSeconds } = req.body;

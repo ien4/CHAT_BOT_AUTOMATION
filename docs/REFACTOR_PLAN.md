@@ -1,5 +1,19 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05D — Settings route split + runtime (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05D tiếp tục tổ chức phần **Settings/Cài Đặt** (khu vực mấu chốt: webhook config, Telegram destinations, handoff, provider/API, channel/Chatwoot/Facebook config):
+
+- Tách `GET /settings/handoff` khỏi `dashboard.js` sang `settings.controller.js` + `settings.routes.js` (move nguyên trạng), giữ public route/method/auth/status/shape/DB query/error. `dashboard.js`: 2408 → 2395 dòng.
+- Runtime: 3 route tách trước (`webhook`, `telegram-destinations`, `prompts`) PASS 200; auth 401 khi thiếu token; `handoff` trả **500 giữ nguyên** như bản gốc (không regression).
+- **Phát hiện bug pre-existing**: route handoff dùng `prisma.handoffSettings` (số nhiều) nhưng model là `HandoffSetting` (đúng `prisma.handoffSetting`) → undefined → 500. Không tự sửa (behavior change, cần approval).
+
+Nguyên tắc Settings refactor: an toàn route-by-route, có runtime smoke test; **không** tách route external side effect (Telegram/Chatwoot/Facebook) hoặc route write khi chưa có test cô lập riêng.
+
+Tiếp theo: **Prompt 05D-FIX** (sửa accessor handoff, cần approval) → **Prompt 05E** (route settings write/external với test cô lập) hoặc **Prompt 06** (repository layer prompts/settings).
+
 ## Prompt 05R-LOCALDB-FIX — Local pgvector fix + run backend (PASS)
 
 Ngày cập nhật: 2026-07-08

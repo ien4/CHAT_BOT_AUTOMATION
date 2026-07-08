@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **Prompt 05R-LOCALDB-FIX đã chạy — dựng DB pgvector local/test bền vững, backend `npm run dev` chạy OK, smoke test 3 route PASS lại; DB/env được giữ lại để user tự chạy**
+Trạng thái hiện tại: **Prompt 05D đã chạy — tách `GET /settings/handoff` (behavior giữ nguyên); phát hiện bug pre-existing sai Prisma accessor `handoffSettings` khiến route trả 500 cả trước/sau. 3 route tách trước vẫn runtime PASS.**
 Lưu ý bắt buộc: các prompt 03 đến 05C đạt **Static validation pass**. Prompt 05R-ENV đã **runtime verified** 3 route `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts` (auth 401 khi thiếu token; 200 + shape đúng khi có token). Các route/khu vực khác vẫn chưa runtime verified.
 
 ## 1. Nguyên tắc cập nhật
@@ -28,6 +28,7 @@ Lưu ý bắt buộc: các prompt 03 đến 05C đạt **Static validation pass*
 | Phase 08 — Backend API route/controller split tiếp theo | ✅ Done with warnings | Prompt 05B tách `GET /settings/telegram-destinations`; static validation pass — chưa runtime verified |
 | Phase 09 — Backend API route/controller split tiếp theo | ✅ Done with warnings | Prompt 05C tách `GET /prompts`; static validation pass — chưa runtime verified |
 | Phase 10 — Runtime smoke test route đã tách | ✅ Done | Prompt 05R-ENV: runtime smoke test PASS cho 3 route trên DB local/test tạm (env + Docker Postgres dùng một lần, đã dọn) |
+| Phase 10b — Settings route split tiếp | ✅ Done with warnings | Prompt 05D tách `GET /settings/handoff` (behavior giữ nguyên); phát hiện bug pre-existing accessor cần Prompt 05D-FIX |
 | Phase 11 — Repository layer | ⬜ Planned | Prompt 06 (đã mở khóa sau 05R runtime PASS) |
 | Phase 12 — Tenant safety audit | ⬜ Planned | Prompt 07 |
 | Phase 13 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
@@ -260,6 +261,24 @@ Trạng thái: **PASS — runtime smoke test passed**. 3 route đã tách runtim
 
 Trạng thái: **PASS — backend local runs and smoke test passed**.
 
+### Prompt 05D — Settings API route/controller split + runtime verify
+
+- [x] Preflight Git; branch `chore/prompt-05r-docs-local-run`, working tree clean, commit `040257b` tồn tại.
+- [x] Baseline static validation PASS; route map toàn bộ `/settings*` còn lại.
+- [x] Chọn route settings read-only an toàn nhất: `GET /settings/handoff` (còn lại đều write/external).
+- [x] Thêm `createGetHandoffSettings({ prisma })` vào `settings.controller.js`; mount `GET /handoff` trong `settings.routes.js`; gỡ block khỏi `dashboard.js` (2408→2395 dòng).
+- [x] Giữ nguyên public route/method/auth/status/shape/DB query/error — move handler **nguyên trạng**.
+- [x] Static validation sau thay đổi PASS (`node --check` ×9, `prisma validate`, `git diff --check`).
+- [x] Runtime smoke: no-token→401; `webhook`/`telegram-destinations`/`prompts`→200; `handoff`→500 (**giữ nguyên** behavior gốc).
+- [x] Phát hiện **bug pre-existing**: route handoff dùng `prisma.handoffSettings` (số nhiều) trong khi model là `HandoffSetting` (accessor đúng `prisma.handoffSetting`) → undefined → 500. **Không tự sửa** (cần approval — Prompt 05D-FIX).
+- [x] Dừng backend; giữ DB container/volume/env.
+- [x] Tạo report `report/PROMPT_05D_SETTINGS_ROUTE_SPLIT_RUNTIME_REPORT.md`.
+- [x] Không sửa schema/webhook/RAG/tenant handoff/dashboard FE.
+
+Trạng thái: **PASS WITH WARNINGS** — tách route thành công, behavior giữ nguyên (không regression); tồn đọng bug pre-existing accessor cần fix riêng.
+
+**Settings/Cài Đặt là khu vực mấu chốt** (webhook config, Telegram destinations, handoff, provider/API, channel/Chatwoot/Facebook config) → refactor phải an toàn, route-by-route, có runtime smoke test; không tách route external side effect khi chưa có test cô lập.
+
 ## 4. Next planned prompts
 
 | Prompt | Tên | Mục tiêu | Tool nên dùng |
@@ -276,7 +295,8 @@ Trạng thái: **PASS — backend local runs and smoke test passed**.
 
 | Rủi ro | Trạng thái | Ưu tiên | Prompt xử lý |
 |---|---|---|---|
-| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05D sau Prompt 05R |
+| `backend/src/api/dashboard.js` quá lớn | Open (2395 dòng sau 05D) | P0 | Prompt 05E/06 |
+| Bug handoff: sai Prisma accessor `handoffSettings` (đúng `handoffSetting`) → `/settings/handoff` trả 500 | Open (pre-existing, phát hiện ở 05D) | P1 | Prompt 05D-FIX (cần approval) |
 | `$queryRawUnsafe` | Open | P0 | Prompt 08 |
 | Tenant scope chưa runtime verified | Open | P0 | Prompt 07 |
 | Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
@@ -321,7 +341,8 @@ Trạng thái: **PASS — backend local runs and smoke test passed**.
 | Prompt 05C | PASS | PASS | Not run | Not run | Not run | `5e51bf7eea53305b4800c1449f4dc60caf885f46` |
 | Prompt 05R | PASS | PASS | PASS | PASS | BLOCKED (thiếu env/DB local/test) | `2bf4386` / `7425777` |
 | Prompt 05R-ENV | PASS | PASS | PASS | PASS | PASS (3 route, DB local/test tạm) | `c864390` |
-| Prompt 05R-LOCALDB-FIX | PASS | PASS | Not run | Not run | PASS (3 route, DB pgvector local bền vững) | Ghi sau commit |
+| Prompt 05R-LOCALDB-FIX | PASS | PASS | Not run | Not run | PASS (3 route, DB pgvector local bền vững) | `040257b` |
+| Prompt 05D | PASS | PASS | Not run | Not run | PASS WITH WARNINGS (3 route 200; handoff 500 giữ nguyên — bug pre-existing) | Ghi sau commit |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
@@ -338,9 +359,10 @@ Ghi chú: “PASS” ở các mốc trên là static validation/build validation
 
 Prompt 05R-ENV đã hoàn tất: 3 route đã tách (`GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`) **runtime verified PASS** trên môi trường local/test dùng một lần (Docker Postgres tạm + env local, đã dọn sạch sau test).
 
-Bước tiếp theo: chọn một trong hai hướng —
+Bước tiếp theo (sau Prompt 05D):
 
-- **Prompt 05D**: tiếp tục tách thêm route read-only nhỏ khỏi `backend/src/api/dashboard.js` (đã có guardrail runtime tương đương), hoặc
+- **Prompt 05D-FIX (khuyến nghị làm trước, cần approval)**: sửa bug accessor `prisma.handoffSettings` → `prisma.handoffSetting` cho `GET`/`PUT /settings/handoff` (controller + `dashboard.js` dòng ~1291/1511), runtime verify `GET /settings/handoff` trả 200.
+- **Prompt 05E**: các route settings còn lại là write/external → cần prompt test cô lập riêng (mock external), không tách bừa.
 - **Prompt 06**: bắt đầu repository layer cho nhóm `prompts`/`settings` khi controller boundary đã đủ rõ.
 
 Lưu ý tái chạy: Prompt 05R-LOCALDB-FIX đã dựng DB pgvector local **bền vững** (`bbotech-pgvector-local`, port 5433, volume `bbotech_pgvector_local_data`) và giữ `backend/.env`. User chạy lại backend bằng: `docker start bbotech-pgvector-local` → `cd backend` → `npm run dev` (xem `docs/LOCAL_RUN_GUIDE.md` mục 1c). Không chạy migration/db push/Docker compose/start-all trên dữ liệu production.

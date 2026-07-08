@@ -1,5 +1,21 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05D Update - Settings Route Split + Runtime (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route group settings kế tiếp | Done with warnings | `GET /settings/handoff` | Public route vẫn `/api/settings/handoff`. |
+| Controller settings mở rộng | Done | `createGetHandoffSettings({ prisma })` trong `settings.controller.js` | Move handler **nguyên trạng**. |
+| Route module settings mở rộng | Done | `router.get('/handoff', authMiddleware, ...)` trong `settings.routes.js` | Dùng `prisma` đã truyền sẵn. |
+| `dashboard.js` gỡ block | Done | 2408 → 2395 dòng | Giữ nguyên `PUT /settings/handoff`. |
+| Static validation | PASS | `node --check` ×9, `prisma validate`, `git diff --check` | — |
+| Runtime: webhook/telegram-destinations/prompts | PASS | 200, shape đúng | Auth 401 khi thiếu token. |
+| Runtime: `GET /settings/handoff` (mới) | 500 — behavior giữ nguyên | Bản gốc `git HEAD` cũng 500 | Không regression. |
+| Bug pre-existing phát hiện | Open (P1) | model `HandoffSetting` nhưng route dùng `prisma.handoffSettings` (undefined) | Cần Prompt 05D-FIX; `index.js` seed dùng đúng `prisma.handoffSetting`. |
+| Behavior-critical modules | Không đổi | Không sửa schema/webhook/RAG/tenant handoff/dashboard FE | — |
+
 ## Prompt 05R-LOCALDB-FIX Update - Local pgvector + Backend Run PASS
 
 Ngày cập nhật: 2026-07-08

@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   createGetTelegramDestinations,
+  createGetHandoffSettings,
   getWebhookSettings,
 } = require('../../controllers/dashboard/settings.controller');
 
@@ -9,6 +10,7 @@ function createSettingsRoutes({ authMiddleware, prisma }) {
 
   router.get('/webhook', authMiddleware, getWebhookSettings);
   router.get('/telegram-destinations', authMiddleware, createGetTelegramDestinations({ prisma }));
+  router.get('/handoff', authMiddleware, createGetHandoffSettings({ prisma }));
 
   return router;
 }
