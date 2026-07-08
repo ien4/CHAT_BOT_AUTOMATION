@@ -1339,23 +1339,6 @@ function sanitizeTelegramDestinationInput(body) {
   return { name, type, purpose, chatId, isActive };
 }
 
-router.get('/settings/telegram-destinations', authMiddleware, async (req, res) => {
-  try {
-    const destinations = await prisma.telegramDestination.findMany({
-      orderBy: [{ purpose: 'asc' }, { name: 'asc' }],
-    });
-    res.json({
-      destinations,
-      envFallback: {
-        statusGroupIdConfigured: Boolean(process.env.TELEGRAM_STATUS_GROUP_ID),
-      },
-    });
-  } catch (error) {
-    console.error('Failed to list Telegram destinations:', error);
-    res.status(500).json({ error: 'Failed to list Telegram destinations' });
-  }
-});
-
 router.post('/settings/telegram-destinations', authMiddleware, async (req, res) => {
   try {
     const data = sanitizeTelegramDestinationInput(req.body);
@@ -1586,7 +1569,7 @@ router.post('/handoff/:conversationId/assign', authMiddleware, async (req, res) 
 
 // ==================== WEBHOOK STATUS ====================
 
-router.use('/settings', createSettingsRoutes({ authMiddleware }));
+router.use('/settings', createSettingsRoutes({ authMiddleware, prisma }));
 
 // ==================== CHATWOOT SETTINGS ====================
 

@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **sẵn sàng cho Prompt 05B — Backend API route/controller split next group**
-Lưu ý bắt buộc: các prompt 03 và 04 mới đạt **Static validation pass — chưa runtime verified**.
+Trạng thái hiện tại: **sẵn sàng cho Prompt 05C — Backend API route/controller split next small group**
+Lưu ý bắt buộc: các prompt 03 đến 05B mới đạt **Static validation pass — chưa runtime verified**.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -25,12 +25,13 @@ Lưu ý bắt buộc: các prompt 03 và 04 mới đạt **Static validation pas
 | Phase 05 — Architecture shell | ✅ Done with warnings | Prompt 03, static validation pass — chưa runtime verified |
 | Phase 06 — Config hardening/env policy | ✅ Done with warnings | Prompt 04, validation pass — chưa runtime verified |
 | Phase 07 — Backend API route/controller split | ✅ Done with warnings | Prompt 05 tách nhóm route đầu tiên; static validation pass — chưa runtime verified |
-| Phase 08 — Backend API route/controller split tiếp theo | 🟡 Next | Prompt 05B tiếp tục tách nhóm route nhỏ |
-| Phase 09 — Repository layer | ⬜ Planned | Prompt 06 |
-| Phase 10 — Tenant safety audit | ⬜ Planned | Prompt 07 |
-| Phase 11 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
-| Phase 12 — Dashboard feature split | ⬜ Planned | Prompt 09 |
-| Phase 13 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
+| Phase 08 — Backend API route/controller split tiếp theo | ✅ Done with warnings | Prompt 05B tách `GET /settings/telegram-destinations`; static validation pass — chưa runtime verified |
+| Phase 09 — Backend API route/controller split tiếp theo | 🟡 Next | Prompt 05C tiếp tục tách nhóm route nhỏ |
+| Phase 10 — Repository layer | ⬜ Planned | Prompt 06 |
+| Phase 11 — Tenant safety audit | ⬜ Planned | Prompt 07 |
+| Phase 12 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 13 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 14 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
 
@@ -162,11 +163,34 @@ Trạng thái: **PASS — ready for Prompt 05 backend route split** nếu valida
 Trạng thái: **PASS WITH WARNINGS**.
 Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/api/settings/webhook`, method, auth middleware và response shape không đổi.
 
+### Prompt 05B — Backend API route/controller split phase 2
+
+- [x] Preflight Git.
+- [x] Xác nhận commit Prompt 05 `c860ca416a3439dfc7b72bc1e9d9f5ab3cba5af0`.
+- [x] Đọc docs/report bắt buộc và module settings từ Prompt 05.
+- [x] Baseline validation trước thay đổi pass.
+- [x] Route map update trước khi tách.
+- [x] Chọn route nhỏ ít rủi ro: `GET /settings/telegram-destinations`.
+- [x] Mở rộng controller/routes settings đã có.
+- [x] Truyền `prisma` qua `createSettingsRoutes`.
+- [x] Gỡ block GET tương ứng khỏi `backend/src/api/dashboard.js`.
+- [x] Giữ public route/response contract.
+- [x] Không sửa webhook, tenant handoff, RAG, Prisma schema/migrations.
+- [x] Backend syntax validation sau refactor.
+- [x] Prisma validate dummy.
+- [x] Không sửa dashboard frontend.
+- [x] Tạo report Prompt 05B.
+- [x] Commit Prompt 05B nếu pass.
+- [ ] Runtime verification — chưa chạy.
+
+Trạng thái: **PASS WITH WARNINGS**.
+Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/api/settings/telegram-destinations`, method, auth middleware, Prisma query, status code và response shape không đổi.
+
 ## 4. Next planned prompts
 
 | Prompt | Tên | Mục tiêu | Tool nên dùng |
 |---|---|---|---|
-| Prompt 05B | Backend API route/controller split next group | Tách thêm một nhóm route nhỏ khỏi `backend/src/api/dashboard.js` | Codex |
+| Prompt 05C | Backend API route/controller split next small group | Tách thêm một route/nhóm route nhỏ khỏi `backend/src/api/dashboard.js`, ưu tiên read-only và không external side effect | Codex |
 | Prompt 06 | Repository layer cho Prisma | Đưa Prisma access dần vào repositories, không đổi schema sau khi route split đủ nhỏ | Codex |
 | Prompt 07 | Tenant safety audit | Trace tenant scope, không sửa lớn nếu chưa chắc | Codex |
 | Prompt 08 | RAG/raw SQL hardening | Audit `$queryRawUnsafe`, pgvector query và input source | Codex |
@@ -177,7 +201,7 @@ Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/
 
 | Rủi ro | Trạng thái | Ưu tiên | Prompt xử lý |
 |---|---|---|---|
-| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05B |
+| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05C |
 | `$queryRawUnsafe` | Open | P0 | Prompt 08 |
 | Tenant scope chưa runtime verified | Open | P0 | Prompt 07 |
 | Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
@@ -203,6 +227,7 @@ Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/
 | Gom config trước khi tách route | Giảm hard-code và chuẩn bị route split | Prompt 04 |
 | Không sửa DevOps script trong Prompt 04 | Script có migration/db push/tunnel risk, cần prompt riêng | Prompt 04 |
 | Prompt 05 chỉ tách domain nhỏ | Tránh rewrite `dashboard.js` quá rộng | Prompt 05 planned |
+| Prompt 05B tiếp tục chọn route settings read-only | Giữ blast radius nhỏ, không đụng write route hoặc external side effect | Prompt 05B |
 
 ## 7. Validation history
 
@@ -214,8 +239,9 @@ Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/
 | Prompt 02B | PASS | PASS | PASS | PASS | Not run | `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` |
 | Prompt 03 | PASS | PASS | PASS | PASS | Not run | `24ac487d1b406f06650ca942efb311619e6a7c47` |
 | Prompt 04 | PASS | PASS | PASS | PASS | Not run | `25f3bb79e419590fb14540a82f28efe6482d980f` |
-| Prompt 04A | Docs-only diff validation | Not applicable | Not applicable | Not applicable | Not applicable | Ghi sau commit Prompt 04A |
-| Prompt 05 | PASS | PASS | Not run | Not run | Not run | Ghi sau commit Prompt 05 |
+| Prompt 04A | Docs-only diff validation | Not applicable | Not applicable | Not applicable | Not applicable | `cea82b1993abf46a7f732991c24e7d532dd2f347` |
+| Prompt 05 | PASS | PASS | Not run | Not run | Not run | `c860ca416a3439dfc7b72bc1e9d9f5ab3cba5af0` |
+| Prompt 05B | PASS | PASS | Not run | Not run | Not run | Ghi sau commit Prompt 05B |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 

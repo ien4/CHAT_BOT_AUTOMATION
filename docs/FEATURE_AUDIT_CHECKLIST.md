@@ -1,5 +1,27 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05B Update - Backend API Route/Controller Split Phase 2
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route group thứ hai | Done with warnings | `GET /settings/telegram-destinations` | Public route vẫn là `/api/settings/telegram-destinations`. |
+| Controller settings mở rộng | Done | `backend/src/presentation/http/controllers/dashboard/settings.controller.js` | Move nguyên Prisma query, response JSON và error handling từ `dashboard.js`. |
+| Route module settings mở rộng | Done | `backend/src/presentation/http/routes/dashboard/settings.routes.js` | Thêm `router.get('/telegram-destinations', authMiddleware, ...)`. |
+| `dashboard.js` mount route | Done | `router.use('/settings', createSettingsRoutes({ authMiddleware, prisma }))` | Truyền `prisma` vào route factory, không đổi public path. |
+| Route write/test còn lại | Không đổi | `POST/PUT/DELETE /settings/telegram-destinations`, `POST /settings/telegram-destinations/:id/test` | Không tách route có write hoặc external Telegram side effect trong Prompt 05B. |
+| Validation backend | Static validation pass | `node --check`, Prisma validate dummy | Chưa chạy app server/API thật. |
+| Runtime verification | Not done | Không chạy server | Không đánh dấu route runtime là DONE. |
+| Behavior-critical modules | Không đổi | Git diff guardrail | Không đụng webhook, tenant handoff, RAG, Prisma schema/migrations, dashboard frontend. |
+
+Rủi ro còn lại sau Prompt 05B:
+
+- `backend/src/api/dashboard.js` vẫn còn 2.422 dòng và 99 route trực tiếp, cần tiếp tục tách theo nhóm nhỏ.
+- Các route settings còn lại có write/external side effect hoặc handoff singleton, nên không nên gom hết trong một prompt.
+- `$queryRawUnsafe`, analytics raw SQL, tenant scope, handoff, RAG và DevOps script risk vẫn mở.
+- Prompt tiếp theo nên là Prompt 05C để tách thêm route nhỏ, ưu tiên read-only không raw SQL và không gọi external API.
+
 ## Prompt 05 Update - Backend API Route/Controller Split Phase 1
 
 Ngày cập nhật: 2026-07-08

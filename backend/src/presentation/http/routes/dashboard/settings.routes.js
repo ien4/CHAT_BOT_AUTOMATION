@@ -1,10 +1,14 @@
 const express = require('express');
-const { getWebhookSettings } = require('../../controllers/dashboard/settings.controller');
+const {
+  createGetTelegramDestinations,
+  getWebhookSettings,
+} = require('../../controllers/dashboard/settings.controller');
 
-function createSettingsRoutes({ authMiddleware }) {
+function createSettingsRoutes({ authMiddleware, prisma }) {
   const router = express.Router();
 
   router.get('/webhook', authMiddleware, getWebhookSettings);
+  router.get('/telegram-destinations', authMiddleware, createGetTelegramDestinations({ prisma }));
 
   return router;
 }

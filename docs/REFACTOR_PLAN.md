@@ -1,5 +1,22 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05B đã hoàn thành phase 2
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05B đã tiếp tục tách route nhỏ trong phạm vi an toàn:
+
+- Tách `GET /settings/telegram-destinations` khỏi `backend/src/api/dashboard.js`.
+- Mở rộng `backend/src/presentation/http/controllers/dashboard/settings.controller.js`.
+- Mở rộng `backend/src/presentation/http/routes/dashboard/settings.routes.js`.
+- Mount settings route bằng `router.use('/settings', createSettingsRoutes({ authMiddleware, prisma }))`.
+- Giữ nguyên public route `/api/settings/telegram-destinations`, method `GET`, auth middleware, Prisma query, status code và response shape.
+- Không tách các route `POST/PUT/DELETE /settings/telegram-destinations` hoặc route test Telegram vì có write/external side effect.
+- Không sửa webhook handlers, tenant handoff, RAG pipeline, Prisma schema/migrations hoặc dashboard frontend.
+- Static validation pass — chưa runtime verified.
+
+Prompt tiếp theo nên là Prompt 05C: tiếp tục tách thêm một route/nhóm route nhỏ, ưu tiên read-only, không raw SQL, không upload, không external side effect. Chưa nên chuyển sang repository layer nếu `backend/src/api/dashboard.js` vẫn còn nhiều route trực tiếp và controller boundary chưa đủ rõ.
+
 ## Prompt 05 đã hoàn thành phase 1
 
 Ngày cập nhật: 2026-07-08
