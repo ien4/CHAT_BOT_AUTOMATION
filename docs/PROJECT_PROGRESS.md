@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **sẵn sàng cho Prompt 05 — Backend API route/controller split phase 1**
+Trạng thái hiện tại: **sẵn sàng cho Prompt 05B — Backend API route/controller split next group**
 Lưu ý bắt buộc: các prompt 03 và 04 mới đạt **Static validation pass — chưa runtime verified**.
 
 ## 1. Nguyên tắc cập nhật
@@ -24,12 +24,13 @@ Lưu ý bắt buộc: các prompt 03 và 04 mới đạt **Static validation pas
 | Phase 04 — Baseline validation | ✅ Done with warnings | `npm ci`, backend syntax, Prisma validate dummy, dashboard typecheck/build pass; còn quality/security warnings |
 | Phase 05 — Architecture shell | ✅ Done with warnings | Prompt 03, static validation pass — chưa runtime verified |
 | Phase 06 — Config hardening/env policy | ✅ Done with warnings | Prompt 04, validation pass — chưa runtime verified |
-| Phase 07 — Backend API route/controller split | 🟡 Next | Prompt 05 |
-| Phase 08 — Repository layer | ⬜ Planned | Prompt 06 |
-| Phase 09 — Tenant safety audit | ⬜ Planned | Prompt 07 |
-| Phase 10 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
-| Phase 11 — Dashboard feature split | ⬜ Planned | Prompt 09 |
-| Phase 12 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
+| Phase 07 — Backend API route/controller split | ✅ Done with warnings | Prompt 05 tách nhóm route đầu tiên; static validation pass — chưa runtime verified |
+| Phase 08 — Backend API route/controller split tiếp theo | 🟡 Next | Prompt 05B tiếp tục tách nhóm route nhỏ |
+| Phase 09 — Repository layer | ⬜ Planned | Prompt 06 |
+| Phase 10 — Tenant safety audit | ⬜ Planned | Prompt 07 |
+| Phase 11 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 12 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 13 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
 
@@ -144,27 +145,29 @@ Trạng thái: **PASS — ready for Prompt 05 backend route split** nếu valida
 
 ### Prompt 05 — Backend API route/controller split
 
-- [ ] Preflight Git.
-- [ ] Xác nhận working tree không có source runtime change không rõ nguồn.
-- [ ] Route map trước khi tách bằng scan `router.get/post/put/delete`.
-- [ ] Chọn domain nhỏ ít rủi ro.
-- [ ] Tạo route/controller wrapper.
-- [ ] Giữ public route/response contract.
-- [ ] Không sửa webhook, tenant handoff, RAG, Prisma schema/migrations.
-- [ ] Backend syntax validation sau refactor.
-- [ ] Prisma validate dummy.
-- [ ] Dashboard typecheck/build nếu dashboard bị ảnh hưởng.
-- [ ] Tạo report Prompt 05.
-- [ ] Commit Prompt 05 nếu pass.
+- [x] Preflight Git.
+- [x] Xác nhận working tree không có source runtime change không rõ nguồn.
+- [x] Route map trước khi tách bằng scan `router.get/post/put/delete`.
+- [x] Chọn domain nhỏ ít rủi ro: `GET /settings/webhook`.
+- [x] Tạo route/controller wrapper.
+- [x] Giữ public route/response contract.
+- [x] Không sửa webhook, tenant handoff, RAG, Prisma schema/migrations.
+- [x] Backend syntax validation sau refactor.
+- [x] Prisma validate dummy.
+- [x] Không sửa dashboard frontend.
+- [x] Tạo report Prompt 05.
+- [x] Commit Prompt 05 nếu pass.
+- [ ] Runtime verification — chưa chạy.
 
-Trạng thái: **Next**.
+Trạng thái: **PASS WITH WARNINGS**.
+Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/api/settings/webhook`, method, auth middleware và response shape không đổi.
 
 ## 4. Next planned prompts
 
 | Prompt | Tên | Mục tiêu | Tool nên dùng |
 |---|---|---|---|
-| Prompt 05 | Backend API route/controller split | Tách `backend/src/api/dashboard.js` theo domain nhỏ | Codex |
-| Prompt 06 | Repository layer cho Prisma | Đưa Prisma access dần vào repositories, không đổi schema | Codex |
+| Prompt 05B | Backend API route/controller split next group | Tách thêm một nhóm route nhỏ khỏi `backend/src/api/dashboard.js` | Codex |
+| Prompt 06 | Repository layer cho Prisma | Đưa Prisma access dần vào repositories, không đổi schema sau khi route split đủ nhỏ | Codex |
 | Prompt 07 | Tenant safety audit | Trace tenant scope, không sửa lớn nếu chưa chắc | Codex |
 | Prompt 08 | RAG/raw SQL hardening | Audit `$queryRawUnsafe`, pgvector query và input source | Codex |
 | Prompt 09 | Dashboard feature split | Tách page lớn thành features/components, giữ route/UI behavior | Claude Code hoặc Codex |
@@ -174,7 +177,7 @@ Trạng thái: **Next**.
 
 | Rủi ro | Trạng thái | Ưu tiên | Prompt xử lý |
 |---|---|---|---|
-| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05 |
+| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05B |
 | `$queryRawUnsafe` | Open | P0 | Prompt 08 |
 | Tenant scope chưa runtime verified | Open | P0 | Prompt 07 |
 | Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
@@ -212,6 +215,7 @@ Trạng thái: **Next**.
 | Prompt 03 | PASS | PASS | PASS | PASS | Not run | `24ac487d1b406f06650ca942efb311619e6a7c47` |
 | Prompt 04 | PASS | PASS | PASS | PASS | Not run | `25f3bb79e419590fb14540a82f28efe6482d980f` |
 | Prompt 04A | Docs-only diff validation | Not applicable | Not applicable | Not applicable | Not applicable | Ghi sau commit Prompt 04A |
+| Prompt 05 | PASS | PASS | Not run | Not run | Not run | Ghi sau commit Prompt 05 |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
@@ -226,11 +230,11 @@ Ghi chú: “PASS” ở các mốc trên là static validation/build validation
 
 ## 9. Bước tiếp theo rõ ràng
 
-Bước tiếp theo: **Prompt 05 — Backend API route/controller split phase 1**.
+Bước tiếp theo: **Prompt 05B — Backend API route/controller split next group**.
 
-Mục tiêu Prompt 05:
+Mục tiêu Prompt 05B:
 
-- Tách một nhóm route nhỏ ít rủi ro khỏi `backend/src/api/dashboard.js`.
+- Tách thêm một nhóm route nhỏ ít rủi ro khỏi `backend/src/api/dashboard.js`.
 - Giữ nguyên public route, HTTP method, middleware, auth behavior và response contract.
 - Tạo route/controller wrapper theo shell `backend/src/presentation/http`.
 - Chạy validation sau thay đổi.

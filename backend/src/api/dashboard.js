@@ -10,6 +10,7 @@ const facebookMenu = require('../facebook/menu');
 const getPrisma = require('../db');
 const { encryptIfPresent, decryptIfPresent } = require('../chatwoot/crypto');
 const tenantRegistry = require('../tenants/registry');
+const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -1585,14 +1586,7 @@ router.post('/handoff/:conversationId/assign', authMiddleware, async (req, res) 
 
 // ==================== WEBHOOK STATUS ====================
 
-router.get('/settings/webhook', authMiddleware, (req, res) => {
-  res.json({
-    verifyToken: process.env.FB_VERIFY_TOKEN ? '***configured***' : null,
-    pageAccessToken: process.env.FB_PAGE_ACCESS_TOKEN ? '***configured***' : null,
-    appSecret: process.env.FB_APP_SECRET ? '***configured***' : null,
-    webhookUrl: `${req.protocol}://${req.get('host')}/webhook`,
-  });
-});
+router.use('/settings', createSettingsRoutes({ authMiddleware }));
 
 // ==================== CHATWOOT SETTINGS ====================
 

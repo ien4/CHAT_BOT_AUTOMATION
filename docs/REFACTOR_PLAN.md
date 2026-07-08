@@ -1,5 +1,21 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05 đã hoàn thành phase 1
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05 đã tách nhóm route đầu tiên trong phạm vi an toàn:
+
+- Tách `GET /settings/webhook` khỏi `backend/src/api/dashboard.js`.
+- Tạo `backend/src/presentation/http/controllers/dashboard/settings.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/settings.routes.js`.
+- Mount lại bằng `router.use('/settings', createSettingsRoutes({ authMiddleware }))`.
+- Giữ nguyên public route `/api/settings/webhook`, method `GET`, auth middleware và response shape.
+- Không sửa webhook handlers, tenant handoff, RAG pipeline, Prisma schema/migrations hoặc dashboard frontend.
+- Static validation pass — chưa runtime verified.
+
+Prompt tiếp theo nên là Prompt 05B: tiếp tục tách thêm một nhóm route nhỏ, ít rủi ro khỏi `backend/src/api/dashboard.js` trước khi chuyển sang repository layer.
+
 ## Prompt 04 đã hoàn thành
 
 Ngày cập nhật: 2026-07-08

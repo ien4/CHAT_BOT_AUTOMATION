@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05 Update - Backend API Route/Controller Split Phase 1
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route group đầu tiên | Done with warnings | `GET /settings/webhook` | Public route vẫn là `/api/settings/webhook`. |
+| Controller mới | Done | `backend/src/presentation/http/controllers/dashboard/settings.controller.js` | Move nguyên trạng response JSON, không đổi mask config. |
+| Route module mới | Done | `backend/src/presentation/http/routes/dashboard/settings.routes.js` | Dùng lại `authMiddleware` truyền từ `dashboard.js`. |
+| `dashboard.js` mount route | Done | `router.use('/settings', createSettingsRoutes({ authMiddleware }))` | Giữ path, method và auth behavior. |
+| Validation backend | Static validation pass | `node --check`, Prisma validate dummy | Chưa chạy app server/API thật. |
+| Runtime verification | Not done | Không chạy server | Không đánh dấu route runtime là DONE. |
+| Behavior-critical modules | Không đổi | Git diff guardrail | Không đụng webhook, tenant handoff, RAG, Prisma schema/migrations, dashboard frontend. |
+
+Rủi ro còn lại sau Prompt 05:
+
+- `backend/src/api/dashboard.js` vẫn còn khoảng 2.439 dòng và khoảng 100 route trực tiếp, cần tiếp tục tách theo nhóm nhỏ.
+- `$queryRawUnsafe`, analytics raw SQL, tenant scope, handoff, RAG và DevOps script risk vẫn mở.
+- Prompt tiếp theo nên là Prompt 05B để tách thêm một nhóm route nhỏ trước khi chuyển sâu sang repository layer.
+
 ## Prompt 04A Update - Progress Rewrite Before Prompt 05
 
 Ngày cập nhật: 2026-07-08
