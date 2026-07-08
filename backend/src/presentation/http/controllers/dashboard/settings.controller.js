@@ -42,8 +42,25 @@ function createGetHandoffSettings({ prisma }) {
   };
 }
 
+function createPutHandoffSettings({ prisma }) {
+  return async function putHandoffSettings(req, res) {
+    try {
+      const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd } = req.body;
+      const settings = await prisma.handoffSetting.upsert({
+        where: { id: 'singleton' },
+        update: { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd },
+        create: { id: 'singleton', pendingTimeoutSeconds: pendingTimeoutSeconds ?? 30, sessionTimeoutSeconds: sessionTimeoutSeconds ?? 30, offHoursPendingTimeout: offHoursPendingTimeout ?? 10, workHoursStart, workHoursEnd },
+      });
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update handoff settings' });
+    }
+  };
+}
+
 module.exports = {
   createGetTelegramDestinations,
   createGetHandoffSettings,
+  createPutHandoffSettings,
   getWebhookSettings,
 };

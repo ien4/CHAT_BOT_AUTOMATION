@@ -1284,20 +1284,7 @@ router.delete('/staff/:id', authMiddleware, async (req, res) => {
 
 // ==================== HANDOFF SETTINGS ====================
 
-// GET /settings/handoff đã tách sang presentation/http/routes/dashboard/settings.routes.js
-router.put('/settings/handoff', authMiddleware, async (req, res) => {
-  try {
-    const { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd } = req.body;
-    const settings = await prisma.handoffSetting.upsert({
-      where: { id: 'singleton' },
-      update: { pendingTimeoutSeconds, sessionTimeoutSeconds, offHoursPendingTimeout, workHoursStart, workHoursEnd },
-      create: { id: 'singleton', pendingTimeoutSeconds: pendingTimeoutSeconds ?? 30, sessionTimeoutSeconds: sessionTimeoutSeconds ?? 30, offHoursPendingTimeout: offHoursPendingTimeout ?? 10, workHoursStart, workHoursEnd },
-    });
-    res.json(settings);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update handoff settings' });
-  }
-});
+// GET/PUT /settings/handoff đã tách sang presentation/http/routes/dashboard/settings.routes.js
 
 // Xem trạng thái handoff realtime — conversations đang pending hoặc active
 // ==================== TELEGRAM DESTINATIONS ====================

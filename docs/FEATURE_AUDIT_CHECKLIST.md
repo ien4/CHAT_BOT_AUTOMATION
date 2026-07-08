@@ -1,5 +1,21 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05E Update - Split PUT Handoff Settings Route (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| `PUT /settings/handoff` route split | Done | `router.put('/handoff', authMiddleware, createPutHandoffSettings({ prisma }))` trong `settings.routes.js` | Public route vẫn là `/api/settings/handoff`. |
+| Controller settings mở rộng | Done | `createPutHandoffSettings({ prisma })` trong `settings.controller.js` | Move logic upsert đã fix từ Prompt 05D-FIX. |
+| `dashboard.js` gỡ block PUT | Done | Direct `router.put('/settings/handoff')` đã bị gỡ | `dashboard.js` còn 2382 dòng, khoảng 96 route direct. |
+| Auth no-token | Runtime verified | GET/PUT `/api/settings/handoff` không token → 401 `{error}` | Không crash. |
+| Existing routes | Runtime verified PASS | `webhook` 200, `telegram-destinations` 200, `prompts` 200 array len=7 | Token lấy qua login endpoint local/test; không in credential/token. |
+| Handoff GET/PUT | Runtime verified PASS | GET 200 object, PUT 200 object, GET lại sau PUT 200 | PUT payload chỉ gồm field schema hợp lệ. |
+| Behavior/public contract | Preserved | Route/method/auth/status/response shape giữ nguyên | Chỉ đổi vị trí code. |
+| Static validation | PASS | `node --check` 9 file backend, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/dashboard FE/DevOps/package | Chỉ sửa route/controller settings handoff. |
+
 ## Prompt 05D-FIX Update - Handoff Settings Accessor + Runtime (PASS)
 
 Ngày cập nhật: 2026-07-08

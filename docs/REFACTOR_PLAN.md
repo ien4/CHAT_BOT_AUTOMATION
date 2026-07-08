@@ -1,5 +1,21 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05E — Split PUT handoff settings route + runtime (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05E tiếp tục thu nhỏ `backend/src/api/dashboard.js` trong phạm vi **Settings/Cài Đặt / Handoff settings**:
+
+- Tách `PUT /settings/handoff` khỏi `dashboard.js` sang `settings.controller.js` + `settings.routes.js`.
+- `GET /settings/handoff` và `PUT /settings/handoff` hiện cùng nằm trong settings controller/routes, dùng chung mount `/api/settings`.
+- Giữ nguyên public route `/api/settings/handoff`, method PUT, `authMiddleware`, status code thành công/lỗi, response shape và Prisma upsert behavior đã fix ở Prompt 05D-FIX.
+- Runtime smoke PASS trên DB pgvector local/test: GET/PUT handoff không token → 401; `webhook`, `telegram-destinations`, `prompts`, handoff GET, handoff PUT → 200; GET lại sau PUT → 200.
+- Không sửa Prisma schema/migrations, webhook handlers, tenant handoff, RAG pipeline, bot engine/tools, dashboard frontend, package hoặc DevOps scripts.
+
+Sau Prompt 05E, `dashboard.js` còn 2382 dòng và khoảng 96 route direct. Các settings route còn lại trong `dashboard.js` đều là write/external side effect như Telegram destination write/test, Chatwoot test, Facebook menu read/write, nên không nên tách tiếp nếu chưa có test cô lập.
+
+Tiếp theo khuyến nghị: **Prompt 06** repository layer cho `settings`/`prompts`. Nếu vẫn muốn xử lý Settings route còn lại trước, dùng **Prompt 05F** để tạo test cô lập cho external/write route, không gọi Telegram/Chatwoot/Facebook thật.
+
 ## Prompt 05D-FIX — Handoff settings accessor + runtime (PASS)
 
 Ngày cập nhật: 2026-07-08
