@@ -1,270 +1,247 @@
-# PROJECT PROGRESS - BBOTECH BOT AUTOMATION
-
-## Prompt 04 Update - Config Hardening + Localhost Cleanup + Env Policy
+# PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
+Trạng thái hiện tại: **sẵn sàng cho Prompt 05 — Backend API route/controller split phase 1**
+Lưu ý bắt buộc: các prompt 03 và 04 mới đạt **Static validation pass — chưa runtime verified**.
 
-| Hạng mục | Kết quả | Ghi chú |
+## 1. Nguyên tắc cập nhật
+
+- Sau mỗi prompt hoàn thành, phải tick checklist tương ứng trong file này và tạo report riêng trong `report/`.
+- Không tick hạng mục runtime nếu chỉ mới có syntax/type/build validation.
+- Nếu một phần chỉ là architecture shell/static validation, phải ghi rõ “Static validation pass — chưa runtime verified”.
+- Không gom nhiều refactor rủi ro vào một prompt.
+- Không sửa webhook, tenant handoff, RAG, Prisma schema/migrations hoặc DevOps script nếu prompt không cho phép rõ.
+- Không đọc `.env` thật; chỉ dùng `.env.example` để mapping tên biến.
+- Khi có commit mới, ghi hash vào lịch sử prompt và validation history.
+
+## 2. Tổng quan trạng thái
+
+| Phase | Trạng thái | Ghi chú |
 |---|---|---|
-| Preflight Git | PASS | Working tree sạch trước Prompt 04; commit Prompt 03 `24ac487d1b406f06650ca942efb311619e6a7c47` tồn tại. |
-| Baseline validation trước thay đổi | PASS | Backend syntax + Prisma validate dummy pass; dashboard typecheck + build pass. |
-| Backend config helper | PASS | Mở rộng `backend/src/infrastructure/services/config.js` với URL normalize, env mode helpers, `getAppBaseUrl`, `getBackendPort`, placeholder warning helper; chưa gọi runtime để tránh đổi behavior. |
-| Dashboard config helper | PASS | Chuẩn hóa normalize URL trong `dashboard/src/lib/config/env.ts`; fallback local vẫn giữ tại helper tập trung. |
-| Dashboard settings localhost cleanup | PASS | `dashboard/src/app/dashboard/settings/page.tsx` dùng `CHATWOOT_BASE_URL` thay vì đọc trực tiếp `NEXT_PUBLIC_CHATWOOT_URL || localhost`. |
-| Env examples | PASS | Bổ sung biến còn thiếu trong `backend/.env.example`; tạo mới `dashboard/.env.example` cho `NEXT_PUBLIC_*`. |
-| Env policy | PASS | Tạo `docs/ENV_POLICY.md` với quy tắc secret/public env, local vs production, validation an toàn. |
-| DevOps scan read-only | WARNING | `start-all.bat`, `backend/Dockerfile`, `webhook-urls-current.txt` còn rủi ro local/migration/stale URL; Prompt 04 chỉ ghi nhận, không sửa. |
-| Source behavior | NO INTENTIONAL CHANGE | Không đổi Prisma schema/migrations, webhook URL, public route, tenant handoff, RAG pipeline hoặc Chatwoot crypto. |
-| Runtime verification | NOT RUN | Không chạy app server, Docker, start script, migration hoặc DB push. |
-| Final verdict | PASS WITH WARNINGS | Có thể sang Prompt 05: tách backend API route/controller nhỏ, giữ route/response contract. |
+| Phase 01 — Project audit | ✅ Done | Prompt 01 — read-only audit, không sửa source |
+| Phase 02 — Safety gate | ✅ Done | Prompt 02 blocked đúng guardrail; Prompt 02B đã tạo Git checkpoint |
+| Phase 03 — Progress/checklist foundation | ✅ Done | Prompt 02A tạo progress/checklist/report |
+| Phase 04 — Baseline validation | ✅ Done with warnings | `npm ci`, backend syntax, Prisma validate dummy, dashboard typecheck/build pass; còn quality/security warnings |
+| Phase 05 — Architecture shell | ✅ Done with warnings | Prompt 03, static validation pass — chưa runtime verified |
+| Phase 06 — Config hardening/env policy | ✅ Done with warnings | Prompt 04, validation pass — chưa runtime verified |
+| Phase 07 — Backend API route/controller split | 🟡 Next | Prompt 05 |
+| Phase 08 — Repository layer | ⬜ Planned | Prompt 06 |
+| Phase 09 — Tenant safety audit | ⬜ Planned | Prompt 07 |
+| Phase 10 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 11 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 12 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
-Rủi ro còn lại sau Prompt 04:
+## 3. Checklist chi tiết theo Prompt
 
-- Backend runtime cũ vẫn còn fallback localhost trong `backend/src/api/dashboard.js` và log startup của `backend/src/index.js`; chưa sửa để tránh đổi webhook/startup behavior.
-- `start-all.bat` vẫn có `prisma db push --accept-data-loss` và nhiều local tunnel/localhost hard-code.
-- `backend/Dockerfile` vẫn chạy `npx prisma migrate deploy` khi container start; cần Prompt DevOps/deploy riêng.
-- `webhook-urls-current.txt` có thể stale và không nên dùng làm nguồn production.
-- Backend vẫn chưa có lint/typecheck script thật; dashboard build/typecheck vẫn là guardrail chính.
+### Prompt 01 — Project audit + clean architecture mapping
 
-## Prompt 03 Update - Architecture Shell Without Behavior Change
+- [x] Đọc tree dự án.
+- [x] Audit backend.
+- [x] Audit dashboard.
+- [x] Audit Prisma/Docker/scripts.
+- [x] Xác định rủi ro mixed architecture.
+- [x] Tạo report Prompt 01: `report/PROMPT_01_PROJECT_AUDIT_CLEAN_ARCHITECTURE_REPORT.md`.
+- [x] Không sửa source runtime.
+- [x] Không đọc `.env` thật.
 
-Ngày cập nhật: 2026-07-08
+Trạng thái: **PASS**.
+Commit: chưa có Git repository tại thời điểm Prompt 01.
 
-| Hạng mục | Kết quả | Ghi chú |
-|---|---|---|
-| Preflight Git | PASS | Baseline commit `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` tồn tại. Trước refactor chỉ có docs/report thay đổi từ Prompt 02B. |
-| Backend architecture shell | PASS | Đã tạo `domain`, `application`, `infrastructure`, `presentation` cùng README cho các layer/folder chính. |
-| Backend Prisma wrapper | PASS | Đã tạo `backend/src/infrastructure/persistence/prisma/client.js`, chỉ re-export singleton `backend/src/db.js`, không tạo PrismaClient thứ hai. |
-| Backend config helper | PASS | Đã tạo `backend/src/infrastructure/services/config.js` với `getEnv`, `getRequiredEnv`, `isProduction`; chưa ép migrate code cũ. |
-| Dashboard architecture shell | PASS | Đã tạo `components`, `features`, `lib/config`, `lib/api`, `lib/auth`, `lib/utils`, `styles` shell. |
-| Dashboard config helper | PASS | Đã tạo `dashboard/src/lib/config/env.ts`; fallback local vẫn là `http://localhost:3001`. |
-| Dashboard API client helper | PASS | Đã tạo `dashboard/src/lib/api/client.ts`; `dashboard/src/lib/api.ts` vẫn là compatibility facade và giữ interceptor cũ. |
-| Hard-code localhost dashboard | PARTIAL | `http://localhost:3001` trong dashboard source đã gom về `dashboard/src/lib/config/env.ts`; chưa xử lý backend/scripts/root. |
-| Source behavior | NO INTENTIONAL CHANGE | Không đổi Prisma schema, migrations, public API route, webhook URL, tenant handoff, RAG pipeline hoặc bot engine. |
-| Backend validation sau thay đổi | STATIC PASS | `node --check` pass cho file cũ trọng yếu và wrapper mới; Prisma validate pass với `DATABASE_URL` dummy. |
-| Dashboard validation sau thay đổi | STATIC PASS | `npx --no-install tsc --noEmit` pass; `npm run --if-present build` pass. |
-| Runtime verification | NOT RUN | Không chạy app server, không gọi webhook/API thật, không dùng DB thật. |
-| Final verdict | PASS WITH WARNINGS | Có thể sang Prompt 04, nhưng các warning baseline vẫn còn. |
+### Prompt 02 — Controlled clean architecture reorganization
 
-Rủi ro còn lại sau Prompt 03:
+- [x] Preflight safety gate.
+- [x] Phát hiện thiếu `.git`.
+- [x] Dừng đúng guardrail.
+- [x] Tạo report blocked: `report/PROMPT_02_BLOCKED_NEED_GIT_CHECKPOINT.md`.
+- [x] Không sửa source runtime.
+- [x] Không chạy dependency install, migration, Docker hoặc start script.
 
-- Backend chưa có lint/typecheck script thật.
-- Dashboard `next lint` vẫn chưa có config không tương tác.
-- `$queryRawUnsafe` vẫn còn trong backend.
-- Hard-code localhost vẫn còn ở backend/scripts/root docs và cần Prompt 04 xử lý có kiểm soát.
-- Default credential/fallback vẫn còn.
-- Tenant scope, handoff và RAG chưa runtime verified.
-- `start-all.bat` vẫn có `prisma db push --accept-data-loss`.
+Trạng thái: **BLOCKED đúng quy trình**.
+Commit: chưa có Git repository tại thời điểm Prompt 02.
 
-Điều kiện sang Prompt 04: chỉ nên làm config hardening + hard-code localhost cleanup + env policy, không chạm tenant handoff/RAG/schema/migrations.
+### Prompt 02A — Project progress + audit checklist
 
-## Prompt 02B Update - Safety Foundation + Baseline Validation
+- [x] Tạo `docs/PROJECT_PROGRESS.md`.
+- [x] Tạo `docs/FEATURE_AUDIT_CHECKLIST.md`.
+- [x] Tạo report Prompt 02A: `report/PROMPT_02A_PROJECT_PROGRESS_AND_AUDIT_PLAN_REPORT.md`.
+- [x] Tổng hợp roadmap an toàn trước refactor.
+- [x] Không sửa source runtime.
 
-Ngày cập nhật: 2026-07-07
+Trạng thái: **PASS WITH WARNINGS** vì dự án vẫn thiếu Git checkpoint/dependencies/baseline validation tại thời điểm đó.
+Commit: chưa có Git repository tại thời điểm Prompt 02A.
 
-| Hạng mục | Kết quả | Ghi chú |
-|---|---|---|
-| Git checkpoint | PASS | Đã `git init` và tạo checkpoint local. |
-| Commit checkpoint | `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` | Message: `checkpoint before safety validation and clean architecture refactor`. |
-| `.gitignore` | PASS | Đã bổ sung rule bảo vệ `node_modules/`, `.next/`, `dist/`, `build/`, `coverage/`, `.env`, `.env.*`, `!.env.example`, `*.log`, `.vercel/`, `uploads/`, `backend/uploads/`. |
-| Secret/build artifact staged | PASS | Không phát hiện `.env` thật, `node_modules`, `.next`, build output hoặc log trong staged checkpoint. |
-| Backend `npm ci` | PASS WITH WARNINGS | Cài thành công từ `backend/package-lock.json`; npm audit báo 10 vulnerabilities và một số package deprecated. Không chạy `npm audit fix`. |
-| Dashboard `npm ci` | PASS WITH WARNINGS | Cài thành công từ `dashboard/package-lock.json`; npm audit báo 3 vulnerabilities. Không chạy `npm audit fix`. |
-| `node_modules` tracking | PASS | `backend/node_modules/` và `dashboard/node_modules/` đang ignored, không bị Git track. |
-| Backend syntax check | PASS | `node --check` pass cho `src/index.js`, `src/db.js`, `src/api/dashboard.js`, webhook handlers, tenant webhook, bot agent/tools, RAG pipeline. |
-| Backend lint/typecheck | WARNING | Không có script `lint` hoặc `typecheck`; `npm run --if-present` không validate thực tế. |
-| Prisma validate | WARNING | `npx prisma validate` fail nếu không có `DATABASE_URL`; pass khi dùng `DATABASE_URL` dummy local chỉ cho validate schema. Không chạy migrate/db push. |
-| Dashboard lint | WARNING | `npm run lint` mở prompt cấu hình ESLint tương tác vì chưa có ESLint config; không tự cấu hình trong Prompt 02B. |
-| Dashboard typecheck | PASS | `npx --no-install tsc --noEmit` pass. |
-| Dashboard build | PASS | `npm run build` pass với Next.js 14. |
-| P0 risks confirmed | CONFIRMED | `$queryRawUnsafe`, hard-code localhost, default credential/fallback, `db push --accept-data-loss`, `prisma migrate deploy`, thiếu thư mục `chatwoot/`. |
-| Source runtime changed | NO | Không sửa `backend/src`, `dashboard/src`, Prisma schema, migrations, public routes hoặc webhook URL. |
+### Prompt 02B — Safety foundation + baseline validation
 
-Kết luận Prompt 02B: **PASS WITH WARNINGS**. Dự án có thể sang Prompt 03 nếu Prompt 03 chỉ tạo architecture shell/wrapper không đổi behavior, không đổi schema, không đổi route/webhook, và tiếp tục ghi validation sau từng nhóm nhỏ.
+- [x] `git init`.
+- [x] Cập nhật `.gitignore` để bảo vệ `.env`, dependency, build artifact, logs, uploads.
+- [x] Tạo Git checkpoint.
+- [x] Commit baseline `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca`.
+- [x] `backend npm ci`.
+- [x] `dashboard npm ci`.
+- [x] Backend syntax check pass.
+- [x] Prisma validate pass với `DATABASE_URL` dummy.
+- [x] Dashboard `tsc --noEmit` pass.
+- [x] Dashboard build pass.
+- [x] Ghi warnings còn lại vào report Prompt 02B.
+- [x] Không sửa source runtime.
 
-Điều kiện bắt buộc trước hoặc trong Prompt 03:
+Trạng thái: **PASS WITH WARNINGS**.
+Warnings chính: backend chưa có lint/typecheck thật, dashboard lint chưa cấu hình không tương tác, npm audit vulnerabilities còn mở, `$queryRawUnsafe`, default credential/fallback, hard-code localhost và DevOps script rủi ro còn tồn tại.
 
-- Không bắt đầu refactor lớn khi chưa quyết định cách xử lý `next lint` đang thiếu ESLint config.
-- Không coi backend là fully validated vì backend chưa có lint/typecheck script.
-- Không chạy migration/db push.
-- Không sửa `$queryRawUnsafe` hàng loạt trong cùng một bước; cần audit từng query có input người dùng.
-- Không xóa default credential/fallback nếu chưa có test login/startup và kế hoạch env production.
-- Không đụng flow tenant/handoff/RAG nếu chưa có checklist regression cụ thể.
+### Prompt 03 — Architecture shell refactor
 
-Ngày cập nhật: 2026-07-07  
-Phạm vi file này: theo dõi tiến độ, rủi ro, checklist tính năng và roadmap refactor an toàn cho dự án BBOTECH Bot Automation.
+- [x] Tạo backend shell `domain/application/infrastructure/presentation`.
+- [x] Tạo README layer/folder chính.
+- [x] Tạo backend Prisma wrapper.
+- [x] Tạo backend config helper.
+- [x] Tạo dashboard shell `features/components/lib/config/lib/api`.
+- [x] Tạo dashboard env/API helper.
+- [x] Gom một số hard-code dashboard về helper fallback.
+- [x] Tạo `docs/ARCHITECTURE.md`.
+- [x] Tạo `docs/REFACTOR_PLAN.md`.
+- [x] Backend syntax validation pass.
+- [x] Prisma validate dummy pass.
+- [x] Dashboard typecheck pass.
+- [x] Dashboard build pass.
+- [x] Commit `24ac487d1b406f06650ca942efb311619e6a7c47`.
+- [ ] Runtime verification — chưa chạy.
 
-## 1. Tổng quan hiện tại
+Trạng thái: **PASS WITH WARNINGS**.
+Ghi chú: **Static validation pass — chưa runtime verified**. Không đổi Prisma schema, migrations, public route, webhook URL, tenant handoff, RAG pipeline hoặc bot engine.
 
-Dự án là hệ thống chatbot automation gồm backend Express/CommonJS, Prisma/PostgreSQL/pgvector, tích hợp Facebook webhook, Chatwoot, Telegram handoff, RAG knowledge base, dashboard Next.js 14 và một số script vận hành local.
+### Prompt 04 — Config hardening + localhost cleanup + env policy
 
-Trạng thái sau Prompt 01, Prompt 02 và Prompt 02A:
+- [x] Mở rộng backend config helper.
+- [x] Chuẩn hóa dashboard env helper.
+- [x] Gom Chatwoot/settings/Telegram dashboard URL về helper.
+- [x] Tạo `docs/ENV_POLICY.md`.
+- [x] Cập nhật `backend/.env.example`.
+- [x] Tạo `dashboard/.env.example`.
+- [x] Cập nhật `docs/ARCHITECTURE.md`.
+- [x] Cập nhật `docs/REFACTOR_PLAN.md`.
+- [x] Cập nhật `docs/FEATURE_AUDIT_CHECKLIST.md`.
+- [x] Tạo report Prompt 04: `report/PROMPT_04_CONFIG_HARDENING_LOCALHOST_ENV_POLICY_REPORT.md`.
+- [x] Backend validation pass.
+- [x] Dashboard validation pass.
+- [x] Commit `25f3bb79e419590fb14540a82f28efe6482d980f`.
+- [ ] Runtime verification — chưa chạy.
 
-| Hạng mục | Trạng thái | Ghi chú |
-|---|---|---|
-| Audit kiến trúc Prompt 01 | Hoàn thành | Báo cáo tại `report/PROMPT_01_PROJECT_AUDIT_CLEAN_ARCHITECTURE_REPORT.md`. |
-| Refactor Prompt 02 | Bị chặn | Không có `.git`, không có checkpoint an toàn, thiếu `node_modules`. Báo cáo tại `report/PROMPT_02_BLOCKED_NEED_GIT_CHECKPOINT.md`. |
-| Prompt 02A | Hoàn thành tài liệu | Chỉ tạo tài liệu tiến độ/checklist/report, không sửa source runtime. |
-| Git checkpoint | Chưa có | `git status --short --branch` báo không phải git repository; `Test-Path .git` là `False`. |
-| Dependency local | Chưa cài | `backend/node_modules` và `dashboard/node_modules` đều chưa tồn tại. |
-| Source refactor | Chưa thực hiện | Cần dừng refactor source cho đến khi có checkpoint và baseline validation. |
+Trạng thái: **PASS WITH WARNINGS**.
+Ghi chú: **Static validation pass — chưa runtime verified**. DevOps scripts, Dockerfile và stale webhook URL file chỉ được scan read-only, chưa sửa.
 
-Kết luận vận hành: dự án có nhiều module đã tồn tại nhưng đang ở trạng thái rủi ro cao nếu refactor trực tiếp. Việc tiếp theo phải là dựng nền an toàn trước khi đụng vào `backend/src`, `dashboard/src`, Prisma schema hoặc migration.
+### Prompt 04A — Rewrite project progress + checklist before Prompt 05
 
-## 2. Mục tiêu kỹ thuật cuối cùng
+- [x] Preflight Git.
+- [x] Xác nhận commit Prompt 04 `25f3bb79e419590fb14540a82f28efe6482d980f`.
+- [x] Đọc toàn bộ report/docs bắt buộc.
+- [x] Rewrite `docs/PROJECT_PROGRESS.md`.
+- [x] Cập nhật `docs/FEATURE_AUDIT_CHECKLIST.md`.
+- [x] Tạo report `report/PROMPT_04A_PROJECT_PROGRESS_REWRITE_REPORT.md`.
+- [x] Chỉ sửa docs/report.
+- [ ] Runtime verification — không thuộc phạm vi Prompt 04A.
 
-Mục tiêu cuối của giai đoạn clean architecture/refactor là đưa dự án về trạng thái có thể phát triển dài hạn mà không làm hỏng tính năng đang có.
+Trạng thái: **PASS — ready for Prompt 05 backend route split** nếu validation docs-only và commit pass.
 
-Các mục tiêu chính:
+### Prompt 05 — Backend API route/controller split
 
-| Mục tiêu | Kết quả mong muốn |
-|---|---|
-| Bảo toàn hành vi hiện tại | Facebook webhook, Chatwoot, Telegram handoff, dashboard, RAG, multi-tenant vẫn hoạt động sau từng bước. |
-| Tách module rõ ràng | Backend tách routes, services, repositories, adapters và domain logic thay vì dồn vào file lớn. |
-| Giảm hard-code môi trường | Dashboard/backend dùng cấu hình tập trung, không còn URL localhost cố định trong flow deploy. |
-| Kiểm soát Prisma/database | Không dùng `db push --accept-data-loss` cho dữ liệu thật; migration phải có backup/checkpoint. |
-| Giảm rủi ro raw SQL | Kiểm tra và thay thế/bao bọc các điểm `$queryRawUnsafe` nhạy cảm. |
-| Chuẩn hóa multi-tenant | Mọi query dữ liệu khách hàng, hội thoại, nhân viên, knowledge phải có tenant scope rõ ràng. |
-| Có baseline validation | Có lệnh validate/build/lint/test tối thiểu trước và sau refactor. |
+- [ ] Preflight Git.
+- [ ] Xác nhận working tree không có source runtime change không rõ nguồn.
+- [ ] Route map trước khi tách bằng scan `router.get/post/put/delete`.
+- [ ] Chọn domain nhỏ ít rủi ro.
+- [ ] Tạo route/controller wrapper.
+- [ ] Giữ public route/response contract.
+- [ ] Không sửa webhook, tenant handoff, RAG, Prisma schema/migrations.
+- [ ] Backend syntax validation sau refactor.
+- [ ] Prisma validate dummy.
+- [ ] Dashboard typecheck/build nếu dashboard bị ảnh hưởng.
+- [ ] Tạo report Prompt 05.
+- [ ] Commit Prompt 05 nếu pass.
 
-## 3. Checklist nguyên tắc bảo vệ
+Trạng thái: **Next**.
 
-Các nguyên tắc này bắt buộc áp dụng cho mọi prompt tiếp theo:
+## 4. Next planned prompts
 
-- [ ] Không sửa source runtime nếu chưa có git checkpoint hoặc bản sao lưu rõ ràng.
-- [ ] Không chạy `prisma db push --accept-data-loss` trên dữ liệu thật.
-- [ ] Không chạy migration nếu chưa có backup và baseline validation.
-- [ ] Không đọc hoặc ghi file `.env` thật; chỉ được đọc `.env.example`.
-- [ ] Không in token, secret, webhook secret hoặc URL có chứa credential vào tài liệu.
-- [ ] Không xóa/move file hàng loạt khi chưa có danh sách thay đổi cụ thể.
-- [ ] Không refactor nhiều module cùng lúc khi chưa có smoke test.
-- [ ] Không đổi schema Prisma trong cùng bước với đổi logic nghiệp vụ lớn.
-- [ ] Không sửa `backend/src` hoặc `dashboard/src` trong prompt chỉ yêu cầu audit/tài liệu.
-- [ ] Mỗi bước refactor phải ghi lại file đã đổi, lý do đổi và cách kiểm tra.
-
-## 4. Checklist trước refactor
-
-Trước khi bắt đầu Prompt refactor source, cần hoàn thành tối thiểu các mục sau:
-
-| Việc cần làm | Trạng thái | Ghi chú |
-|---|---|---|
-| Khởi tạo hoặc phục hồi git repository | Chưa xong | Cần có `.git` và checkpoint trước refactor. |
-| Tạo commit/checkpoint baseline | Chưa xong | Nếu không dùng Git, cần backup toàn bộ thư mục dự án. |
-| Cài dependency backend | Chưa xong | `backend/node_modules` chưa tồn tại. |
-| Cài dependency dashboard | Chưa xong | `dashboard/node_modules` chưa tồn tại. |
-| Chạy `npm run prisma:generate` hoặc lệnh tương đương an toàn | Chưa xong | Chỉ chạy sau khi dependency có sẵn; không chạy migration/db push. |
-| Chạy `npx prisma validate` | Chưa xong | Validation schema không đụng dữ liệu. |
-| Chạy backend lint/test/build nếu có | Chưa xong | `backend/package.json` cần được dùng làm nguồn lệnh. |
-| Chạy dashboard lint/build nếu có | Chưa xong | Next.js build giúp phát hiện lỗi TypeScript/runtime import. |
-| Ghi baseline lỗi hiện tại | Chưa xong | Không sửa trước khi ghi nhận lỗi gốc. |
-| Cập nhật lại file tiến độ sau baseline | Chưa xong | Ghi kết quả vào file này hoặc report tiếp theo. |
-
-## 5. Bản đồ tính năng hiện tại
-
-Bảng kiểm chi tiết nằm tại [FEATURE_AUDIT_CHECKLIST.md](./FEATURE_AUDIT_CHECKLIST.md).
-
-Tóm tắt theo nhóm:
-
-| Nhóm | Phạm vi | Trạng thái tổng quan | Ưu tiên |
+| Prompt | Tên | Mục tiêu | Tool nên dùng |
 |---|---|---|---|
-| A. Backend core | Express, auth, Prisma, dashboard API, seed | Đã có nhưng rủi ro file lớn và default credential | P0 |
-| B. Messaging/webhook | Facebook, Chatwoot, Telegram, handoff | Đã có nhiều luồng; cần kiểm tra tenant scope và webhook signature | P0 |
-| C. Bot/AI | Bot engine, LLM providers, tools, intents, appointments | Đã có; cần test hành vi và tách service sau checkpoint | P0 |
-| D. RAG/knowledge | Upload, parser, embeddings, pgvector, search | Đã có; rủi ro `$queryRawUnsafe` và vector unsupported | P0 |
-| E. Multi-tenant | Tenant registry, channel configs, scoped resources | Đã có; rủi ro trộn dữ liệu tenant cần ưu tiên audit | P0 |
-| F. Dashboard | Trang quản trị, CRUD, analytics, handoff, settings | Đã có; hard-code localhost và vài flow bypass API client | P0 |
-| G. DevOps/deploy | Docker, batch scripts, env example, webhook URLs | Đã có; rủi ro `db push --accept-data-loss`, thiếu thư mục Chatwoot | P0 |
+| Prompt 05 | Backend API route/controller split | Tách `backend/src/api/dashboard.js` theo domain nhỏ | Codex |
+| Prompt 06 | Repository layer cho Prisma | Đưa Prisma access dần vào repositories, không đổi schema | Codex |
+| Prompt 07 | Tenant safety audit | Trace tenant scope, không sửa lớn nếu chưa chắc | Codex |
+| Prompt 08 | RAG/raw SQL hardening | Audit `$queryRawUnsafe`, pgvector query và input source | Codex |
+| Prompt 09 | Dashboard feature split | Tách page lớn thành features/components, giữ route/UI behavior | Claude Code hoặc Codex |
+| Prompt 10 | DevOps/deploy hardening | Script, Docker, migration policy, CI/deploy env | Codex |
 
-## 6. Hidden bugs ưu tiên
+## 5. Rủi ro đang mở
 
-P0 cần xử lý trước hoặc trong các bước đầu sau checkpoint:
-
-| Rủi ro | Dấu hiệu hiện tại | Hướng kiểm tra an toàn |
-|---|---|---|
-| Không có git checkpoint | `.git` không tồn tại | Prompt 02B phải tạo checkpoint trước refactor. |
-| Thiếu dependency | `backend/node_modules` và `dashboard/node_modules` không tồn tại | Chạy cài dependency có kiểm soát và ghi lại lỗi. |
-| Raw SQL unsafe | `$queryRawUnsafe` trong dashboard, RAG, tenant handoff, seed | Audit từng query, ưu tiên query có input người dùng. |
-| Hard-code localhost | Dashboard settings/campaigns/tenants, scripts, webhook URL | Gom cấu hình API base URL sau khi có baseline. |
-| Tenant data mixing | Nhiều API cũ có thể chưa scope tenant đầy đủ | Kiểm tra query theo tenant/page/channel trước refactor. |
-| Start script có thể phá dữ liệu | `start-all.bat` chạy `prisma db push --accept-data-loss` | Không dùng script này cho production/dữ liệu thật. |
-| Default admin credential | Backend seed có fallback `admin/admin123` | Chỉ dùng local; production phải yêu cầu env mạnh. |
-| Chatwoot local folder chưa xác nhận | Prompt 01 ghi nhận `chatwoot/` có thể thiếu | Không chạy batch script trước khi kiểm tra cấu trúc thực tế. |
-
-P1 nên xử lý sau khi P0 ổn định:
-
-| Rủi ro | Hướng xử lý |
-|---|---|
-| `backend/src/api/dashboard.js` quá lớn | Tách routes theo domain sau khi có regression check. |
-| Dynamic `require` trong backend | Giữ CommonJS trước, nhưng giảm require trong handler khi tách service. |
-| Dashboard fetch trực tiếp ngoài `lib/api.ts` | Chuẩn hóa về API client, interceptor auth và base URL. |
-| Webhook URL stale | Cập nhật sau khi có deploy/ngrok/cloudflared flow rõ ràng. |
-| Appointment docs có thể lệch code | So sánh `docs/appointment-modify-spec.md` với bot tools/API thực tế. |
-
-P2 cải thiện dài hạn:
-
-| Rủi ro/cải thiện | Hướng xử lý |
-|---|---|
-| Chuẩn hóa naming và module boundaries | Làm sau khi behavior đã được khóa bằng test/checklist. |
-| Tăng test tự động | Thêm unit/integration tests theo module đã tách. |
-| CI/CD | Sau khi repo có git và build baseline pass. |
-| Deploy hardening | Tách local scripts khỏi production deploy. |
-
-## 7. Roadmap refactor tổng thể
-
-Roadmap đề xuất theo pha, chỉ bắt đầu từ Phase A sau khi Prompt 02B hoàn tất nền an toàn.
-
-| Phase | Mục tiêu | Điều kiện vào | Kết quả mong muốn |
+| Rủi ro | Trạng thái | Ưu tiên | Prompt xử lý |
 |---|---|---|---|
-| A. Safety foundation | Git checkpoint, dependency, baseline validation | Có quyền tạo checkpoint | Biết lỗi gốc trước khi refactor. |
-| B. Config hardening | Gom env/config, bỏ hard-code localhost | Baseline đã ghi nhận | API URL và webhook URL nhất quán. |
-| C. Backend route split | Tách `dashboard.js` theo domain | Có smoke test dashboard API | File nhỏ hơn, behavior không đổi. |
-| D. Service/repository layer | Tách logic nghiệp vụ khỏi route handler | Routes đã tách | Dễ test, ít duplicate Prisma query. |
-| E. Tenant safety audit | Bảo đảm tenant scope toàn bộ data flow | Query map đầy đủ | Giảm rủi ro trộn dữ liệu. |
-| F. RAG/database hardening | Kiểm soát vector/raw SQL | Có test hoặc sample data | Giảm `$queryRawUnsafe`, ổn định search. |
-| G. Dashboard API cleanup | Chuẩn hóa axios client và auth flow | Backend API ổn định | Giảm fetch hard-code, giảm lỗi deploy. |
-| H. DevOps cleanup | Tách local script khỏi production | App chạy ổn local | Script an toàn, không tự phá dữ liệu. |
-| I. CI/test expansion | Thêm validation tự động | Build local ổn | Có guardrail cho thay đổi sau này. |
+| `backend/src/api/dashboard.js` quá lớn | Open | P0 | Prompt 05 |
+| `$queryRawUnsafe` | Open | P0 | Prompt 08 |
+| Tenant scope chưa runtime verified | Open | P0 | Prompt 07 |
+| Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
+| `start-all.bat` có `db push --accept-data-loss` | Open | P0 | Prompt 10 |
+| Container start chạy `prisma migrate deploy` | Open | P0 | Prompt 10 |
+| Runtime verification chưa chạy | Open | P0 | Sau khi route split an toàn |
+| Backend chưa có lint/typecheck thật | Open | P1 | Prompt quality gate riêng |
+| Dashboard lint chưa cấu hình | Open | P1 | Prompt quality gate riêng |
+| npm audit vulnerabilities | Open | P1 | Prompt security deps riêng |
+| Hard-code localhost trong script/root | Open | P1 | Prompt 10 |
+| `webhook-urls-current.txt` có thể stale | Open | P1 | Prompt 10 |
+| `chatwoot/` folder không tồn tại ở root | Open | P1 | Prompt 10 |
 
-## 8. Lịch sử prompt
+## 6. Decision log
 
-| Prompt | Kết quả | File liên quan |
+| Quyết định | Lý do | Prompt |
 |---|---|---|
-| Prompt 01 - Read-only project audit + clean architecture mapping | Hoàn thành audit kiến trúc, không sửa source | `report/PROMPT_01_PROJECT_AUDIT_CLEAN_ARCHITECTURE_REPORT.md` |
-| Prompt 02 - Controlled clean architecture reorganization | Bị chặn vì thiếu git checkpoint và dependency | `report/PROMPT_02_BLOCKED_NEED_GIT_CHECKPOINT.md` |
-| Prompt 02A - Project progress file + feature audit checklist + next roadmap | Hoàn thành tài liệu tiến độ/checklist/report, không sửa source runtime | `docs/PROJECT_PROGRESS.md`, `docs/FEATURE_AUDIT_CHECKLIST.md`, `report/PROMPT_02A_PROJECT_PROGRESS_AND_AUDIT_PLAN_REPORT.md` |
+| Không refactor khi chưa có Git checkpoint | Tránh mất điểm rollback | Prompt 02 |
+| Tạo Git checkpoint trước khi cài dependency/refactor | Có baseline khôi phục an toàn | Prompt 02B |
+| Dùng `DATABASE_URL` dummy cho Prisma validate | Validate schema mà không đọc `.env` thật hoặc connect DB thật | Prompt 02B+ |
+| Chỉ tạo architecture shell ở Prompt 03 | Tránh phá webhook/RAG/tenant/handoff | Prompt 03 |
+| Không sửa webhook/tenant/RAG trong Prompt 03/04 | Rủi ro behavior cao, cần regression checklist | Prompt 03/04 |
+| Gom config trước khi tách route | Giảm hard-code và chuẩn bị route split | Prompt 04 |
+| Không sửa DevOps script trong Prompt 04 | Script có migration/db push/tunnel risk, cần prompt riêng | Prompt 04 |
+| Prompt 05 chỉ tách domain nhỏ | Tránh rewrite `dashboard.js` quá rộng | Prompt 05 planned |
 
-## 9. Quy tắc cho prompt tiếp theo
+## 7. Validation history
 
-Prompt tiếp theo phải tuân thủ các điều kiện sau:
+| Mốc | Backend syntax | Prisma validate dummy | Dashboard typecheck | Dashboard build | Runtime verification | Commit hash |
+|---|---|---|---|---|---|---|
+| Prompt 01 | Not run | Not run | Not run | Not run | Not run | Không có Git |
+| Prompt 02 | Not run | Not run | Not run | Not run | Not run | Không có Git |
+| Prompt 02A | Not run | Not run | Not run | Not run | Not run | Không có Git |
+| Prompt 02B | PASS | PASS | PASS | PASS | Not run | `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` |
+| Prompt 03 | PASS | PASS | PASS | PASS | Not run | `24ac487d1b406f06650ca942efb311619e6a7c47` |
+| Prompt 04 | PASS | PASS | PASS | PASS | Not run | `25f3bb79e419590fb14540a82f28efe6482d980f` |
+| Prompt 04A | Docs-only diff validation | Not applicable | Not applicable | Not applicable | Not applicable | Ghi sau commit Prompt 04A |
 
-- Chỉ làm đúng phạm vi đã ghi trong prompt, không tự ý refactor rộng.
-- Nếu prompt đụng source runtime, việc đầu tiên phải kiểm tra `.git` và checkpoint.
-- Nếu vẫn không có `.git`, chỉ được tạo tài liệu/report hoặc hướng dẫn checkpoint, không sửa `backend/src` và `dashboard/src`.
-- Không chạy `docker compose up`, `start-all.bat`, `prisma db push`, `prisma migrate`, hoặc script có thể ghi database nếu chưa được yêu cầu rõ và chưa có backup.
-- Không đọc `.env` thật; chỉ dùng `.env.example` để mapping biến môi trường.
-- Mọi thay đổi phải cập nhật lại `docs/PROJECT_PROGRESS.md` hoặc tạo report mới trong `report/`.
-- Khi có lỗi validation, ghi nguyên nhân và file liên quan, không che lỗi bằng refactor.
+Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
-## 10. Bước rõ ràng tiếp theo - Prompt 02B
+## 8. Tool routing
 
-Tên đề xuất: `PROMPT 02B - SAFETY FOUNDATION + BASELINE VALIDATION BEFORE REFACTOR`.
+| Tool | Việc nên dùng |
+|---|---|
+| Codex | Refactor backend, repository layer, config/env policy, DevOps hardening, validation, Git commit, báo cáo kỹ thuật. |
+| Claude Code | Dashboard feature split, UI flow phức tạp, frontend component refactor lớn nếu cần thao tác nhiều UI state. |
+| Claude Design | Chỉ dùng khi cần redesign visual/mockup, layout mới hoặc thiết kế giao diện trước khi code. |
+| ChatGPT | Tạo prompt, review report, lập kế hoạch, tổng hợp quyết định và checklist. |
 
-Mục tiêu Prompt 02B:
+## 9. Bước tiếp theo rõ ràng
 
-1. Xác nhận lại workspace có `.git` hay chưa.
-2. Nếu chưa có `.git`, tạo git repository local hoặc yêu cầu người vận hành xác nhận phương án checkpoint.
-3. Tạo checkpoint baseline trước khi sửa source.
-4. Cài dependency cho `backend` và `dashboard` nếu được phép.
-5. Chạy các validation an toàn: package scripts, `prisma validate`, backend smoke check nếu khả thi, dashboard lint/build nếu khả thi.
-6. Ghi lại toàn bộ lỗi baseline vào report mới.
-7. Cập nhật trạng thái trong `docs/PROJECT_PROGRESS.md`.
+Bước tiếp theo: **Prompt 05 — Backend API route/controller split phase 1**.
 
-Điều không làm trong Prompt 02B:
+Mục tiêu Prompt 05:
 
-- Không refactor source.
-- Không đổi Prisma schema.
-- Không chạy migration hoặc `db push`.
-- Không deploy.
-- Không sửa logic chatbot/dashboard trước khi baseline được ghi nhận.
+- Tách một nhóm route nhỏ ít rủi ro khỏi `backend/src/api/dashboard.js`.
+- Giữ nguyên public route, HTTP method, middleware, auth behavior và response contract.
+- Tạo route/controller wrapper theo shell `backend/src/presentation/http`.
+- Chạy validation sau thay đổi.
+- Tạo report Prompt 05 và commit nếu pass.
 
-Khi Prompt 02B hoàn thành, dự án mới đủ điều kiện để bắt đầu Prompt 03 hoặc một prompt refactor nhỏ có kiểm soát.
+Điều kiện bắt buộc:
+
+- Không đụng webhook handlers.
+- Không đụng tenant handoff.
+- Không đụng RAG pipeline.
+- Không đụng Prisma schema/migrations.
+- Không sửa Dockerfile/scripts.
+- Không chạy migration/db push/Docker/start script.
+- Nếu chưa có runtime smoke test, ghi rõ **Static validation pass — chưa runtime verified**.

@@ -1,5 +1,28 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 04A Update - Progress Rewrite Before Prompt 05
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú cho Prompt 05 |
+|---|---|---|---|
+| Prompt 01 audit | Done | `report/PROMPT_01_PROJECT_AUDIT_CLEAN_ARCHITECTURE_REPORT.md` | Read-only audit, không sửa source runtime. |
+| Prompt 02 safety gate | Done / Blocked đúng guardrail | `report/PROMPT_02_BLOCKED_NEED_GIT_CHECKPOINT.md` | Việc dừng vì thiếu `.git` là đúng quy trình. |
+| Prompt 02A progress/checklist foundation | Done | `docs/PROJECT_PROGRESS.md`, `docs/FEATURE_AUDIT_CHECKLIST.md`, report Prompt 02A | Chỉ docs/report, không runtime source. |
+| Prompt 02B safety foundation | Done with warnings | Commit `57a6fe52a17bb5b56b569fa9e7254b70cc2e44ca` | Baseline static validation pass, còn warnings quality/security. |
+| Prompt 03 architecture shell | Done with warnings | Commit `24ac487d1b406f06650ca942efb311619e6a7c47` | Static validation pass — chưa runtime verified. |
+| Prompt 04 config/env policy | Done with warnings | Commit `25f3bb79e419590fb14540a82f28efe6482d980f` | Static validation pass — chưa runtime verified. |
+| Prompt 04A progress rewrite | Done | `docs/PROJECT_PROGRESS.md`, report Prompt 04A | Chỉ docs/report; dùng để vào Prompt 05 rõ hơn. |
+| Runtime verification | Not done | Chưa chạy app/API thật | Không đánh dấu feature runtime là DONE cho đến khi có smoke test. |
+| Prompt 05 readiness | Ready with warnings | `docs/REFACTOR_PLAN.md`, `docs/ENV_POLICY.md`, report Prompt 04 | Chỉ tách route/controller domain nhỏ trong `backend/src/api/dashboard.js`. |
+
+Rủi ro còn lại cần giữ trước Prompt 05:
+
+- `backend/src/api/dashboard.js` vẫn quá lớn và là mục tiêu Prompt 05.
+- Không chạm webhook, tenant handoff, RAG pipeline, Prisma schema/migrations trong Prompt 05.
+- `$queryRawUnsafe`, tenant scope, default credential/fallback, DevOps script rủi ro và npm audit vulnerabilities vẫn mở.
+- Nếu Prompt 05 chỉ đạt syntax/build validation thì phải ghi: **Static validation pass — chưa runtime verified**.
+
 ## Prompt 04 Config/Env Validation Update
 
 Ngày cập nhật: 2026-07-08
