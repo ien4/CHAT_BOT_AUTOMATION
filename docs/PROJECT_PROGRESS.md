@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **Prompt 05R đã chạy — feature inventory + local run guide + static validation PASS; runtime smoke test BLOCKED vì thiếu `.env` local/test và DB local/test**
-Lưu ý bắt buộc: các prompt 03 đến 05C mới đạt **Static validation pass — chưa runtime verified**. Prompt 05R chưa runtime verified được 3 route đã tách do thiếu env/DB local/test.
+Trạng thái hiện tại: **Prompt 05R-ENV đã chạy — runtime smoke test PASS cho 3 route đã tách trên DB local/test dùng một lần**
+Lưu ý bắt buộc: các prompt 03 đến 05C đạt **Static validation pass**. Prompt 05R-ENV đã **runtime verified** 3 route `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts` (auth 401 khi thiếu token; 200 + shape đúng khi có token). Các route/khu vực khác vẫn chưa runtime verified.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -27,8 +27,8 @@ Lưu ý bắt buộc: các prompt 03 đến 05C mới đạt **Static validation
 | Phase 07 — Backend API route/controller split | ✅ Done with warnings | Prompt 05 tách nhóm route đầu tiên; static validation pass — chưa runtime verified |
 | Phase 08 — Backend API route/controller split tiếp theo | ✅ Done with warnings | Prompt 05B tách `GET /settings/telegram-destinations`; static validation pass — chưa runtime verified |
 | Phase 09 — Backend API route/controller split tiếp theo | ✅ Done with warnings | Prompt 05C tách `GET /prompts`; static validation pass — chưa runtime verified |
-| Phase 10 — Runtime smoke test route đã tách | 🟠 Blocked | Prompt 05R: feature inventory + local run guide + static validation PASS; runtime smoke test 3 route BLOCKED vì thiếu `.env`/DB local/test |
-| Phase 11 — Repository layer | ⬜ Planned | Prompt 06 (sau khi 05R runtime PASS) |
+| Phase 10 — Runtime smoke test route đã tách | ✅ Done | Prompt 05R-ENV: runtime smoke test PASS cho 3 route trên DB local/test tạm (env + Docker Postgres dùng một lần, đã dọn) |
+| Phase 11 — Repository layer | ⬜ Planned | Prompt 06 (đã mở khóa sau 05R runtime PASS) |
 | Phase 12 — Tenant safety audit | ⬜ Planned | Prompt 07 |
 | Phase 13 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
 | Phase 14 — Dashboard feature split | ⬜ Planned | Prompt 09 |
@@ -224,8 +224,25 @@ Ghi chú: **Static validation pass — chưa runtime verified**. Public route `/
 - [x] Tạo report `report/PROMPT_05R_FEATURE_INVENTORY_LOCAL_RUN_RUNTIME_SMOKE_REPORT.md`.
 - [x] Không sửa source runtime/schema/webhook/RAG/tenant handoff/DevOps script.
 
-Trạng thái: **BLOCKED — needs local/test env**. Docs/readiness/static validation hoàn tất; runtime chưa verify.
-Điều kiện còn thiếu: `backend/.env` + `dashboard/.env.local` local/test, PostgreSQL local/test (không production). Sau khi có, chạy lại Prompt 05R để thực hiện Phase 5.
+Trạng thái: **BLOCKED — needs local/test env** (tại thời điểm 05R). Docs/readiness/static validation hoàn tất; runtime chưa verify khi đó.
+Điều kiện còn thiếu khi đó: `backend/.env` + `dashboard/.env.local` local/test, PostgreSQL local/test.
+
+### Prompt 05R-ENV — Prepare local test env + runtime smoke gate
+
+- [x] Preflight Git; branch `chore/prompt-05r-docs-local-run`, working tree clean, commit `7425777` tồn tại.
+- [x] Env readiness: xác nhận `.env` thiếu; người dùng phê duyệt tạo env local-only + Docker Postgres tạm.
+- [x] Tạo `backend/.env` + `dashboard/.env.local` local-only (gitignored, không in secret, không commit).
+- [x] Khởi động Docker Postgres tạm (`pgvector/pgvector:pg16`, port 5433, DB local/test).
+- [x] `npx prisma migrate deploy` (non-destructive) áp dụng 10 migration vào DB tạm trống; KHÔNG `db push`/`--accept-data-loss`.
+- [x] Static validation lại: backend `node --check` ×9 + `prisma validate` PASS; dashboard `tsc` + `next build` PASS.
+- [x] Start backend local `node src/index.js`; seed default admin + prompt templates.
+- [x] Lấy auth token qua `POST /api/auth/login` (không in token/secret).
+- [x] Runtime smoke test 3 route — **PASS**: no-token→401; `webhook`→200 (secret mask/null); `telegram-destinations`→200 (`{destinations,envFallback}`); `prompts`→200 (array len=7).
+- [x] Dừng server; gỡ container tạm; xóa file env local; working tree clean.
+- [x] Tạo report `report/PROMPT_05R_ENV_RUNTIME_SMOKE_REPORT.md`.
+- [x] Không sửa source runtime/schema/webhook/RAG/tenant handoff/DevOps; không push.
+
+Trạng thái: **PASS — runtime smoke test passed**. 3 route đã tách runtime verified.
 
 ## 4. Next planned prompts
 
@@ -286,7 +303,8 @@ Trạng thái: **BLOCKED — needs local/test env**. Docs/readiness/static valid
 | Prompt 05 | PASS | PASS | Not run | Not run | Not run | `c860ca416a3439dfc7b72bc1e9d9f5ab3cba5af0` |
 | Prompt 05B | PASS | PASS | Not run | Not run | Not run | `29a97a6c3950dc73219bcf91b74b373614ff4d28` |
 | Prompt 05C | PASS | PASS | Not run | Not run | Not run | `5e51bf7eea53305b4800c1449f4dc60caf885f46` |
-| Prompt 05R | PASS | PASS | PASS | PASS | BLOCKED (thiếu env/DB local/test) | Ghi sau commit Prompt 05R |
+| Prompt 05R | PASS | PASS | PASS | PASS | BLOCKED (thiếu env/DB local/test) | `2bf4386` / `7425777` |
+| Prompt 05R-ENV | PASS | PASS | PASS | PASS | PASS (3 route, DB local/test tạm) | Ghi sau commit Prompt 05R-ENV |
 
 Ghi chú: “PASS” ở các mốc trên là static validation/build validation, không đồng nghĩa runtime smoke test đã pass.
 
@@ -301,21 +319,14 @@ Ghi chú: “PASS” ở các mốc trên là static validation/build validation
 
 ## 9. Bước tiếp theo rõ ràng
 
-Bước tiếp theo: **người dùng chuẩn bị env/DB local/test rồi chạy lại Prompt 05R (Phase 5 runtime smoke test)**.
+Prompt 05R-ENV đã hoàn tất: 3 route đã tách (`GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`) **runtime verified PASS** trên môi trường local/test dùng một lần (Docker Postgres tạm + env local, đã dọn sạch sau test).
 
-Prompt 05R đã hoàn tất docs (feature inventory + local run guide), readiness audit và static validation (PASS), nhưng runtime smoke test 3 route đang **BLOCKED** vì:
+Bước tiếp theo: chọn một trong hai hướng —
 
-- `backend/.env` và `dashboard/.env(.local)` không tồn tại → không có `DATABASE_URL`/`JWT_SECRET`.
-- Chưa có DB local/test xác nhận; 2/3 route cần DB và login (lấy token) cần DB + credential local/test.
+- **Prompt 05D**: tiếp tục tách thêm route read-only nhỏ khỏi `backend/src/api/dashboard.js` (đã có guardrail runtime tương đương), hoặc
+- **Prompt 06**: bắt đầu repository layer cho nhóm `prompts`/`settings` khi controller boundary đã đủ rõ.
 
-Người dùng cần làm thủ công (chi tiết `docs/LOCAL_RUN_GUIDE.md`):
-
-- Tạo `backend/.env` từ `backend/.env.example` với `DATABASE_URL` local/test, `JWT_SECRET`, `ADMIN_USERNAME/ADMIN_PASSWORD`, `ENCRYPTION_KEY` nếu cần.
-- Tạo `dashboard/.env.local` từ `dashboard/.env.example`.
-- Chuẩn bị PostgreSQL local/test (không production).
-- Chạy lại Prompt 05R để thực hiện Phase 5.
-
-Sau khi 3 route runtime PASS: chọn Prompt 05D (tách thêm route read-only nhỏ) hoặc Prompt 06 (repository layer). Không chạy migration/db push/Docker/start-all.
+Lưu ý tái chạy: DB test là container tạm dùng một lần đã bị gỡ; muốn smoke test lại cần chuẩn bị lại env + DB local/test (xem `docs/LOCAL_RUN_GUIDE.md`). Không chạy migration/db push/Docker/start-all trên dữ liệu production.
 
 Điều kiện bắt buộc:
 

@@ -1,5 +1,28 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 05R-ENV Update - Local Test Env + Runtime Smoke PASS
+
+Ngày cập nhật: 2026-07-08
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Env local/test | Done (dùng một lần) | `backend/.env` + `dashboard/.env.local` local-only, gitignored | Không in secret; đã xóa sau test. |
+| DB local/test | Done (dùng một lần) | Docker `pgvector/pgvector:pg16` container tạm `bbotest_pg`, port 5433 | Không production; đã gỡ sau test. |
+| Schema setup | Done | `npx prisma migrate deploy` áp 10 migration vào DB tạm | Non-destructive; KHÔNG `db push`/`--accept-data-loss`. |
+| Static validation | PASS | `node --check` ×9 + `prisma validate` + dashboard `tsc` + `next build` | Không thay đổi source. |
+| Auth behavior | Runtime verified | `GET /api/prompts` không token → 401 | Auth enforced, không crash. |
+| `GET /api/settings/webhook` | Runtime verified PASS | status 200, object 4 keys, secret mask/null, webhookUrl đúng | Không cần DB, không external API. |
+| `GET /api/settings/telegram-destinations` | Runtime verified PASS | status 200, `{destinations:[],envFallback}` | Read-only DB. |
+| `GET /api/prompts` | Runtime verified PASS | status 200, array len=7, shape khớp `promptTemplate` | Read-only DB + tenant scope mặc định `null`. |
+| Behavior-critical modules | Không đổi | Không sửa source/schema/webhook/RAG/tenant handoff/DevOps | Chỉ tạo env tạm + chạy migration lên DB tạm. |
+| Env commit | Không | `git check-ignore` xác nhận; working tree clean | KHÔNG commit `.env`. |
+
+Rủi ro còn lại sau Prompt 05R-ENV:
+
+- Runtime verify chỉ trên DB test dùng một lần; cần chuẩn bị lại nếu tái chạy.
+- `backend/src/api/dashboard.js` còn 2.408 dòng, 98 route trực tiếp; phần lớn route chưa runtime verified.
+- `$queryRawUnsafe`, tenant scope sâu, handoff, RAG, DevOps script risk, default credential, npm audit (backend 10, dashboard 3) vẫn mở.
+
 ## Prompt 05R Update - Feature Inventory + Local Run + Runtime Smoke
 
 Ngày cập nhật: 2026-07-08

@@ -1,5 +1,18 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 05R-ENV — Local test env + runtime smoke (PASS)
+
+Ngày cập nhật: 2026-07-08
+
+Prompt 05R-ENV đã mở khóa runtime verification:
+
+- Người dùng phê duyệt tạo env local-only + Docker Postgres tạm làm DB test.
+- Áp dụng migration sẵn có (`prisma migrate deploy`, non-destructive) vào DB tạm trống; không `db push`.
+- Runtime smoke test **PASS** cho 3 route đã tách: `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts` (auth 401 khi thiếu token; 200 + shape đúng khi có token; không external API; read-only DB).
+- Dọn sạch: gỡ container tạm, xóa env local; không commit env; không sửa source runtime.
+
+Vì runtime đã PASS, có thể tiến hành **Prompt 05D** (tách thêm route read-only nhỏ) hoặc **Prompt 06** (repository layer cho prompts/settings). Mỗi bước tiếp theo nên có runtime verification tương đương trên env/DB local/test trước khi mở rộng blast radius. Vẫn không chạy migration/db push/Docker/start-all trên dữ liệu production.
+
 ## Prompt 05R — Feature inventory + local run + runtime smoke (BLOCKED)
 
 Ngày cập nhật: 2026-07-08
