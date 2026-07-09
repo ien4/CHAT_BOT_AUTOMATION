@@ -1,5 +1,33 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 07 — Tenant safety audit + local DB preflight (NEEDS FIX)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 07 đã audit tenant scope toàn hệ thống và xác nhận backend/local DB đủ chạy smoke test, nhưng chưa được phép refactor source runtime trong phase này.
+
+Kết quả chính:
+
+- Local DB pgvector `bbotech-pgvector-local` đang chạy ở `localhost:5433`; P1001 được xử lý ở mức preflight vì DB local đã sẵn sàng.
+- Backend port `3001` đang chạy sẵn trước prompt; smoke test dùng process đó và không dừng lại.
+- Runtime smoke default/local PASS: no-token `/api/prompts` → 401; `/api/prompts` → 200 array len=7; `/api/prompts?layer=intent` → 200 array len=6; `/api/settings/telegram-destinations` → 200; handoff GET/PUT → 200.
+- Local DB không có tenant sample (`tenant_count=0`, `tenant_prompt_count=0`, `tenant_conversation_count=0`), nên chưa thể runtime verify cross-tenant bằng dữ liệu thật.
+- `GET /api/prompts` giữ tenant scope đúng trong repository: controller gọi `getTenantScope(req)`, repository filter `tenantId: tenantId ?? null`, filter `layer` giữ nguyên.
+- Tenant webhook flow tương đối tốt: resolve tenant bằng slug, conversation lookup/create có `tenantId`, handoff claim/takeover có kiểm tra tenant trong transaction.
+- Kết luận security: **NEEDS FIX** vì có P0/P1 authorization gaps trong dashboard API.
+
+P0/P1 cần xử lý trước khi refactor tiếp:
+
+- **P0:** các route nested `/api/tenants/:id/staff`, `/api/tenants/:id/channel-configs`, `/api/tenants/:id/knowledge`, `/api/tenants/:id/webhook-info` chỉ có `authMiddleware`, chưa có `platformAdminOnly` hoặc guard `req.user.tenantId === req.params.id`.
+- **P1:** `/api/conversations`, `/api/conversations/:id`, `/api/conversations/:id/messages` chưa filter theo tenant scope.
+- **P1:** detail route như `/api/knowledge/:id`, `/api/prompts/:id`, `/api/quick-reply-menus/:id`, `/api/content-packages/:id` và package items dùng id trực tiếp; list/write có nơi scoped nhưng detail vẫn cần guard.
+- **P1/P2:** legacy staff/handoff/analytics/global Chatwoot/Facebook routes cần quyết định rõ platform-only hay tenant-scoped.
+
+Tiếp theo bắt buộc:
+
+- **Prompt 07A — Tenant authorization hardening**: thêm helper guard nhỏ cho dashboard routes, khóa platform-only route legacy/global, thêm tenant ownership check cho detail/message routes, rồi chạy smoke regression.
+- Chỉ sau Prompt 07A mới tiếp tục **Prompt 06D** hoặc **Prompt 08**. Prompt 08 vẫn nên xử lý `$queryRawUnsafe`/RAG raw SQL sau khi quyền tenant đã rõ.
+
 ## Prompt 06C — Prompts repository with tenant scope checklist (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-08

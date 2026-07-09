@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
-Ngày cập nhật: 2026-07-08
-Trạng thái hiện tại: **Prompt 06C đã hoàn tất — tạo repository layer cho `GET /api/prompts`; prompts controller không còn gọi Prisma trực tiếp cho list prompts và runtime PASS trên default/local scope.**
-Lưu ý bắt buộc: các prompt 03 đến 06C đạt **Static validation pass**. Prompt 06C đã **runtime verified** `GET /api/settings/webhook`, `GET /api/settings/telegram-destinations`, `GET /api/prompts`, `GET /api/prompts?layer=intent`, `GET /api/settings/handoff`, `PUT /api/settings/handoff` (không token → 401; có token → 200 + shape đúng). Local DB không có tenant sample nên full tenant isolation vẫn cần Prompt 07.
+Ngày cập nhật: 2026-07-09
+Trạng thái hiện tại: **Prompt 07 đã hoàn tất audit tenant safety + local DB preflight — runtime smoke PASS trên default/local scope nhưng kết luận NEEDS FIX vì phát hiện route tenant/detail còn thiếu guard ownership/platform.**
+Lưu ý bắt buộc: Prompt 07 không sửa source runtime theo guardrail. Local DB pgvector đã chạy ở `localhost:5433`, lỗi P1001 không còn xuất hiện trong preflight. Backend trên port `3001` đã có sẵn trước prompt và được dùng để smoke test; prompt không start/stop process đó. Local DB hiện `tenant_count=0`, `tenant_prompt_count=0`, `tenant_conversation_count=0`, nên chưa thể runtime verify cross-tenant bằng tenant sample.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -32,12 +32,36 @@ Lưu ý bắt buộc: các prompt 03 đến 06C đạt **Static validation pass*
 | Phase 10c — Handoff settings accessor fix | ✅ Done | Prompt 05D-FIX sửa accessor + Prisma payload schema compatibility; `GET/PUT /settings/handoff` runtime PASS |
 | Phase 10d — PUT handoff settings route split | ✅ Done | Prompt 05E tách `PUT /settings/handoff` sang settings controller/routes; runtime GET/PUT PASS |
 | Phase 11 — Repository layer | ✅ Started | Prompt 06 tạo `handoffSettingsRepository`; Prompt 06B tạo `telegramDestinationsRepository`; Prompt 06C tạo `promptTemplatesRepository`; runtime settings/prompts smoke PASS |
-| Phase 12 — Tenant safety audit | ⬜ Planned | Prompt 07 |
-| Phase 13 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
-| Phase 14 — Dashboard feature split | ⬜ Planned | Prompt 09 |
-| Phase 15 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
+| Phase 12 — Tenant safety audit | ⚠️ Done — NEEDS FIX | Prompt 07 audit xong; phát hiện P0/P1 tenant authorization gaps cần Prompt 07A trước khi refactor tiếp |
+| Phase 13 — Tenant authorization hardening | ⬜ Planned | Prompt 07A — thêm guard ownership/platform cho route tenant/detail có rủi ro |
+| Phase 14 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 15 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 16 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 07 — Tenant safety audit + local DB preflight
+
+- [x] Preflight Git: working tree sạch trước khi sửa docs/report; commit Prompt 06C `5b3fae6` tồn tại.
+- [x] Preflight secret/env: `.env` và `.env.local` vẫn bị gitignore; không commit env.
+- [x] Local DB preflight: container `bbotech-pgvector-local` đang chạy, port `5433` listening, log PostgreSQL ready; không chạy `docker compose up`, không chạy `db push`.
+- [x] Backend process: port `3001` đang có backend sẵn; dùng để smoke test, không stop vì prompt không khởi động process này.
+- [x] Static validation backend: `node --check` PASS cho các file dashboard/settings/prompts/repository/tenant/webhook/RAG/bot trọng tâm.
+- [x] Prisma validation: PASS khi chạy Prisma CLI local `5.22.0` từ thư mục `backend`; ghi chú `npx prisma` từ root dùng CLI `7.8.0` và không tương thích schema hiện tại.
+- [x] Runtime smoke: no-token `/api/prompts` → 401; `/api/prompts` → 200 array len=7; `/api/prompts?layer=intent` → 200 array len=6; `/api/settings/telegram-destinations` → 200; handoff GET/PUT → 200.
+- [x] Tenant scope audit: đọc `getTenantScope`, prompt repository, tenant registry/webhook, tenant handoff, owner webhook/chatwoot, bot context, RAG pipeline, dashboard route map.
+- [x] Tạo report Prompt 07: `report/PROMPT_07_TENANT_SAFETY_AUDIT_REPORT.md`.
+- [x] Không sửa source runtime, không sửa schema/migrations, không sửa webhook/RAG/handoff/bot/dashboard frontend/package/DevOps.
+
+Trạng thái: **NEEDS FIX**.
+P0/P1 chính:
+
+- **P0:** các route nested `/api/tenants/:id/*` dùng `authMiddleware` nhưng chưa có `platformAdminOnly` hoặc ownership guard, trong khi đọc/ghi/xóa theo `req.params.id`.
+- **P1:** các route conversations/detail/messages, knowledge/prompts/quick-reply/content-package detail và một số route legacy handoff/analytics còn thiếu tenant scope hoặc platform-only guard.
+- **P2:** RAG còn `$queryRawUnsafe` ở add/update vector; owner Chatwoot webhook là global/legacy và cần được khóa rõ nếu không phục vụ tenant.
+
+Commit: `Audit tenant scope safety` (xem `git log -1` để lấy hash HEAD sau amend).
+Next bắt buộc: **Prompt 07A — tenant authorization hardening** trước Prompt 06D hoặc Prompt 08.
 
 ### Prompt 01 — Project audit + clean architecture mapping
 

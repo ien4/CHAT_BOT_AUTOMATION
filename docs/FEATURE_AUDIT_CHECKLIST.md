@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 07 Update - Tenant Safety Audit + Local DB Preflight (NEEDS FIX)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Git/env preflight | PASS | Working tree sạch trước docs edit; `.env`/`.env.local` vẫn gitignored | Không in secret, không commit env. |
+| Local DB preflight | PASS | `bbotech-pgvector-local` running, port `5433` listening, PostgreSQL ready | Lỗi P1001 được gỡ ở preflight vì DB local đã chạy. |
+| Backend runtime availability | PASS | Port `3001` đã có backend process trước prompt | Dùng process hiện có; prompt không stop process này. |
+| Static backend validation | PASS | `node --check` các file dashboard/settings/prompts/repository/tenant/webhook/RAG/bot trọng tâm | Không sửa source runtime. |
+| Prisma validate | PASS WITH TOOLCHAIN NOTE | Prisma CLI local backend `5.22.0` PASS từ thư mục `backend` | `npx prisma` từ root dùng CLI `7.8.0` nên fail do schema Prisma 5 còn `url = env(...)`. |
+| Runtime smoke default/local | PASS | no-token `/prompts` 401; prompts 200 len=7; intent 200 len=6; telegram destinations 200; handoff GET/PUT 200 | JWT local ký trong memory, không in token/credential. |
+| Tenant runtime sample | Not verified | Local DB: `tenants=0`, `tenantPrompts=0`, `tenantConversations=0` | Cross-tenant behavior chỉ audit tĩnh trong Prompt 07. |
+| Prompt list tenant scope | PASS | `GET /api/prompts` qua repository `findManyForScope({ tenantId, layer })` | Tenant admin bị lock bởi `getTenantScope(req)`; platform dùng `tenantScope` query. |
+| Tenant webhook isolation | PASS | Tenant webhook resolve bằng slug, conversation query/create có `tenantId` | Handoff tenant có nhiều guard tenant trong claim/takeover. |
+| Nested tenant routes | P0 NEEDS FIX | `/api/tenants/:id/staff`, `/channel-configs`, `/knowledge`, `/webhook-info` chỉ có `authMiddleware` | Thiếu platform/ownership guard cho `req.params.id`; có read/write/delete cross-tenant risk. |
+| Conversation/detail routes | P1 NEEDS FIX | `/conversations`, `/conversations/:id`, `/messages`, detail knowledge/prompts/menu/package | List có nơi scoped, nhưng detail/read hoặc message route còn dùng id trực tiếp. |
+| Legacy global routes | P1/P2 OPEN | legacy staff/handoff/analytics/facebook/global Chatwoot routes | Cần khóa platform-only hoặc tách owner/global vs tenant rõ ràng. |
+| Source runtime changed | Không | Chỉ docs/report | Không sửa schema/migrations/webhook/RAG/handoff/bot/dashboard frontend/package/DevOps. |
+
 ## Prompt 06C Update - Prompts Repository + Tenant Scope Checklist (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-08
