@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-09
-Trạng thái hiện tại: **Prompt 07C đã hoàn tất — P1 detail resource tenant guard đã được harden cho knowledge, prompts, quick-reply, content packages, package items và appointments.**
-Lưu ý bắt buộc: Prompt 07C chỉ sửa `backend/src/api/dashboard.js` và docs/report. Không sửa Prisma schema/migrations, RAG pipeline, webhook, tenant handoff, bot engine, dashboard frontend, package hoặc DevOps. Runtime smoke local `localhost:5433` PASS 47/47, cleanup dữ liệu `test_07c_*` PASS.
+Trạng thái hiện tại: **Prompt 07D đã hoàn tất — legacy/global dashboard routes đã được phân loại và các route platform-only rõ ràng đã được khóa bằng `platformAdminOnly`.**
+Lưu ý bắt buộc: Prompt 07D chỉ sửa middleware route trong `backend/src/api/dashboard.js` và docs/report. Không sửa handler logic, Prisma schema/migrations, RAG pipeline, webhook, tenant handoff, bot engine, dashboard frontend, package hoặc DevOps. Runtime smoke local `localhost:5433` PASS 79/79, cleanup dữ liệu `test_07d_*` PASS.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -36,12 +36,31 @@ Lưu ý bắt buộc: Prompt 07C chỉ sửa `backend/src/api/dashboard.js` và 
 | Phase 13 — Tenant authorization hardening P0 | ✅ Done | Prompt 07A thêm `tenantPathAccessOnly` cho `/api/tenants/:id/*`; runtime denied smoke PASS |
 | Phase 14 — Tenant authorization hardening P1 conversations | ✅ Done | Prompt 07B tenant-scope `/api/conversations`, detail, messages; cross-tenant smoke PASS |
 | Phase 15 — Tenant authorization hardening P1 detail resources | ✅ Done | Prompt 07C harden knowledge/prompts/quick-reply/content-package/package-items/appointments; runtime smoke PASS |
-| Phase 16 — Legacy/global route classification | ⬜ Planned | Prompt 07D nếu cần phân loại staff/handoff/analytics/facebook/global Chatwoot |
+| Phase 16 — Legacy/global route classification | ✅ Done with warnings | Prompt 07D classify và patch platform-only routes; còn follow-up tenant handoff/RAG upload-scrape |
 | Phase 17 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
 | Phase 18 — Dashboard feature split | ⬜ Planned | Prompt 09 |
 | Phase 19 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 07D — Legacy/global route authorization classification
+
+- [x] Preflight Git/env: branch `chore/prompt-05r-docs-local-run`, working tree sạch trước sửa, `.env`/`.env.local` gitignored, không có env tracked/staged.
+- [x] Xác nhận commit Prompt 07C `7ad04f6` tồn tại.
+- [x] Baseline static validation trước patch PASS.
+- [x] Classify legacy/global groups: stats, providers, campaigns, global staff, Telegram destination write/test, handoff, Chatwoot test, Facebook pages/menu/subscription, test endpoint, analytics/raw SQL.
+- [x] Thêm `platformAdminOnly` cho các route `PLATFORM_ONLY` rõ ràng trong `backend/src/api/dashboard.js`.
+- [x] Không đổi route path/method/handler success response cho platform admin.
+- [x] Không sửa RAG/raw SQL, schema/migrations, webhook, tenant handoff, bot, dashboard frontend, package/DevOps.
+- [x] Static validation sau patch PASS: `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check`.
+- [x] Runtime smoke PASS 79/79: no-token 401, tenant token 403 cho route patched, platform token không bị guard 403, regression prompts/settings/P0/07B/07C PASS.
+- [x] Cleanup test data PASS: leftover `test_07d_*` = 0.
+- [x] Tạo report Prompt 07D: `report/PROMPT_07D_LEGACY_GLOBAL_ROUTE_AUTH_CLASSIFICATION_REPORT.md`.
+
+Trạng thái: **PASS WITH WARNINGS**.
+Residual risk còn lại: `POST /knowledge/upload` và `POST /knowledge/scrape` vẫn cần Prompt 08/07E vì đi qua RAG side effect và chưa truyền tenantId; các tenant handoff routes mà frontend đã khai báo dưới `/tenants/:id/handoff/*` chưa có backend implementation; `settings.routes.js` còn các read/settings route global cần quyết định chính sách nếu muốn khóa platform-only toàn diện.
+Commit: `Classify legacy global route authorization` (xem `git log -1` để lấy hash HEAD).
+Next khuyến nghị: **Prompt 08 — RAG/raw SQL hardening** nếu ưu tiên raw SQL/RAG; hoặc **Prompt 07E — tenant handoff + remaining route follow-up** nếu muốn đóng nốt tenant handoff/upload-scrape authorization trước RAG.
 
 ### Prompt 07C — Detail resource tenant guard
 

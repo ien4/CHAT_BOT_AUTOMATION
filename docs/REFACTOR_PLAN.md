@@ -1,5 +1,43 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 07D — Legacy/global route authorization classification (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 07D phân loại legacy/global dashboard routes và chỉ áp patch nhỏ ở middleware.
+
+Patch đã áp dụng:
+
+- Thêm `platformAdminOnly` cho các route rõ ràng là owner/platform-only hoặc global legacy:
+  - `GET /api/stats`
+  - LLM providers: `GET /api/providers`, `PUT /api/providers/:id`, `POST /api/providers/:id/test`
+  - Legacy campaigns: upload/CRUD và `POST /api/content-packages/migrate-from-campaigns`
+  - Global staff: `GET/POST/PUT/DELETE /api/staff...`
+  - Telegram destination write/test: `POST/PUT/DELETE /api/settings/telegram-destinations...`
+  - Global handoff monitor/actions: `/api/handoff/*`
+  - Owner/global Chatwoot/Facebook/test/analytics: `/api/settings/chatwoot-test`, `/api/facebook-pages...`, `/api/settings/facebook-menu`, `/api/test-message`, `/api/fb-subscription`, `/api/analytics`
+- Không đổi handler logic, route path, method hoặc success response shape cho platform admin.
+
+Validation:
+
+- Static validation PASS: `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check`.
+- Runtime smoke PASS 79/79 bằng Express app tạm mount `dashboardApi`.
+- Smoke dùng mock in-memory cho external integration routes để không gọi Chatwoot/Facebook/bot thật.
+- Cleanup sample `test_07d_*` PASS.
+
+Không thay đổi:
+
+- Không sửa Prisma schema/migrations.
+- Không sửa RAG/raw SQL.
+- Không sửa webhook handler, tenant handoff module, bot engine source, dashboard frontend, package hoặc DevOps.
+- Không tách repository.
+
+Follow-up:
+
+- **Prompt 08**: RAG/raw SQL hardening, gồm `knowledge_base.embedding` mismatch và RAG insert/update/query raw SQL.
+- **Prompt 07E** nếu cần: tenant handoff dashboard routes dưới `/tenants/:id/handoff/*` và `POST /knowledge/upload`/`POST /knowledge/scrape` ownership/RAG side effect.
+- **Prompt 10**: DevOps script hardening vẫn còn mở.
+
 ## Prompt 07C — Detail resource tenant guard (PASS)
 
 Ngày cập nhật: 2026-07-09

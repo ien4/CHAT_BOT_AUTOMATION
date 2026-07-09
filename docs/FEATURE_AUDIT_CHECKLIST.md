@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 07D Update - Legacy/Global Route Authorization Classification (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Legacy/global route map | Done | Scan `router.*`, staff/handoff/analytics/facebook/chatwoot/global/raw SQL trong `backend/src/api/dashboard.js` | Phân loại theo `PLATFORM_ONLY`, `TENANT_SCOPED`, `OWNER_GLOBAL_INTEGRATION`, `LEGACY_DEPRECATE_OR_REVIEW`, `ALREADY_GUARDED`. |
+| Platform-only guard | Fixed | Thêm `platformAdminOnly` cho stats, providers update/test, campaigns, global staff, Telegram write/test, handoff, Chatwoot test, Facebook pages/menu/subscription, test-message, analytics | Chỉ đổi middleware, không đổi handler logic hoặc response shape cho platform admin. |
+| Already guarded | PASS | `admin-users`, parent `tenants`, tenant nested routes, conversations, detail resources, channel configs, knowledge reindex | Giữ nguyên guard từ 07A/07B/07C. |
+| Tenant-scoped routes | PASS/Tracked | conversations, knowledge CRUD chính, prompts, quick replies, content packages/items, appointments, channel-configs dùng `getTenantScope` hoặc tenant guard | Không refactor trong Prompt 07D. |
+| Owner/global integration | Guarded | Chatwoot test, Facebook pages/menu/subscription và test-message bị khóa platform-only | Smoke dùng mock in-memory để không gọi API thật. |
+| Raw SQL routes | Classified | Analytics raw SQL đã platform-only; RAG/raw SQL trong knowledge/reindex vẫn để Prompt 08 | Không sửa raw SQL trong 07D. |
+| Follow-up route | OPEN | `POST /knowledge/upload`, `POST /knowledge/scrape` chưa tenant-scoped và đi qua RAG side effect | Cần Prompt 08/07E, không vá bừa trong 07D. |
+| Tenant handoff API | OPEN | Frontend khai báo `/tenants/:id/handoff/*` nhưng backend `dashboard.js` chưa có route tương ứng | Cần Prompt 07E nếu tenant handoff dashboard là yêu cầu. |
+| Static validation | PASS | `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime smoke | PASS | 79/79 checks PASS; tenant token 403 cho route patched; platform token không bị guard 403 | Platform call migration campaign được skip để tránh DB migration side effect. |
+| Test data cleanup | PASS | leftover `test_07d_*` = 0 | Sample chỉ gồm prompt/conversation/message để regression 07B/07C. |
+
 ## Prompt 07C Update - Detail Resource Tenant Guard (PASS)
 
 Ngày cập nhật: 2026-07-09

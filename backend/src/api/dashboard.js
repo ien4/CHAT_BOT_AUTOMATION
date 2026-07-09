@@ -179,7 +179,7 @@ router.delete('/admin-users/:id', authMiddleware, platformAdminOnly, async (req,
 
 // ==================== DASHBOARD STATS ====================
 
-router.get('/stats', authMiddleware, async (req, res) => {
+router.get('/stats', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const [
       totalConversations,
@@ -683,7 +683,7 @@ router.delete('/prompts/:id', authMiddleware, async (req, res) => {
 
 // ==================== LLM PROVIDERS ====================
 
-router.get('/providers', authMiddleware, async (req, res) => {
+router.get('/providers', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const providers = await prisma.llmProvider.findMany({
       orderBy: { priority: 'asc' },
@@ -747,7 +747,7 @@ router.delete('/providers/:id', authMiddleware, platformAdminOnly, async (req, r
   }
 });
 
-router.put('/providers/:id', authMiddleware, async (req, res) => {
+router.put('/providers/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { name, modelName, apiKey, baseUrl, maxTokens, temperature, isEnabled, priority } = req.body;
     const data = { name, modelName, baseUrl, maxTokens, temperature, isEnabled, priority };
@@ -770,7 +770,7 @@ router.put('/providers/:id', authMiddleware, async (req, res) => {
 });
 
 // Test a provider connection
-router.post('/providers/:id/test', authMiddleware, async (req, res) => {
+router.post('/providers/:id/test', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const provider = await prisma.llmProvider.findUnique({ where: { id: req.params.id } });
     if (!provider) return res.status(404).json({ error: 'Provider not found' });
@@ -903,7 +903,7 @@ router.delete('/quick-reply-menus/:id', authMiddleware, async (req, res) => {
 // ==================== CAMPAIGNS ====================
 
 // Upload tài liệu cho campaign
-router.post('/campaigns/upload', authMiddleware, upload.single('file'), async (req, res) => {
+router.post('/campaigns/upload', authMiddleware, platformAdminOnly, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -936,7 +936,7 @@ router.post('/campaigns/upload', authMiddleware, upload.single('file'), async (r
   }
 });
 
-router.get('/campaigns', authMiddleware, async (req, res) => {
+router.get('/campaigns', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const campaigns = await prisma.campaign.findMany({
       orderBy: { createdAt: 'desc' },
@@ -947,7 +947,7 @@ router.get('/campaigns', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/campaigns/:id', authMiddleware, async (req, res) => {
+router.get('/campaigns/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id } });
     if (!campaign) return res.status(404).json({ error: 'Not found' });
@@ -957,7 +957,7 @@ router.get('/campaigns/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/campaigns', authMiddleware, async (req, res) => {
+router.post('/campaigns', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { name, description, assets } = req.body;
     const campaign = await prisma.campaign.create({
@@ -973,7 +973,7 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/campaigns/:id', authMiddleware, async (req, res) => {
+router.put('/campaigns/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { name, description, assets, isActive } = req.body;
     const campaign = await prisma.campaign.update({
@@ -986,7 +986,7 @@ router.put('/campaigns/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/campaigns/:id', authMiddleware, async (req, res) => {
+router.delete('/campaigns/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     await prisma.campaign.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1195,7 +1195,7 @@ router.delete('/content-packages/:packageId/items/:itemId', authMiddleware, asyn
 });
 
 // Migrate Campaign → ContentPackage
-router.post('/content-packages/migrate-from-campaigns', authMiddleware, async (req, res) => {
+router.post('/content-packages/migrate-from-campaigns', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const campaigns = await prisma.campaign.findMany();
     let migrated = 0;
@@ -1324,7 +1324,7 @@ router.put('/appointments/:id', authMiddleware, async (req, res) => {
 
 // ==================== STAFF ====================
 
-router.get('/staff', authMiddleware, async (req, res) => {
+router.get('/staff', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const staff = await prisma.staff.findMany({ orderBy: { name: 'asc' } });
     res.json(staff);
@@ -1333,7 +1333,7 @@ router.get('/staff', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/staff', authMiddleware, async (req, res) => {
+router.post('/staff', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { name, telegramChatId } = req.body;
     if (!name || !telegramChatId) {
@@ -1351,7 +1351,7 @@ router.post('/staff', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/staff/:id', authMiddleware, async (req, res) => {
+router.put('/staff/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { name, telegramChatId, isActive, isOnDuty } = req.body;
     const data = {};
@@ -1367,7 +1367,7 @@ router.put('/staff/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/staff/:id', authMiddleware, async (req, res) => {
+router.delete('/staff/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     await prisma.staff.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1393,7 +1393,7 @@ function sanitizeTelegramDestinationInput(body) {
   return { name, type, purpose, chatId, isActive };
 }
 
-router.post('/settings/telegram-destinations', authMiddleware, async (req, res) => {
+router.post('/settings/telegram-destinations', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const data = sanitizeTelegramDestinationInput(req.body);
     if (!data.name || !data.chatId) {
@@ -1425,7 +1425,7 @@ router.post('/settings/telegram-destinations', authMiddleware, async (req, res) 
   }
 });
 
-router.put('/settings/telegram-destinations/:id', authMiddleware, async (req, res) => {
+router.put('/settings/telegram-destinations/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const input = sanitizeTelegramDestinationInput(req.body);
     const data = {};
@@ -1459,7 +1459,7 @@ router.put('/settings/telegram-destinations/:id', authMiddleware, async (req, re
   }
 });
 
-router.delete('/settings/telegram-destinations/:id', authMiddleware, async (req, res) => {
+router.delete('/settings/telegram-destinations/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     await prisma.telegramDestination.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1469,7 +1469,7 @@ router.delete('/settings/telegram-destinations/:id', authMiddleware, async (req,
   }
 });
 
-router.post('/settings/telegram-destinations/:id/test', authMiddleware, async (req, res) => {
+router.post('/settings/telegram-destinations/:id/test', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const destination = await prisma.telegramDestination.findUnique({ where: { id: req.params.id } });
     if (!destination) return res.status(404).json({ error: 'Khong tim thay cau hinh Telegram' });
@@ -1489,7 +1489,7 @@ router.post('/settings/telegram-destinations/:id/test', authMiddleware, async (r
   }
 });
 
-router.get('/handoff/active', authMiddleware, async (req, res) => {
+router.get('/handoff/active', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const active = await prisma.conversation.findMany({
       where: { handoffStatus: { in: ['pending_human', 'human_active'] } },
@@ -1503,7 +1503,7 @@ router.get('/handoff/active', authMiddleware, async (req, res) => {
 });
 
 // Force-end một human session từ dashboard
-router.post('/handoff/:conversationId/force-end', authMiddleware, async (req, res) => {
+router.post('/handoff/:conversationId/force-end', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const handoffModule = require('../telegram/handoff');
     await handoffModule.endHumanSession(req.params.conversationId, 'admin_forced');
@@ -1514,7 +1514,7 @@ router.post('/handoff/:conversationId/force-end', authMiddleware, async (req, re
 });
 
 // Staff status với active session info
-router.get('/handoff/staff-status', authMiddleware, async (req, res) => {
+router.get('/handoff/staff-status', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -1545,7 +1545,7 @@ router.get('/handoff/staff-status', authMiddleware, async (req, res) => {
 });
 
 // Conversations đang bot xử lý trong 1 giờ gần nhất — staff có thể takeover
-router.get('/handoff/bot-queue', authMiddleware, async (req, res) => {
+router.get('/handoff/bot-queue', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -1581,7 +1581,7 @@ router.get('/handoff/bot-queue', authMiddleware, async (req, res) => {
 });
 
 // Phân công thủ công từ dashboard
-router.post('/handoff/:conversationId/assign', authMiddleware, async (req, res) => {
+router.post('/handoff/:conversationId/assign', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { staffId } = req.body;
     if (!staffId) return res.status(400).json({ error: 'staffId là bắt buộc' });
@@ -1627,7 +1627,7 @@ router.use('/settings', createSettingsRoutes({ authMiddleware, prisma }));
 
 // ==================== CHATWOOT SETTINGS ====================
 
-router.get('/settings/chatwoot-test', authMiddleware, async (req, res) => {
+router.get('/settings/chatwoot-test', authMiddleware, platformAdminOnly, async (req, res) => {
   const axios = require('axios');
   const baseUrl = process.env.CHATWOOT_BASE_URL;
   const accountId = process.env.CHATWOOT_ACCOUNT_ID;
@@ -1668,7 +1668,7 @@ router.get('/settings/chatwoot-test', authMiddleware, async (req, res) => {
 
 // ==================== FACEBOOK PAGES ====================
 
-router.get('/facebook-pages', authMiddleware, async (req, res) => {
+router.get('/facebook-pages', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const pages = await prisma.facebookPage.findMany({
       orderBy: { pageName: 'asc' },
@@ -1687,7 +1687,7 @@ router.get('/facebook-pages', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/facebook-pages/:id', authMiddleware, async (req, res) => {
+router.get('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const page = await prisma.facebookPage.findUnique({ where: { id: req.params.id } });
     if (!page) return res.status(404).json({ error: 'Not found' });
@@ -1698,7 +1698,7 @@ router.get('/facebook-pages/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/facebook-pages', authMiddleware, async (req, res) => {
+router.post('/facebook-pages', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter } = req.body;
     if (!pageId || !pageName || !accessToken) {
@@ -1715,7 +1715,7 @@ router.post('/facebook-pages', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/facebook-pages/:id', authMiddleware, async (req, res) => {
+router.put('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter } = req.body;
     const data = {};
@@ -1734,7 +1734,7 @@ router.put('/facebook-pages/:id', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/facebook-pages/:id', authMiddleware, async (req, res) => {
+router.delete('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     await prisma.facebookPage.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1746,7 +1746,7 @@ router.delete('/facebook-pages/:id', authMiddleware, async (req, res) => {
 // ==================== FACEBOOK MENU MANAGEMENT ====================
 
 // Get current Messenger profile (menu, greeting, get_started)
-router.get('/settings/facebook-menu', authMiddleware, async (req, res) => {
+router.get('/settings/facebook-menu', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const profile = await facebookMenu.getProfile();
     res.json(profile);
@@ -1756,7 +1756,7 @@ router.get('/settings/facebook-menu', authMiddleware, async (req, res) => {
 });
 
 // Setup/Reset Persistent Menu
-router.post('/settings/facebook-menu', authMiddleware, async (req, res) => {
+router.post('/settings/facebook-menu', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const result = await facebookMenu.setupPersistentMenu();
     await facebookMenu.setupGetStarted();
@@ -1770,7 +1770,7 @@ router.post('/settings/facebook-menu', authMiddleware, async (req, res) => {
 // ==================== TEST ENDPOINTS ====================
 
 // Simulate a Facebook message (no Facebook needed)
-router.post('/test-message', authMiddleware, async (req, res) => {
+router.post('/test-message', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { message, senderId } = req.body;
     if (!message) return res.status(400).json({ error: 'Nội dung tin nhắn là bắt buộc' });
@@ -1790,7 +1790,7 @@ router.post('/test-message', authMiddleware, async (req, res) => {
 });
 
 // Check Facebook webhook subscription status for all pages
-router.get('/fb-subscription', authMiddleware, async (req, res) => {
+router.get('/fb-subscription', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const axios = require('axios');
     const token = process.env.FB_PAGE_ACCESS_TOKEN;
@@ -1821,7 +1821,7 @@ router.get('/fb-subscription', authMiddleware, async (req, res) => {
  * GET /analytics — Báo cáo phân tích nâng cao
  * Cung cấp cho Dashboard phần Thống kê
  */
-router.get('/analytics', authMiddleware, async (req, res) => {
+router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const { days = 30 } = req.query;
     const sinceDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
