@@ -8,7 +8,8 @@ Ngày cập nhật: 2026-07-09
 - Không sinh thêm Chatwoot route/controller/service/model/env mới.
 - Không sinh thêm biến `CHATWOOT_*` hoặc `NEXT_PUBLIC_CHATWOOT_URL` mới.
 - Luồng đích: Facebook Messenger API -> Backend Express custom -> Dashboard nội bộ Next.js -> PostgreSQL/pgvector.
-- Prompt 08A chỉ intake/audit/docs; chưa xóa runtime code.
+- Prompt 08A intake/audit/docs; Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã cleanup env example/config warning và lập schema cleanup plan.
+- Prisma schema, dashboard source và DevOps scripts vẫn còn legacy blockers cho các prompt sau.
 
 ## 2. Phạm vi áp dụng từ nay trở đi
 
@@ -123,7 +124,7 @@ Ghi chú bắt buộc:
 
 - **08A audit/docs**: tiếp nhận chỉ thị No-Chatwoot, scan reference, lập impact map, cập nhật docs/report.
 - **08B backend removal**: loại bỏ/disable backend Chatwoot runtime route, client, adapter, tenant webhook và handoff sync; giữ direct Facebook webhook.
-- **08C schema/env cleanup**: lập migration/env cleanup plan cho `chatwoot*` fields và `CHATWOOT_*`; không dùng `db push`.
+- **08C schema/env cleanup**: đã cleanup env example/config warning và lập migration/env cleanup plan cho `chatwoot*` fields; không dùng `db push`; chưa sửa schema/migrations.
 - **08D dashboard cleanup**: bỏ UI/API/env Chatwoot khỏi settings, tenants, channel configs và dashboard API client.
 - **09 RAG/raw SQL**: xử lý `$queryRawUnsafe`, pgvector query và knowledge upload/scrape sau No-Chatwoot backlog.
 - **10 DevOps/deploy**: cleanup scripts, compose, stale webhook URL files, deploy policy.

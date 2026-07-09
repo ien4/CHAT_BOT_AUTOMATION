@@ -1,6 +1,6 @@
 # ENV POLICY - BBOTECH BOT AUTOMATION
 
-Ngày cập nhật: 2026-07-08  
+Ngày cập nhật: 2026-07-09
 Phạm vi: quy tắc cấu hình môi trường cho backend Express, dashboard Next.js, Docker/local script và các prompt refactor tiếp theo.
 
 ## 1. Nguyên tắc bắt buộc
@@ -26,7 +26,8 @@ File mẫu: `backend/.env.example`.
 | Webhook rate limit | `MESSAGE_RATE_WINDOW_MS`, `MESSAGE_RATE_MAX`, `MESSAGE_BURST_WINDOW_MS`, `MESSAGE_BURST_MAX`, `MESSAGE_RATE_BLOCK_MS`, `MESSAGE_RATE_WARNING_COOLDOWN_MS` | Không phải secret. Có thể commit default trong `.env.example`. |
 | LLM | `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `CLAUDE_API_KEY` | Secret. Chỉ cấu hình provider thật ở môi trường chạy. |
 | Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_MANAGER_CHAT_ID`, `TELEGRAM_STATUS_GROUP_ID` | Token/chat id không đưa vào dashboard public env. |
-| Chatwoot | `CHATWOOT_BASE_URL`, `CHATWOOT_API_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `CHATWOOT_INBOX_ID`, `CHATWOOT_TEAM_ID`, `CHATWOOT_WEBHOOK_SECRET` | Token/secret phải nằm ở backend env. `CHATWOOT_BASE_URL` production phải là URL Chatwoot public/internal đúng môi trường. |
+
+Biến `CHATWOOT_*` là legacy/deprecated sau Prompt 08A-08C và không còn thuộc target architecture. Không thêm mới hoặc khôi phục `CHATWOOT_BASE_URL`, `CHATWOOT_API_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `CHATWOOT_INBOX_ID`, `CHATWOOT_TEAM_ID`, `CHATWOOT_WEBHOOK_SECRET` trong env example/policy mới. Nếu môi trường thật còn các biến này để rollback lịch sử, không commit và không dùng làm target triển khai mới.
 
 ## 3. Dashboard env
 
@@ -35,7 +36,8 @@ File mẫu: `dashboard/.env.example`.
 | Biến | Chính sách |
 |---|---|
 | `NEXT_PUBLIC_API_URL` | Public URL tới backend API. Local fallback hiện là `http://localhost:3001/api` trong `dashboard/src/lib/config/env.ts`. Production phải cấu hình URL public HTTPS. |
-| `NEXT_PUBLIC_CHATWOOT_URL` | Chỉ dùng để hiển thị Chatwoot base URL trong dashboard. Không đặt token ở đây. |
+
+Không thêm `NEXT_PUBLIC_CHATWOOT_URL` hoặc public env nào liên quan Chatwoot. Dashboard public env không được chứa secret; mọi biến `NEXT_PUBLIC_*` đều được bundle vào browser và phải coi là dữ liệu công khai.
 
 Mọi biến bắt đầu bằng `NEXT_PUBLIC_` phải được coi là dữ liệu công khai.
 
@@ -56,7 +58,8 @@ Trước production deploy cần kiểm tra:
 - Không có biến production nào còn `localhost`, `127.0.0.1`, `host.docker.internal`, `your-*`, `placeholder`, `changeme`, `admin123`.
 - `APP_BASE_URL` trỏ đúng domain HTTPS dùng cho Facebook webhook.
 - `NEXT_PUBLIC_API_URL` trỏ đúng backend API public.
-- `ENCRYPTION_KEY`, `JWT_SECRET`, `ADMIN_PASSWORD`, token Facebook, token Chatwoot, token Telegram đều đã được đặt bằng giá trị thật.
+- `ENCRYPTION_KEY`, `JWT_SECRET`, `ADMIN_PASSWORD`, token Facebook, token Telegram đều đã được đặt bằng giá trị thật.
+- Không có `CHATWOOT_*` hoặc `NEXT_PUBLIC_CHATWOOT_URL` trong cấu hình target mới.
 - Không dùng `start-all.bat` hoặc `prisma db push --accept-data-loss` cho dữ liệu thật.
 
 ## 6. Validation an toàn

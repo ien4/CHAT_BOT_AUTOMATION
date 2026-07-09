@@ -101,8 +101,6 @@ function getPlaceholderConfigWarnings(env = process.env) {
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_MANAGER_CHAT_ID',
     'TELEGRAM_STATUS_GROUP_ID',
-    'CHATWOOT_API_TOKEN',
-    'CHATWOOT_WEBHOOK_SECRET',
     'ADMIN_PASSWORD',
     'POSTGRES_PASSWORD',
   ]

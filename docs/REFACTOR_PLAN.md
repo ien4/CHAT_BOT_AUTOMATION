@@ -1,5 +1,47 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 08C — Prisma/env No-Chatwoot cleanup plan (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 08C đã hoàn tất phase env/config cleanup và lập kế hoạch schema migration an toàn. Đây không phải schema removal prompt.
+
+Đã làm:
+
+- Xóa `CHATWOOT_*` khỏi `backend/.env.example`.
+- Ghi rõ local pgvector host port `localhost:5433` trong `backend/.env.example`.
+- Xóa `NEXT_PUBLIC_CHATWOOT_URL` khỏi `dashboard/.env.example`.
+- Xóa warning placeholder `CHATWOOT_API_TOKEN`, `CHATWOOT_WEBHOOK_SECRET` khỏi `backend/src/infrastructure/services/config.js`.
+- Cập nhật `docs/ENV_POLICY.md` để Chatwoot env là legacy/deprecated, không thuộc target mới.
+- Tạo `docs/NO_CHATWOOT_SCHEMA_ENV_CLEANUP_PLAN.md` với bảng field legacy, migration strategy, dashboard/backend/devops blockers.
+- Tạo report Prompt 08C.
+
+Không làm:
+
+- Không sửa `backend/prisma/schema.prisma`.
+- Không sửa `backend/prisma/migrations/**`.
+- Không tạo migration mới.
+- Không chạy migration hoặc `db push`.
+- Không sửa dashboard source, RAG/raw SQL, webhook direct Facebook, tenant handoff, bot engine/tools, package hoặc scripts.
+
+Schema blockers còn lại:
+
+- `Conversation.chatwootConversationId`.
+- `Tenant.chatwootModel`.
+- `Tenant.chatwootAccountId`.
+- `Tenant.chatwootBaseUrl`.
+- `Tenant.chatwootApiTokenEnc`.
+- `Tenant.chatwootTeamId`.
+- `Tenant.webhookSecretEnc` là legacy-adjacent, cần quyết định riêng trước khi drop.
+
+Thứ tự tiếp theo:
+
+- **Prompt 08D**: dashboard No-Chatwoot cleanup cho settings, channel configs, tenants, env helper và API client.
+- **Prompt backend/API cleanup prep**: dừng tenant CRUD đọc/ghi field legacy sau khi dashboard không còn gửi payload cũ.
+- **Prompt schema migration removal**: tạo migration drop columns/indexes chỉ sau khi scan sạch backend/dashboard/scripts và có backup/rollback plan.
+- **Prompt 09**: RAG/raw SQL hardening sau khi No-Chatwoot path ổn.
+- **Prompt 10**: DevOps/scripts cleanup.
+
 ## Prompt 08B — Backend Chatwoot runtime removal (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09

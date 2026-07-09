@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 08C Update - Prisma/Env No-Chatwoot Cleanup Plan (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Backend env example | Cleaned | `backend/.env.example` | Đã xóa block `CHATWOOT_*`; giữ direct Facebook env và ghi rõ local pgvector `localhost:5433`. |
+| Dashboard env example | Cleaned | `dashboard/.env.example` | Đã xóa `NEXT_PUBLIC_CHATWOOT_URL`; chỉ còn `NEXT_PUBLIC_API_URL`. |
+| Backend config warning | Cleaned | `backend/src/infrastructure/services/config.js` | Không còn warning placeholder cho `CHATWOOT_API_TOKEN`/`CHATWOOT_WEBHOOK_SECRET`. |
+| Env policy | Updated | `docs/ENV_POLICY.md` | Ghi rõ Chatwoot env là legacy/deprecated và không thuộc target mới. |
+| Schema cleanup plan | Created | `docs/NO_CHATWOOT_SCHEMA_ENV_CLEANUP_PLAN.md` | Có bảng field legacy, migration strategy, dashboard/backend/devops blockers. |
+| Prisma schema | Not changed | `backend/prisma/schema.prisma` | Không sửa schema trong Prompt 08C. |
+| Prisma migrations | Not changed | `backend/prisma/migrations/**` | Không xóa migration lịch sử, không tạo migration mới. |
+| Dashboard source blockers | OPEN | `dashboard/src/lib/config/env.ts`, `dashboard/src/lib/api.ts`, settings/channel-configs/tenants pages | Để Prompt 08D; 08C chỉ audit, không sửa dashboard source. |
+| Backend/API blockers | OPEN | `backend/src/api/dashboard.js` tenant CRUD còn field `chatwoot*` | Cần prompt cleanup backend/API sau hoặc cùng schema-removal prep. |
+| DevOps/scripts blockers | OPEN | `backend/scripts/*`, `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt` | Để Prompt 10/DevOps. |
+| Static validation | PASS | backend `node --check`, `npx prisma validate`, dashboard `tsc --noEmit`, `git diff --check` | Không chạy server, không chạy migration. |
+| Runtime smoke | NOT REQUIRED | Env example/config policy/docs cleanup only | Không đánh dấu runtime toàn hệ thống PASS trong 08C. |
+
 ## Prompt 08B Update - Backend Chatwoot Runtime Removal (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09
