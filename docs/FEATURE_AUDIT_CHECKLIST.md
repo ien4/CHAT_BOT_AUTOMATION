@@ -577,3 +577,21 @@ Quy ước trạng thái:
 - [ ] Ghi lỗi baseline vào report.
 - [ ] Cập nhật trạng thái trong `docs/PROJECT_PROGRESS.md`.
 - [ ] Chỉ sau đó mới chọn một refactor nhỏ cho prompt tiếp theo.
+
+## Prompt 08D Feature Audit Update
+
+Ngày cập nhật: 2026-07-09
+
+| Nhóm | Trạng thái sau Prompt 08D | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| Dashboard source Chatwoot refs | Closed trong `dashboard/src` | `rg -n -i "chatwoot|NEXT_PUBLIC_CHATWOOT|lookupInboxes|chatwoot-test|lookup-inboxes" dashboard/src` không còn kết quả | Docs ngoài `dashboard/src` vẫn có thể nhắc lịch sử no-Chatwoot. |
+| Dashboard env runtime | Closed | `CHATWOOT_BASE_URL` và `NEXT_PUBLIC_CHATWOOT_URL` đã bị gỡ khỏi `dashboard/src/lib/config/env.ts` | Env example đã xử lý ở Prompt 08C; chưa động `.env.local`. |
+| Settings page legacy connection test | Closed | Gỡ UI test và fetch `/api/settings/chatwoot-test` khỏi `dashboard/src/app/dashboard/settings/page.tsx` | Backend route cũ nếu còn tồn tại cần xử lý trong prompt backend cleanup riêng. |
+| Channel Configs lookup inbox | Closed ở Dashboard | Gỡ `lookupInboxes` khỏi `dashboard/src/lib/api.ts` và picker khỏi page | Backend route lookup cũ nếu còn tồn tại cần xử lý theo no-Chatwoot backend cleanup sau. |
+| Tenants create/update Dashboard payload | Closed ở client | `dashboard/src/app/dashboard/tenants/page.tsx` không còn gửi legacy fields | Cần runtime mutating test trên DB test riêng. |
+| Backend tenant create compatibility | Done tối thiểu | `POST /tenants` trong `backend/src/api/dashboard.js` chỉ bắt buộc `slug`, `name`, tự điền compatibility fields | Schema vẫn còn cột legacy, chưa cleanup database. |
+| Prisma schema legacy fields | Open intentional | Prompt 08D không sửa schema/migration | Cần migration plan riêng, không làm trong prompt này. |
+| Dashboard lint | Open | `npm run --if-present lint` mở prompt cấu hình ESLint tương tác | Cần quality gate prompt riêng. |
+| Dashboard build/typecheck | PASS | `npx --no-install tsc --noEmit`, `npm run --if-present build` PASS | Nên thêm browser/manual smoke theo flow tenant khi có DB test. |
+
+Kết luận: Prompt 08D hoàn tất cleanup Dashboard theo no-Chatwoot directive, nhưng chưa hoàn tất cleanup dữ liệu/schema/backend legacy toàn diện.

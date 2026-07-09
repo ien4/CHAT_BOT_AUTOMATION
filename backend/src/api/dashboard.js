@@ -2038,6 +2038,9 @@ router.delete('/channel-configs/:id', authMiddleware, async (req, res) => {
 // ==================== TENANTS ====================
 // Mask credentials trước khi trả về client — không bao giờ expose raw token
 
+const TENANT_COMPAT_MODE = 'direct-facebook';
+const TENANT_COMPAT_ACCOUNT_ID = 'direct-facebook';
+
 function maskTenant(t) {
   return {
     ...t,
@@ -2077,7 +2080,7 @@ router.get('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res) =
 router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const {
-      slug, name, chatwootModel = 'dedicated',
+      slug, name, chatwootModel,
       chatwootAccountId, chatwootBaseUrl,
       chatwootApiToken, chatwootTeamId,
       webhookSecret, telegramGroupChatId,
@@ -2086,20 +2089,19 @@ router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
       defaultPersona,
     } = req.body;
 
-    if (!slug || !name || !chatwootAccountId) {
-      return res.status(400).json({ error: 'slug, name, chatwootAccountId là bắt buộc' });
+    if (!slug || !name) {
+      return res.status(400).json({ error: 'slug, name là bắt buộc' });
     }
     if (!/^[a-z0-9-]+$/.test(slug)) {
       return res.status(400).json({ error: 'slug chỉ được chứa chữ thường, số và dấu gạch ngang' });
     }
-    if (chatwootModel === 'dedicated' && !chatwootApiToken) {
-      return res.status(400).json({ error: 'chatwootApiToken bắt buộc với dedicated model' });
-    }
+    const compatModel = chatwootModel || TENANT_COMPAT_MODE;
+    const compatAccountId = chatwootAccountId || TENANT_COMPAT_ACCOUNT_ID;
 
     const tenant = await prisma.tenant.create({
       data: {
-        slug, name, chatwootModel,
-        chatwootAccountId: String(chatwootAccountId),
+        slug, name, chatwootModel: compatModel,
+        chatwootAccountId: String(compatAccountId),
         chatwootBaseUrl:      chatwootBaseUrl || null,
         chatwootApiTokenEnc:  encryptIfPresent(chatwootApiToken),
         chatwootTeamId:       chatwootTeamId ? String(chatwootTeamId) : null,

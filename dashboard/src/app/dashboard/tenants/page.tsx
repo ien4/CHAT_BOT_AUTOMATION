@@ -1,10 +1,9 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { tenantsApi } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/config/env';
 import {
-  Plus, Trash2, Edit3, Building2, Users, Link2, Copy, Check,
-  ChevronDown, ChevronUp, ToggleLeft, ToggleRight, HelpCircle, X, Globe, Server,
+  Plus, Trash2, Edit3, Building2, Users, Link2, Check,
+  ChevronDown, ChevronUp, ToggleLeft, ToggleRight, HelpCircle, X,
   Phone, MessageSquare, Clock, UserCheck, Ban, Bot, AlertTriangle, RefreshCw,
   BarChart3, TrendingUp, TrendingDown, Zap, Activity
 } from 'lucide-react';
@@ -19,17 +18,10 @@ interface Tenant {
   slug: string;
   name: string;
   isActive: boolean;
-  chatwootModel: 'shared' | 'dedicated';
-  chatwootAccountId: string;
-  chatwootBaseUrl: string | null;
-  chatwootTeamId: string | null;
   telegramGroupChatId: string | null;
   pendingTimeoutSeconds: number;
   sessionTimeoutSeconds: number;
   defaultPersona: string | null;
-  hasApiToken: boolean;
-  hasWebhookSecret: boolean;
-  webhookUrl: string;
   createdAt: string;
 }
 
@@ -62,11 +54,6 @@ export default function TenantsPage() {
     } catch { toast.error('Lỗi tải danh sách tenant'); }
     finally { setLoading(false); }
   };
-
-  // Lấy base URL từ tenant đầu tiên, fallback về API_BASE_URL để giữ behavior dev hiện tại.
-  const baseWebhookUrl = tenants[0]?.webhookUrl
-    ? tenants[0].webhookUrl.replace(/\/chatwoot-webhook\/[^/]+$/, '')
-    : API_BASE_URL;
 
   const handleDelete = async (tenant: Tenant) => {
     if (!confirm(`Xóa tenant "${tenant.name}"? Tất cả staff và cấu hình sẽ bị xóa.`)) return;
@@ -116,7 +103,7 @@ export default function TenantsPage() {
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
         <h3 className="font-medium text-blue-800 flex items-center gap-1"><HelpCircle className="w-4 h-4" /> Multi-tenant là gì?</h3>
         <p className="mt-1 text-blue-700">
-          Mỗi tenant là một đối tác có Chatwoot riêng (hoặc dùng chung). Bot sẽ nhận webhook từ Chatwoot của họ và xử lý tin nhắn riêng biệt, knowledge base riêng, handoff staff riêng.
+          Mỗi tenant là một đối tác có cấu hình chatbot riêng. Bot xử lý tin nhắn, knowledge base và handoff staff riêng theo phạm vi tenant.
         </p>
       </div>
 
@@ -158,7 +145,6 @@ export default function TenantsPage() {
       {showForm && (
         <TenantForm
           tenant={editingTenant}
-          baseWebhookUrl={baseWebhookUrl}
           onClose={() => setShowForm(false)}
           onSaved={handleSaved}
         />
@@ -176,15 +162,6 @@ function TenantCard({ tenant, isSelected, onManage, onEdit, onDelete }: {
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
-
-  const copyUrl = () => {
-    navigator.clipboard.writeText(tenant.webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success('Đã copy webhook URL');
-  };
-
   return (
     <div className={`card transition-all ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
       <div className="flex items-start justify-between gap-4">
@@ -196,21 +173,9 @@ function TenantCard({ tenant, isSelected, onManage, onEdit, onDelete }: {
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold">{tenant.name}</h3>
               <span className="text-xs text-gray-400 font-mono">/{tenant.slug}</span>
-              <span className={`badge ${tenant.chatwootModel === 'shared' ? 'badge-blue' : 'badge-purple'}`}>
-                {tenant.chatwootModel === 'shared' ? (
-                  <><Globe className="w-3 h-3 inline mr-0.5" /> Shared</>
-                ) : (
-                  <><Server className="w-3 h-3 inline mr-0.5" /> Dedicated</>
-                )}
-              </span>
               {!tenant.isActive && <span className="badge badge-red">Vô hiệu</span>}
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <code className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded truncate max-w-xs">{tenant.webhookUrl}</code>
-              <button onClick={copyUrl} className="p-1 text-gray-400 hover:text-blue-600 flex-shrink-0">
-                {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+            <p className="text-xs text-gray-500 mt-1">Cấu hình riêng cho tin nhắn, knowledge và handoff</p>
           </div>
         </div>
 
@@ -280,52 +245,17 @@ function TenantDetail({ tenant, activeTab, onTabChange, onClose, onRefresh }: {
 // ===================== WEBHOOK TAB =====================
 
 function WebhookTab({ tenant }: { tenant: Tenant }) {
-  const [info, setInfo] = useState<{ webhookUrl: string; instructions: string[] } | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    tenantsApi.webhookInfo(tenant.id).then(r => setInfo(r.data)).catch(() => {});
-  }, [tenant.id]);
-
-  const copy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast.success('Đã copy!');
-  };
-
   return (
     <div className="space-y-4">
-      <div>
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Webhook URL</label>
-        <div className="flex items-center gap-2 mt-1">
-          <code className="flex-1 bg-gray-900 text-green-400 text-sm px-3 py-2 rounded-lg font-mono break-all">
-            {info?.webhookUrl || tenant.webhookUrl}
-          </code>
-          <button onClick={() => copy(info?.webhookUrl || tenant.webhookUrl)} className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 flex-shrink-0">
-            {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-600" />}
-          </button>
-        </div>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+        <p className="font-medium">Kết nối tin nhắn trực tiếp</p>
+        <p className="mt-1">
+          Tenant <strong>{tenant.name}</strong> dùng webhook Facebook chung của backend. Cấu hình URL chung trong mục Cài đặt, sau đó backend phân tuyến theo tenant và page.
+        </p>
       </div>
 
-      {info?.instructions && (
-        <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Hướng dẫn cấu hình Chatwoot</label>
-          <ol className="mt-2 space-y-2">
-            {info.instructions.map((step, i) => (
-              <li key={i} className="flex gap-2 text-sm">
-                <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">{i + 1}</span>
-                <span className="text-gray-700">{step.replace(/^\d+\.\s*/, '')}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-        <strong>Bảo mật:</strong> {tenant.hasWebhookSecret
-          ? '✅ Webhook Secret đã cấu hình — HMAC validation bật'
-          : '⚠️ Chưa có Webhook Secret — khuyến nghị cấu hình để bảo mật (Sửa tenant → Webhook Secret)'}
+        <strong>Lưu ý:</strong> Endpoint webhook riêng theo tenant của kiến trúc cũ đã tắt; không cần tạo URL riêng khi thêm tenant.
       </div>
     </div>
   );
@@ -1068,22 +998,14 @@ function TenantHandoffAnalytics({ tenant }: { tenant: Tenant }) {
 
 // ===================== TENANT FORM =====================
 
-function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
+function TenantForm({ tenant, onClose, onSaved }: {
   tenant: Tenant | null;
-  baseWebhookUrl: string;
   onClose: () => void;
   onSaved: (slug?: string) => void;
 }) {
   const [form, setForm] = useState({
     name: tenant?.name || '',
     slug: tenant?.slug || '',
-    chatwootModel: tenant?.chatwootModel || 'shared',
-    chatwootAccountId: tenant?.chatwootAccountId || '1',
-    chatwootBaseUrl: tenant?.chatwootBaseUrl || '',
-    chatwootApiToken: '',
-    chatwootTeamId: tenant?.chatwootTeamId || '',
-    webhookSecret: '',
-    clearWebhookSecret: false,
     telegramGroupChatId: tenant?.telegramGroupChatId || '',
     pendingTimeoutSeconds: tenant?.pendingTimeoutSeconds ?? 300,
     sessionTimeoutSeconds: tenant?.sessionTimeoutSeconds ?? 1800,
@@ -1091,23 +1013,8 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
     isActive: tenant?.isActive ?? true,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [urlCopied, setUrlCopied] = useState(false);
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
-
-  const webhookUrl = tenant
-    ? tenant.webhookUrl
-    : form.slug
-      ? `${baseWebhookUrl}/chatwoot-webhook/${form.slug}`
-      : null;
-
-  const copyWebhookUrl = () => {
-    if (!webhookUrl) return;
-    navigator.clipboard.writeText(webhookUrl);
-    setUrlCopied(true);
-    setTimeout(() => setUrlCopied(false), 2000);
-    toast.success('Đã copy webhook URL');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1115,9 +1022,6 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
     try {
       const payload: any = {
         name: form.name,
-        chatwootModel: form.chatwootModel,
-        chatwootAccountId: form.chatwootAccountId,
-        chatwootTeamId: form.chatwootTeamId || null,
         telegramGroupChatId: form.telegramGroupChatId || null,
         pendingTimeoutSeconds: Number(form.pendingTimeoutSeconds),
         sessionTimeoutSeconds: Number(form.sessionTimeoutSeconds),
@@ -1125,18 +1029,6 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
         isActive: form.isActive,
       };
       if (!tenant) payload.slug = form.slug;
-      // chatwootBaseUrl chỉ cần cho dedicated
-      if (form.chatwootModel === 'dedicated') {
-        payload.chatwootBaseUrl = form.chatwootBaseUrl;
-      }
-      // API token: gửi nếu nhập mới (cả shared lẫn dedicated)
-      if (form.chatwootApiToken) payload.chatwootApiToken = form.chatwootApiToken;
-      // Webhook secret: xóa tường minh hoặc cập nhật nếu nhập mới
-      if (form.clearWebhookSecret) {
-        payload.webhookSecret = '';
-      } else if (form.webhookSecret) {
-        payload.webhookSecret = form.webhookSecret;
-      }
 
       if (tenant) {
         await tenantsApi.update(tenant.id, payload);
@@ -1152,9 +1044,6 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
     } finally { setSubmitting(false); }
   };
 
-  const hasApiToken = tenant?.hasApiToken && !form.chatwootApiToken;
-  const hasWebhookSecret = tenant?.hasWebhookSecret && !form.webhookSecret && !form.clearWebhookSecret;
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-4 my-4">
@@ -1164,23 +1053,6 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Webhook URL Preview */}
-          <div className="bg-gray-900 rounded-xl p-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide flex items-center gap-1">
-                <Link2 className="w-3.5 h-3.5" /> Webhook URL (dán vào Chatwoot Agent Bot)
-              </span>
-              {webhookUrl && (
-                <button type="button" onClick={copyWebhookUrl} className="flex items-center gap-1 text-xs text-gray-400 hover:text-green-400 transition-colors">
-                  {urlCopied ? <><Check className="w-3.5 h-3.5 text-green-400" /><span className="text-green-400">Đã copy!</span></> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
-                </button>
-              )}
-            </div>
-            <code className="block text-sm font-mono text-green-400 break-all">
-              {webhookUrl || <span className="text-gray-500 italic">Nhập slug để xem preview URL...</span>}
-            </code>
-          </div>
-
           {/* Tên & Slug */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1198,126 +1070,6 @@ function TenantForm({ tenant, baseWebhookUrl, onClose, onSaved }: {
                 disabled={!!tenant}
               />
             </div>
-          </div>
-
-          {/* Chatwoot Model */}
-          <div>
-            <label className="text-xs font-medium text-gray-500">Chatwoot Model *</label>
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <button
-                type="button"
-                onClick={() => set('chatwootModel', 'shared')}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${form.chatwootModel === 'shared' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
-              >
-                <div className="flex items-center gap-1.5 font-medium text-sm"><Globe className="w-4 h-4" /> Shared</div>
-                <p className="text-xs text-gray-500 mt-0.5">Dùng chung Chatwoot của platform</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => set('chatwootModel', 'dedicated')}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${form.chatwootModel === 'dedicated' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
-              >
-                <div className="flex items-center gap-1.5 font-medium text-sm"><Server className="w-4 h-4" /> Dedicated</div>
-                <p className="text-xs text-gray-500 mt-0.5">Tenant tự host Chatwoot riêng</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Chatwoot config */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-500">Account ID (Chatwoot) *</label>
-              <input value={form.chatwootAccountId} onChange={e => set('chatwootAccountId', e.target.value)} className="input-field" placeholder="1" required />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500">Team ID (tùy chọn)</label>
-              <input value={form.chatwootTeamId} onChange={e => set('chatwootTeamId', e.target.value)} className="input-field" placeholder="1" />
-            </div>
-          </div>
-
-          {/* Dedicated: Base URL (shared dùng URL platform) */}
-          {form.chatwootModel === 'dedicated' && (
-            <div className="bg-purple-50 p-3 rounded-lg">
-              <p className="text-xs font-medium text-purple-700 mb-2">Cấu hình Chatwoot riêng (Dedicated)</p>
-              <div>
-                <label className="text-xs font-medium text-gray-500">Chatwoot Base URL *</label>
-                <input value={form.chatwootBaseUrl} onChange={e => set('chatwootBaseUrl', e.target.value)} className="input-field" placeholder="https://chatwoot.cong-ty.com" required={form.chatwootModel === 'dedicated'} />
-              </div>
-            </div>
-          )}
-
-          {/* Chatwoot API Token — dedicated: Agent Bot token, shared: user profile token */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-gray-500">
-                {form.chatwootModel === 'dedicated' ? 'Agent Bot Access Token' : 'Chatwoot API Token'}
-                {!tenant && form.chatwootModel === 'dedicated' && ' *'}
-              </label>
-              {hasApiToken && (
-                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Đã cấu hình
-                </span>
-              )}
-            </div>
-            <input
-              value={form.chatwootApiToken}
-              onChange={e => set('chatwootApiToken', e.target.value)}
-              className="input-field font-mono"
-              placeholder={
-                hasApiToken
-                  ? 'Để trống = giữ nguyên token hiện tại'
-                  : form.chatwootModel === 'dedicated'
-                    ? 'Token từ Chatwoot → Settings → Integrations → Agent Bots → Token truy cập'
-                    : 'User Access Token từ Chatwoot → Profile Settings'
-              }
-              type="password"
-              required={!tenant && form.chatwootModel === 'dedicated'}
-            />
-            <p className="text-xs text-gray-400 mt-0.5">
-              {form.chatwootModel === 'dedicated'
-                ? 'Chatwoot → Settings → Integrations → Agent Bots → chọn bot → "Token truy cập"'
-                : 'Chatwoot → Profile Settings → Access Token (dùng để bot gọi Chatwoot API)'}
-            </p>
-          </div>
-
-          {/* Webhook Secret */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-gray-500">Webhook Secret (tùy chọn)</label>
-              {hasWebhookSecret && (
-                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Đã cấu hình
-                </span>
-              )}
-            </div>
-            {form.clearWebhookSecret ? (
-              <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                <span className="text-sm text-red-700 flex-1">Webhook secret sẽ bị xóa khi lưu</span>
-                <button type="button" onClick={() => set('clearWebhookSecret', false)} className="text-xs text-red-600 hover:text-red-800 font-medium">Hủy xóa</button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  value={form.webhookSecret}
-                  onChange={e => set('webhookSecret', e.target.value)}
-                  className="input-field font-mono flex-1"
-                  placeholder={hasWebhookSecret ? 'Để trống = giữ nguyên secret hiện tại' : 'Webhook Token từ Chatwoot Agent Bot settings'}
-                  type="password"
-                />
-                {tenant?.hasWebhookSecret && !form.webhookSecret && (
-                  <button
-                    type="button"
-                    onClick={() => set('clearWebhookSecret', true)}
-                    className="px-3 py-2 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 whitespace-nowrap flex-shrink-0"
-                  >
-                    Xóa secret
-                  </button>
-                )}
-              </div>
-            )}
-            <p className="text-xs text-gray-400 mt-0.5">
-              Chatwoot → Settings → Integrations → Agent Bots → Webhook Token (phải khớp chính xác)
-            </p>
           </div>
 
           {/* Telegram */}

@@ -213,7 +213,6 @@ export const channelConfigsApi = {
     api.post('/channel-configs', data),
   update: (id: string, data: any) => api.put(`/channel-configs/${id}`, data),
   delete: (id: string) => api.delete(`/channel-configs/${id}`),
-  lookupInboxes: () => api.get('/channel-configs/lookup-inboxes'),
 };
 
 // Tenants API (Multi-tenant)

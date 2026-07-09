@@ -651,3 +651,41 @@ Lưu ý tái chạy: Prompt 05R-LOCALDB-FIX đã dựng DB pgvector local **bề
 - Không sửa Dockerfile/scripts.
 - Không chạy migration/db push/Docker/start script.
 - Nếu chưa có runtime smoke test, ghi rõ **Static validation pass — chưa runtime verified**.
+
+## Prompt 08D - Dashboard no-Chatwoot cleanup + backend tenant contract bridge
+
+Ngày cập nhật: 2026-07-09
+
+Phạm vi đã làm:
+
+- Xóa toàn bộ reference Chatwoot trong `dashboard/src` theo scan yêu cầu: env runtime, API helper, Settings page, Channel Configs page, Tenants page và README feature nằm dưới `dashboard/src/features`.
+- Gỡ `NEXT_PUBLIC_CHATWOOT_URL`/`CHATWOOT_BASE_URL` khỏi `dashboard/src/lib/config/env.ts`.
+- Gỡ Dashboard call tới `/api/settings/chatwoot-test` và `/api/channel-configs/lookup-inboxes`.
+- Gỡ picker inbox legacy khỏi Channel Configs; form kênh vẫn cho nhập thủ công `inboxId`, `channelType`, `name`, filter và persona như trước.
+- Gỡ form/label/payload legacy khỏi Tenants page: Dashboard không còn gửi `chatwootModel`, `chatwootAccountId`, token, team, base URL hoặc webhook secret.
+- Thêm bridge tối thiểu trong `backend/src/api/dashboard.js`: `POST /tenants` chỉ còn bắt buộc `slug` và `name`; backend tự điền giá trị compatibility cho các cột schema cũ để không cần Dashboard gửi legacy fields.
+- Không sửa Prisma schema/migrations, RAG, webhook handler, tenant handoff, bot engine/tools, package, Dockerfile hoặc script.
+
+Validation đã chạy:
+
+- Baseline trước sửa: `node --check` cho các file backend trọng yếu, `npx prisma validate`, `npx --no-install tsc --noEmit` đều PASS.
+- Sau sửa: `rg -n -i "chatwoot|NEXT_PUBLIC_CHATWOOT|lookupInboxes|chatwoot-test|lookup-inboxes" dashboard/src` không còn kết quả.
+- Sau sửa: `node --check backend/src/api/dashboard.js` PASS.
+- Sau sửa: `npx prisma validate` PASS.
+- Sau sửa: `npx --no-install tsc --noEmit` trong `dashboard` PASS.
+- Sau sửa: `npm run --if-present build` trong `dashboard` PASS.
+- Sau sửa: `git diff --check` PASS, chỉ có warning CRLF/LF của Git trên Windows.
+- Runtime nhẹ: backend đang chạy sẵn và `GET http://localhost:3001/health` trả `{"status":"ok"}`; dashboard đang chạy sẵn và `GET http://localhost:3002` trả HTTP 200.
+
+Giới hạn validation:
+
+- `npm run --if-present lint` trong `dashboard` bị chặn bởi prompt tương tác cấu hình ESLint vì dự án chưa có ESLint config; không tự tạo config trong Prompt 08D để tránh mở rộng scope.
+- Không chạy tenant create/update runtime mutating test vì sẽ ghi DB. Backend startup mới cũng có side effect seed/reset/setup menu/notification nên không tự start thêm instance.
+
+Trạng thái: **PASS WITH WARNINGS** - Dashboard source đã sạch Chatwoot keyword theo yêu cầu; backend tenant create có compatibility bridge; còn cần prompt riêng cho schema legacy cleanup và lint config.
+
+Gợi ý tiếp theo:
+
+- Prompt 08E hoặc 10: lập migration/schema cleanup thực thi cho các cột legacy trong `Tenant`, có backup và migration plan rõ ràng.
+- Prompt quality gate: cấu hình ESLint không tương tác hoặc thay script lint phù hợp Next.js hiện tại.
+- Prompt runtime smoke có kiểm soát: tạo/update tenant trên DB test/snapshot riêng, xác nhận payload mới không cần legacy fields.

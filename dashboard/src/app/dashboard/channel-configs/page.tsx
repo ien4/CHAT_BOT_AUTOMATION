@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { channelConfigsApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { TenantScopeBanner } from '@/components/TenantScopeBanner';
-import { Plus, Trash2, Edit3, Layers, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Trash2, Edit3, Layers, CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface ChannelConfig {
@@ -15,14 +15,6 @@ interface ChannelConfig {
   botPersonaOverride: string | null;
   isActive: boolean;
   createdAt: string;
-}
-
-interface ChatwootInbox {
-  inboxId: string;
-  name: string;
-  channelType: string;
-  chatwootChannelType: string;
-  alreadyConfigured: boolean;
 }
 
 const CHANNEL_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -52,9 +44,6 @@ export default function ChannelConfigsPage() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
 
-  const [inboxes, setInboxes] = useState<ChatwootInbox[]>([]);
-  const [loadingInboxes, setLoadingInboxes] = useState(false);
-
   useEffect(() => { load(); }, [selectedTenantId]);
 
   const load = async () => {
@@ -66,22 +55,10 @@ export default function ChannelConfigsPage() {
     finally { setLoading(false); }
   };
 
-  const loadInboxes = async () => {
-    setLoadingInboxes(true);
-    try {
-      const { data } = await channelConfigsApi.lookupInboxes();
-      setInboxes(data);
-    } catch {
-      toast.error('Không kết nối được Chatwoot. Kiểm tra CHATWOOT_BASE_URL và CHATWOOT_API_TOKEN.');
-    }
-    finally { setLoadingInboxes(false); }
-  };
-
   const openAdd = () => {
     setEditing(null);
     setForm(emptyForm);
     setShowForm(true);
-    loadInboxes();
   };
 
   const openEdit = (cfg: ChannelConfig) => {
@@ -95,16 +72,6 @@ export default function ChannelConfigsPage() {
       isActive: cfg.isActive,
     });
     setShowForm(true);
-    loadInboxes();
-  };
-
-  const handleInboxSelect = (inbox: ChatwootInbox) => {
-    setForm(f => ({
-      ...f,
-      inboxId: inbox.inboxId,
-      channelType: inbox.channelType,
-      name: f.name || inbox.name,
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,7 +124,7 @@ export default function ChannelConfigsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Kênh Chat</h1>
-          <p className="text-gray-500 text-sm mt-1">Cấu hình bot theo từng kênh Chatwoot (Facebook, Website, WhatsApp...)</p>
+          <p className="text-gray-500 text-sm mt-1">Cấu hình bot theo từng nguồn tin nhắn (Facebook, Website, WhatsApp...)</p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center gap-1">
           <Plus className="w-4 h-4" /> Thêm kênh
@@ -171,7 +138,7 @@ export default function ChannelConfigsPage() {
         <p className="font-medium text-blue-800">💡 Cấu hình kênh là tùy chọn — không bắt buộc</p>
         <p className="text-blue-700">
           Bot <strong>tự động nhận và trả lời tin nhắn từ tất cả kênh</strong> mà không cần cấu hình tại đây.
-          Chatwoot đã tự cung cấp thông tin loại kênh (Facebook, Website...) trong mỗi tin nhắn.
+          Nguồn tin nhắn sẽ được backend phân loại trước khi áp dụng cấu hình riêng.
         </p>
         <p className="text-blue-700">Chỉ cần thêm kênh vào đây nếu bạn muốn <strong>tùy chỉnh riêng cho từng kênh</strong>:</p>
         <ul className="list-disc list-inside text-blue-700 space-y-0.5 ml-1">
@@ -186,55 +153,6 @@ export default function ChannelConfigsPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold">{editing ? 'Sửa kênh' : 'Thêm kênh mới'}</h2>
-
-            {/* Inbox picker từ Chatwoot */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-gray-500">Chọn từ Chatwoot Inbox</label>
-                <button
-                  type="button"
-                  onClick={loadInboxes}
-                  className="text-xs text-blue-600 flex items-center gap-1 hover:underline"
-                >
-                  <RefreshCw className={`w-3 h-3 ${loadingInboxes ? 'animate-spin' : ''}`} />
-                  Tải lại
-                </button>
-              </div>
-              {loadingInboxes ? (
-                <div className="text-sm text-gray-400 py-2">Đang tải inboxes...</div>
-              ) : inboxes.length === 0 ? (
-                <div className="text-sm text-gray-400 py-2">Không tìm thấy inbox. Kiểm tra kết nối Chatwoot.</div>
-              ) : (
-                <div className="grid gap-2 max-h-40 overflow-y-auto">
-                  {inboxes.map(inbox => {
-                    const selected = form.inboxId === inbox.inboxId;
-                    const typeInfo = CHANNEL_TYPE_LABELS[inbox.channelType];
-                    return (
-                      <button
-                        key={inbox.inboxId}
-                        type="button"
-                        onClick={() => !inbox.alreadyConfigured || editing ? handleInboxSelect(inbox) : undefined}
-                        disabled={inbox.alreadyConfigured && !editing}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors text-left
-                          ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}
-                          ${inbox.alreadyConfigured && !editing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                        `}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeInfo?.color || 'bg-gray-100 text-gray-600'}`}>
-                            {typeInfo?.label || inbox.channelType}
-                          </span>
-                          <span className="font-medium">{inbox.name}</span>
-                          <span className="text-gray-400">#{inbox.inboxId}</span>
-                        </span>
-                        {inbox.alreadyConfigured && <span className="text-xs text-gray-400">Đã cấu hình</span>}
-                        {selected && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">

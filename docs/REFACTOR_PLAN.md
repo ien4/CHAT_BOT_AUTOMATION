@@ -749,3 +749,49 @@ Validation bắt buộc:
 Risk rollback:
 
 - Giữ backup script cũ hoặc commit nhỏ để revert từng script.
+
+## 10. Prompt 08D - Dashboard no-Chatwoot cleanup completed
+
+Mục tiêu đã hoàn tất:
+
+- Dashboard không còn reference Chatwoot trong `dashboard/src`.
+- Dashboard không còn gọi route test/lookup legacy: `/api/settings/chatwoot-test`, `/api/channel-configs/lookup-inboxes`.
+- Tenant form không còn gửi legacy integration fields.
+- Backend `POST /tenants` có bridge compatibility tối thiểu để không phụ thuộc payload legacy từ Dashboard.
+
+File đã sửa trong phạm vi source:
+
+- `backend/src/api/dashboard.js`
+- `dashboard/src/lib/config/env.ts`
+- `dashboard/src/lib/api.ts`
+- `dashboard/src/app/dashboard/settings/page.tsx`
+- `dashboard/src/app/dashboard/channel-configs/page.tsx`
+- `dashboard/src/app/dashboard/tenants/page.tsx`
+- `dashboard/src/features/channel-configs/README.md`
+- `dashboard/src/features/settings/README.md`
+
+File không được sửa và đã giữ nguyên:
+
+- `backend/prisma/schema.prisma`
+- Prisma migrations
+- RAG pipeline
+- Webhook handlers
+- Tenant handoff
+- Bot engine/tools
+- Package/Docker/scripts
+
+Validation:
+
+- Dashboard source keyword scan sạch.
+- Backend `node --check` cho `src/api/dashboard.js` PASS.
+- `npx prisma validate` PASS.
+- Dashboard `tsc --noEmit` PASS.
+- Dashboard `next build` PASS.
+- Runtime nhẹ với server đang chạy sẵn: backend health 200, dashboard 200.
+- Dashboard lint vẫn open vì `next lint` yêu cầu cấu hình ESLint tương tác.
+
+Kế hoạch tiếp theo:
+
+- Prompt 08E: quyết định và thực thi cleanup schema legacy nếu có migration/backup plan rõ ràng; không làm additive/rename DB trong prompt UI cleanup.
+- Prompt quality gate: cấu hình lint không tương tác, sau đó đưa lint vào validation chính thức.
+- Prompt runtime smoke tenant: trên DB test riêng, chạy create/update tenant bằng payload mới và xác nhận backend tự bridge legacy columns.

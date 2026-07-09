@@ -2,8 +2,8 @@
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { providersApi, telegramDestinationsApi } from '@/lib/api';
-import { API_BASE_URL, CHATWOOT_BASE_URL } from '@/lib/config/env';
-import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, MessageSquare, BrainCircuit } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/config/env';
+import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
@@ -25,8 +25,6 @@ export default function SettingsPage() {
   const [telegramEditing, setTelegramEditing] = useState<string | null>(null);
   const [telegramTesting, setTelegramTesting] = useState<string | null>(null);
   const [telegramForm, setTelegramForm] = useState({ name: '', type: 'group' as 'group' | 'channel', chatId: '', isActive: true });
-  const [chatwootTesting, setChatwootTesting] = useState(false);
-  const [chatwootResult, setChatwootResult] = useState<any>(null);
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [providerForm, setProviderForm] = useState({ name: '', modelName: '', apiKey: '', baseUrl: '', maxTokens: 2048, temperature: 0.7, priority: 10 });
   const [providerSaving, setProviderSaving] = useState(false);
@@ -227,21 +225,6 @@ export default function SettingsPage() {
     }
   };
 
-  const testChatwoot = async () => {
-    setChatwootTesting(true);
-    setChatwootResult(null);
-    try {
-      const res = await fetch(`${API_BASE}/api/settings/chatwoot-test`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const data = await res.json();
-      setChatwootResult(data);
-      if (data.success) toast.success('✅ Kết nối Chatwoot thành công');
-      else toast.error('❌ ' + data.error);
-    } catch { toast.error('Lỗi kết nối backend'); }
-    finally { setChatwootTesting(false); }
-  };
-
   // Facebook Menu management
   const setupFbMenu = async () => {
     setMenuLoading(true);
@@ -291,43 +274,6 @@ export default function SettingsPage() {
         ) : (
           <p className="text-sm text-gray-400">Chưa có thông tin (back-end chưa chạy?)</p>
         )}
-      </div>
-
-      {/* Chatwoot Connection */}
-      <div className="card">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-blue-600" /> Chatwoot</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
-          <div>
-            <p className="text-gray-500">Base URL</p>
-            <p className="font-mono text-sm">{CHATWOOT_BASE_URL}</p>
-          </div>
-          <div>
-            <p className="text-gray-500">Webhook URL</p>
-            <p className="font-mono text-sm text-blue-600">{chatwootResult?.webhookUrl || `${API_BASE.replace(':3001', '')}/chatwoot-webhook`}</p>
-          </div>
-        </div>
-
-        {chatwootResult && (
-          <div className={`mb-4 p-3 rounded-lg text-sm ${chatwootResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-            {chatwootResult.success ? (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 font-medium text-green-700"><CheckCircle className="w-4 h-4" /> Kết nối thành công</div>
-                {chatwootResult.totalConversations != null && (
-                  <p className="text-green-600">Tổng conversations: <strong>{chatwootResult.totalConversations}</strong></p>
-                )}
-                <p className="text-green-600 text-xs font-mono">Webhook: {chatwootResult.webhookUrl}</p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-red-700"><XCircle className="w-4 h-4" /> {chatwootResult.error}</div>
-            )}
-          </div>
-        )}
-
-        <button onClick={testChatwoot} disabled={chatwootTesting} className="btn-secondary text-sm flex items-center gap-2">
-          {chatwootTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
-          Test kết nối Chatwoot
-        </button>
-        <p className="text-xs text-gray-400 mt-2">Kiểm tra API token và kết nối tới Chatwoot server từ backend.</p>
       </div>
 
       {/* Telegram Status Destinations */}
