@@ -689,3 +689,15 @@ Gợi ý tiếp theo:
 - Prompt 08E hoặc 10: lập migration/schema cleanup thực thi cho các cột legacy trong `Tenant`, có backup và migration plan rõ ràng.
 - Prompt quality gate: cấu hình ESLint không tương tác hoặc thay script lint phù hợp Next.js hiện tại.
 - Prompt runtime smoke có kiểm soát: tạo/update tenant trên DB test/snapshot riêng, xác nhận payload mới không cần legacy fields.
+
+## Prompt 08E — Tenant contract runtime smoke + backend legacy stop-write
+
+Ngày cập nhật: 2026-07-09
+
+- Đã verify runtime tenant create/update bằng payload mới (chỉ `slug`/`name`, không legacy field) trên DB local `bbotech-pgvector-local`: smoke PASS 17/17, tenant test cleanup còn 0.
+- Backend tenant contract: `POST/PUT /api/tenants` không còn nhận/ghi field legacy Chatwoot từ client (stop-write). Backend tự set giá trị compatibility `direct-facebook` cho cột NOT NULL còn lại.
+- `maskTenant()` không còn expose cột legacy (`chatwootModel/AccountId/BaseUrl/TeamId/ApiTokenEnc`, `webhookSecretEnc`, `hasApiToken/hasWebhookSecret`, `webhookUrl`); thêm field trung tính `integrationMode`/`messagingMode = direct-facebook`.
+- Prisma schema/migrations KHÔNG sửa; cột legacy vẫn tồn tại tạm để tương thích.
+- Điều kiện để migration removal: backend đã stop-write (đạt ở 08E), dashboard không đọc legacy (đạt), cần backup DB + migration mới drop columns/indexes trên local/staging trước production.
+- Regression PASS: prompts/settings/handoff/telegram-destinations 200; `/webhook` verify sai 403; `/chatwoot-webhook`, `/api/settings/chatwoot-test`, `/api/channel-configs/lookup-inboxes` đều 404.
+- Next prompt đề xuất: 08F/schema-removal migration (drop cột legacy sau backup) hoặc quality-gate lint non-interactive.

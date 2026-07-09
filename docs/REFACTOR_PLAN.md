@@ -795,3 +795,24 @@ Kế hoạch tiếp theo:
 - Prompt 08E: quyết định và thực thi cleanup schema legacy nếu có migration/backup plan rõ ràng; không làm additive/rename DB trong prompt UI cleanup.
 - Prompt quality gate: cấu hình lint không tương tác, sau đó đưa lint vào validation chính thức.
 - Prompt runtime smoke tenant: trên DB test riêng, chạy create/update tenant bằng payload mới và xác nhận backend tự bridge legacy columns.
+
+## Prompt 08E — Backend tenant contract stop-write + runtime smoke
+
+Ngày cập nhật: 2026-07-09
+
+Thay đổi source (chỉ `backend/src/api/dashboard.js`):
+- `POST /api/tenants`: bỏ nhận field legacy Chatwoot; chỉ cần `slug`/`name` + field trung tính; backend tự set `direct-facebook` cho cột NOT NULL.
+- `PUT /api/tenants/:id`: bỏ toàn bộ nhánh ghi legacy token/secret/model/account/base-url/team (stop-write).
+- `maskTenant()`: strip cột legacy khỏi response; thêm `integrationMode`/`messagingMode = direct-facebook`.
+- Gỡ import `encryptIfPresent` không còn dùng.
+
+Không đổi: route path/method/auth, `platformAdminOnly`, nested tenant guard, Prisma schema/migrations, RAG, webhook, handoff, package/Docker/scripts.
+
+Validation:
+- `node --check` backend trọng yếu PASS; `npx prisma validate` PASS.
+- Dashboard `tsc --noEmit` PASS; `next build` PASS.
+- Runtime mutating smoke trên DB local: 17/17 PASS, cleanup tenant test = 0.
+
+Kế hoạch tiếp theo:
+- Prompt schema-removal: backup DB rồi tạo migration drop cột/index legacy (`chatwoot_*`, `webhook_secret_enc` nếu không tái dùng, `conversations.chatwoot_conversation_id`).
+- Prompt quality gate: cấu hình ESLint non-interactive.

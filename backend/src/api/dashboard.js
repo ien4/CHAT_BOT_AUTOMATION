@@ -8,7 +8,6 @@ const llmFactory = require('../llm/factory');
 const contextManager = require('../bot/context');
 const facebookMenu = require('../facebook/menu');
 const getPrisma = require('../db');
-const { encryptIfPresent } = require('../infrastructure/services/credentialCrypto');
 const tenantRegistry = require('../tenants/registry');
 const createPromptRoutes = require('../presentation/http/routes/dashboard/prompts.routes');
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
@@ -2042,13 +2041,21 @@ const TENANT_COMPAT_MODE = 'direct-facebook';
 const TENANT_COMPAT_ACCOUNT_ID = 'direct-facebook';
 
 function maskTenant(t) {
+  // Không expose cột legacy Chatwoot ra client. Schema chưa drop nên cột vẫn tồn
+  // tại trong DB, nhưng response chỉ trả field trung tính direct-facebook.
+  const {
+    chatwootModel,
+    chatwootAccountId,
+    chatwootBaseUrl,
+    chatwootApiTokenEnc,
+    chatwootTeamId,
+    webhookSecretEnc,
+    ...rest
+  } = t;
   return {
-    ...t,
-    chatwootApiTokenEnc: undefined,
-    webhookSecretEnc: undefined,
-    hasApiToken:     !!t.chatwootApiTokenEnc,
-    hasWebhookSecret: !!t.webhookSecretEnc,
-    webhookUrl: null,
+    ...rest,
+    integrationMode: TENANT_COMPAT_MODE,
+    messagingMode: TENANT_COMPAT_MODE,
   };
 }
 
@@ -2080,10 +2087,7 @@ router.get('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res) =
 router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const {
-      slug, name, chatwootModel,
-      chatwootAccountId, chatwootBaseUrl,
-      chatwootApiToken, chatwootTeamId,
-      webhookSecret, telegramGroupChatId,
+      slug, name, telegramGroupChatId,
       pendingTimeoutSeconds, sessionTimeoutSeconds,
       offHoursPendingTimeout, workHoursStart, workHoursEnd,
       defaultPersona,
@@ -2095,17 +2099,14 @@ router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
     if (!/^[a-z0-9-]+$/.test(slug)) {
       return res.status(400).json({ error: 'slug chỉ được chứa chữ thường, số và dấu gạch ngang' });
     }
-    const compatModel = chatwootModel || TENANT_COMPAT_MODE;
-    const compatAccountId = chatwootAccountId || TENANT_COMPAT_ACCOUNT_ID;
 
     const tenant = await prisma.tenant.create({
       data: {
-        slug, name, chatwootModel: compatModel,
-        chatwootAccountId: String(compatAccountId),
-        chatwootBaseUrl:      chatwootBaseUrl || null,
-        chatwootApiTokenEnc:  encryptIfPresent(chatwootApiToken),
-        chatwootTeamId:       chatwootTeamId ? String(chatwootTeamId) : null,
-        webhookSecretEnc:     encryptIfPresent(webhookSecret),
+        slug, name,
+        // Compatibility: cột legacy NOT NULL vẫn tồn tại trong schema chưa drop.
+        // Backend tự set giá trị trung tính direct-facebook, không nhận từ client.
+        chatwootModel:     TENANT_COMPAT_MODE,
+        chatwootAccountId: TENANT_COMPAT_ACCOUNT_ID,
         telegramGroupChatId:  telegramGroupChatId || null,
         pendingTimeoutSeconds:  pendingTimeoutSeconds  ?? 30,
         sessionTimeoutSeconds:  sessionTimeoutSeconds  ?? 30,
@@ -2125,19 +2126,14 @@ router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
 router.put('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
     const {
-      name, chatwootModel, chatwootAccountId, chatwootBaseUrl,
-      chatwootApiToken, chatwootTeamId, webhookSecret,
-      telegramGroupChatId, pendingTimeoutSeconds, sessionTimeoutSeconds,
+      name, telegramGroupChatId, pendingTimeoutSeconds, sessionTimeoutSeconds,
       offHoursPendingTimeout, workHoursStart, workHoursEnd,
       defaultPersona, isActive,
     } = req.body;
 
+    // Stop-write legacy: không còn nhận/ghi field Chatwoot từ client.
     const data = {};
     if (name              !== undefined) data.name              = name;
-    if (chatwootModel     !== undefined) data.chatwootModel     = chatwootModel;
-    if (chatwootAccountId !== undefined) data.chatwootAccountId = String(chatwootAccountId);
-    if (chatwootBaseUrl   !== undefined) data.chatwootBaseUrl   = chatwootBaseUrl || null;
-    if (chatwootTeamId    !== undefined) data.chatwootTeamId    = chatwootTeamId ? String(chatwootTeamId) : null;
     if (telegramGroupChatId !== undefined) data.telegramGroupChatId = telegramGroupChatId || null;
     if (pendingTimeoutSeconds  !== undefined) data.pendingTimeoutSeconds  = pendingTimeoutSeconds;
     if (sessionTimeoutSeconds  !== undefined) data.sessionTimeoutSeconds  = sessionTimeoutSeconds;
@@ -2146,17 +2142,6 @@ router.put('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res) =
     if (workHoursEnd   !== undefined) data.workHoursEnd   = workHoursEnd   ?? null;
     if (defaultPersona !== undefined) data.defaultPersona = defaultPersona || null;
     if (isActive       !== undefined) data.isActive       = isActive;
-
-    // Chỉ update token/secret nếu client gửi giá trị mới (không phải mask '****')
-    // "" hoặc null → xóa secret; undefined → không thay đổi
-    if (chatwootApiToken !== undefined) {
-      if (!chatwootApiToken || chatwootApiToken.startsWith('****')) { /* skip */ }
-      else data.chatwootApiTokenEnc = encryptIfPresent(chatwootApiToken);
-    }
-    if (webhookSecret !== undefined) {
-      if (webhookSecret === null || webhookSecret === '') data.webhookSecretEnc = null;
-      else if (!webhookSecret.startsWith('****')) data.webhookSecretEnc = encryptIfPresent(webhookSecret);
-    }
 
     const tenant = await prisma.tenant.update({ where: { id: req.params.id }, data });
 

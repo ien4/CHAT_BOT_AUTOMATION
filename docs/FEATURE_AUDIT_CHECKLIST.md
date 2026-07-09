@@ -595,3 +595,17 @@ Ngày cập nhật: 2026-07-09
 | Dashboard build/typecheck | PASS | `npx --no-install tsc --noEmit`, `npm run --if-present build` PASS | Nên thêm browser/manual smoke theo flow tenant khi có DB test. |
 
 Kết luận: Prompt 08D hoàn tất cleanup Dashboard theo no-Chatwoot directive, nhưng chưa hoàn tất cleanup dữ liệu/schema/backend legacy toàn diện.
+
+## Prompt 08E Feature Audit Update
+
+Ngày cập nhật: 2026-07-09
+
+| Nhóm | Trạng thái sau Prompt 08E | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| Tenant create/update payload mới | Verified runtime | Smoke mount tạm trên DB local: POST/PUT chỉ `slug`/`name` => 201/200, 17/17 PASS | Slug validation chỉ cho `[a-z0-9-]`, test dùng `test-08e-<ts>`. |
+| Backend tenant legacy write | Closed (stop-write) | `POST/PUT /api/tenants` trong `backend/src/api/dashboard.js` không còn destructure/ghi field Chatwoot từ client | Cột schema legacy vẫn còn (compat nội bộ). |
+| maskTenant legacy exposure | Closed | maskTenant strip cột legacy, thêm `integrationMode/messagingMode` | Không client nào còn phụ thuộc field legacy. |
+| Prisma schema legacy fields | Open intentional | 08E không sửa schema/migration | Cần migration drop riêng sau backup. |
+| Regression read routes + legacy 404 | PASS | prompts/settings/handoff/telegram-destinations 200; chatwoot-webhook/chatwoot-test/lookup-inboxes 404; webhook verify sai 403 | — |
+
+Kết luận: Prompt 08E đã đóng backend legacy stop-write và runtime-verify contract tenant mới; còn lại là migration drop schema legacy.
