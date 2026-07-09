@@ -8,7 +8,6 @@ const manager = require('../notifications/telegramManager');
 const alertQueue = require('../notifications/alertQueue');
 const formatters = require('../notifications/formatters');
 const telegramDestinations = require('../notifications/telegramDestinations');
-const chatwootApi = require('../chatwoot/api');
 
 const DEBUG_LOG = path.join(__dirname, '../../../handoff-debug.log');
 function debugLog(msg) {
@@ -167,7 +166,7 @@ async function initiateHandoff(conversation, messageText) {
 
   // Có staff rảnh → set pending_human TRƯỚC khi gửi DM
   // Dùng updateMany với điều kiện handoffStatus='bot' để atomic check-and-set
-  // Ngăn race condition khi FB webhook + Chatwoot webhook cùng xử lý 1 message
+  // Ngăn race condition khi nhiều webhook cùng xử lý 1 message
   const updateResult = await prisma.conversation.updateMany({
     where: { id: conversation.id, handoffStatus: 'bot' },
     data: { handoffStatus: 'pending_human', humanSessionExpiresAt: null },
@@ -179,14 +178,11 @@ async function initiateHandoff(conversation, messageText) {
     return true;
   }
 
-  const chatwootLink = conversation.chatwootConversationId
-    ? `\n🖥️ <a href="${process.env.CHATWOOT_BASE_URL}/app/accounts/${process.env.CHATWOOT_ACCOUNT_ID}/conversations/${conversation.chatwootConversationId}">Mở Chatwoot</a>`
-    : '';
   for (const staff of freeStaff) {
     try {
       await bot().sendMessage(
         staff.telegramChatId,
-        `🔔 <b>Tin nhắn mới</b>\n\n👤 ${esc(displayName)}\n💬 <i>"${esc(messageText.substring(0,200))}"</i>\n\n⏱ Còn <b>${timeout}s</b> để tiếp nhận${chatwootLink}`,
+        `🔔 <b>Tin nhắn mới</b>\n\n👤 ${esc(displayName)}\n💬 <i>"${esc(messageText.substring(0,200))}"</i>\n\n⏱ Còn <b>${timeout}s</b> để tiếp nhận`,
         {
           parse_mode: 'HTML',
           reply_markup: {
@@ -363,13 +359,6 @@ async function claimConversation(telegramChatId, conversationId, callbackQuery =
   const waitSeconds = Math.round(Math.abs(pendingMs) / 1000);
   await manager.send(formatters.handoffClaimed(staff.name, displayName, waitSeconds));
 
-  // Sync Chatwoot: chuyển conversation sang open + assign team
-  if (updated.chatwootConversationId) {
-    chatwootApi.handoffToHuman(updated.chatwootConversationId).catch(e =>
-      console.error('[Handoff] Chatwoot handoffToHuman failed:', e.message)
-    );
-  }
-
   // Thông báo khách đang được kết nối (hoạt động với mọi channel)
   await sendToCustomer(updated, 'Bạn đang được kết nối với tư vấn viên. Vui lòng chờ trong giây lát... 💬').catch(() => {});
 
@@ -436,13 +425,6 @@ async function takeoverConversation(telegramChatId, conversationId) {
     }
   );
 
-  // Sync Chatwoot: chuyển conversation sang open + assign team
-  if (updated.chatwootConversationId) {
-    chatwootApi.handoffToHuman(updated.chatwootConversationId).catch(e =>
-      console.error('[Handoff] Chatwoot handoffToHuman failed:', e.message)
-    );
-  }
-
   broadcastToGroup(`✋ ${staff.name} tiếp quản (từ bot) → ${displayName}`);
   await sendToCustomer(updated, 'Tư vấn viên vừa tham gia để hỗ trợ bạn trực tiếp! 💬').catch(() => {});
   resetSessionTimer(conversationId, updated.fbUserId, displayName, settings.sessionTimeoutSeconds);
@@ -455,9 +437,7 @@ async function takeoverConversation(telegramChatId, conversationId) {
 /**
  * Staff reply trong Telegram DM → gửi tới khách
  *
- * Cách 1 (Chatwoot primary): nếu conversation có chatwootConversationId,
- * gửi qua Chatwoot API → Chatwoot forward tới Facebook (tránh double-send).
- * Fallback về direct Facebook API nếu không có Chatwoot ID.
+ * Gửi thẳng qua Facebook API bằng page token đã cấu hình.
  */
 async function relayStaffMessage(telegramChatId, text) {
   const staff = await prisma.staff.findUnique({ where: { telegramChatId } });
@@ -472,28 +452,16 @@ async function relayStaffMessage(telegramChatId, text) {
     return;
   }
 
-  if (conversation.chatwootConversationId) {
-    // Cách 1: Chatwoot gửi tới Facebook — không double-send, hiển thị đúng trong Chatwoot UI
-    try {
-      await chatwootApi.sendAgentMessage(conversation.chatwootConversationId, text);
-    } catch (e) {
-      console.error('[Handoff] relayStaffMessage via Chatwoot failed:', e.message);
-      await bot().sendMessage(telegramChatId, '❌ Gửi tin nhắn thất bại. Kiểm tra kết nối Chatwoot.');
-      return;
-    }
-  } else {
-    // Fallback: gửi thẳng Facebook API (khi chưa có Chatwoot integration)
-    const sent = await sendFBMessage(conversation.fbUserId, text, getConversationPageId(conversation));
-    if (!sent) {
-      await bot().sendMessage(telegramChatId, '❌ Gửi tin nhắn thất bại. Kiểm tra cấu hình Facebook Page trong Dashboard > Cài đặt.');
-      return;
-    }
-    if (sent.error) {
-      const fbErr = sent.error;
-      await bot().sendMessage(telegramChatId, `❌ Gửi tin nhắn thất bại (lỗi ${fbErr.code}): ${fbErr.message.substring(0, 100)}`);
-      console.error('[Handoff] relayStaffMessage: FB error detail:', JSON.stringify(sent.error));
-      return;
-    }
+  const sent = await sendFBMessage(conversation.fbUserId, text, getConversationPageId(conversation));
+  if (!sent) {
+    await bot().sendMessage(telegramChatId, '❌ Gửi tin nhắn thất bại. Kiểm tra cấu hình Facebook Page trong Dashboard > Cài đặt.');
+    return;
+  }
+  if (sent.error) {
+    const fbErr = sent.error;
+    await bot().sendMessage(telegramChatId, `❌ Gửi tin nhắn thất bại (lỗi ${fbErr.code}): ${fbErr.message.substring(0, 100)}`);
+    console.error('[Handoff] relayStaffMessage: FB error detail:', JSON.stringify(sent.error));
+    return;
   }
 
   // Lưu vào DB
@@ -512,8 +480,7 @@ async function relayStaffMessage(telegramChatId, text) {
 }
 
 /**
- * Được gọi từ chatwootHandler khi agent reply từ Chatwoot UI
- * để reset session inactivity timer (tránh session tự đóng khi đang chat)
+ * Reset session inactivity timer từ một caller bên ngoài module.
  */
 async function resetSessionTimerExternal(conversationId, fbUserId, displayName) {
   const settings = await getSettings();
@@ -588,13 +555,6 @@ async function endHumanSession(conversationId, reason = 'timeout') {
     where: { id: conversationId },
     data: { handoffStatus: 'bot', assignedStaffId: null, humanSessionExpiresAt: null, botGraceUntil: graceUntil, context: clearDialogState(conversation.context) },
   });
-
-  // Sync Chatwoot: chuyển conversation về pending (bot mode)
-  if (conversation.chatwootConversationId) {
-    chatwootApi.botTakeOver(conversation.chatwootConversationId).catch(e =>
-      console.error('[Handoff] Chatwoot botTakeOver failed:', e.message)
-    );
-  }
 
   const staffName = conversation.assignedStaff?.name || 'Nhân viên';
   const displayName = conversation.fbUserName || 'Khách hàng';
@@ -754,13 +714,6 @@ async function handlePendingTimeout(conversationId, originalMessage, notifiedCha
     data: { handoffStatus: 'bot', botGraceUntil: graceUntil, context: clearDialogState(conversation.context) },
   });
 
-  // Sync Chatwoot: chuyển về pending (không ai nhận → bot xử lý)
-  if (conversation.chatwootConversationId) {
-    chatwootApi.botTakeOver(conversation.chatwootConversationId).catch(e =>
-      console.error('[Handoff] Chatwoot botTakeOver (timeout) failed:', e.message)
-    );
-  }
-
   // Notify staff đã nhận DM và clear staffPendingMap
   for (const chatId of notifiedChatIds) {
     try {
@@ -835,16 +788,10 @@ function getConversationPageId(conversation) {
  * @param {string} [pageId] - ID của Facebook Page (bắt buộc để gửi đúng page)
  */
 /**
- * Gửi tin nhắn hệ thống tới khách — tự chọn kênh phù hợp:
- * - Có chatwootConversationId → gửi qua Chatwoot API (hoạt động với mọi channel)
- * - Không có → fallback về Facebook Graph API trực tiếp
+ * Gửi tin nhắn hệ thống tới khách qua Facebook Graph API trực tiếp.
  */
 async function sendToCustomer(conversation, text) {
-  if (conversation.chatwootConversationId) {
-    await chatwootApi.sendMessage(conversation.chatwootConversationId, text);
-  } else {
-    await sendFBMessage(conversation.fbUserId, text, getConversationPageId(conversation));
-  }
+  await sendFBMessage(conversation.fbUserId, text, getConversationPageId(conversation));
 }
 
 /**

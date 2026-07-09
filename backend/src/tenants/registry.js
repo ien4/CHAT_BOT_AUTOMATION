@@ -1,6 +1,5 @@
 const getPrisma = require('../db');
 const prisma = getPrisma();
-const { decryptIfPresent } = require('../chatwoot/crypto');
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 phút
 
@@ -8,12 +7,8 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 phút
 const cache = new Map();
 
 /**
- * Load tenant từ DB, decrypt credentials, cache kết quả.
+ * Load tenant từ DB và cache kết quả.
  * Trả về null nếu không tìm thấy hoặc inactive.
- *
- * tenant trả về có thêm:
- *   _decryptedApiToken  : string | null
- *   _webhookSecret      : string | null
  */
 async function getBySlug(slug) {
   const cached = cache.get(slug);
@@ -34,15 +29,8 @@ async function getBySlug(slug) {
     return null;
   }
 
-  // Decrypt sensitive fields một lần, lưu vào object
-  const enriched = {
-    ...tenant,
-    _decryptedApiToken: decryptIfPresent(tenant.chatwootApiTokenEnc),
-    _webhookSecret:     decryptIfPresent(tenant.webhookSecretEnc),
-  };
-
-  cache.set(slug, { tenant: enriched, expiresAt: Date.now() + CACHE_TTL });
-  return enriched;
+  cache.set(slug, { tenant, expiresAt: Date.now() + CACHE_TTL });
+  return tenant;
 }
 
 /**

@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 08B Update - Backend Chatwoot Runtime Removal (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Backend Chatwoot webhook routes | Removed | `backend/src/index.js` không còn `POST /chatwoot-webhook` hoặc `POST /chatwoot-webhook/:slug` | Direct Facebook `GET/POST /webhook` vẫn giữ nguyên. |
+| Runtime Chatwoot files | Deleted | `backend/src/webhook/chatwootHandler.js`, `backend/src/tenants/webhookHandler.js`, `backend/src/chatwoot/api.js`, `backend/src/chatwoot/crypto.js`, `backend/src/adapters/chatwootAdapter.js` | Không còn handler/client/adapter Chatwoot active trong backend runtime. |
+| Dashboard backend Chatwoot API routes | Removed | `/api/settings/chatwoot-test` và `/api/channel-configs/lookup-inboxes` không còn route riêng | Runtime smoke xác nhận cả hai trả 404. |
+| Credential crypto | Replaced | `backend/src/infrastructure/services/credentialCrypto.js` | Helper generic thay cho `chatwoot/crypto`; vẫn dùng để mã hóa field legacy còn trong schema. |
+| Tenant registry | Cleaned | `backend/src/tenants/registry.js` | Không còn decrypt `_decryptedApiToken` hoặc `_webhookSecret` cho Chatwoot webhook. |
+| Owner Telegram handoff | Cleaned | `backend/src/telegram/handoff.js` | Bỏ sync/takeover/end-session qua Chatwoot; staff outbound dùng direct Facebook `sendFBMessage` như nhánh hiện hữu. |
+| Tenant handoff | Degraded safely | `backend/src/tenants/handoff.js` | Không fallback sang Chatwoot; tenant direct outbound được báo rõ là chưa implemented, tránh gọi tích hợp cũ. |
+| Direct Facebook webhook | Preserved | `backend/src/index.js`, `backend/src/webhook/handler.js` | Smoke `GET /webhook` thiếu/wrong verify token trả 403, không crash. |
+| Static validation | PASS | `node --check` các file backend trọng tâm và `npx prisma validate` | Không sửa Prisma schema/migrations. |
+| Runtime smoke | PASS | 16/16 checks PASS bằng Express app tạm, DB local `localhost:5433` | Không gọi Facebook/Telegram/Gemini/Chatwoot thật. |
+| Remaining backend source refs | Tracked | `backend/src/api/dashboard.js`, `backend/src/infrastructure/services/config.js`, README placeholder | Các ref còn lại là schema/env/docs legacy, chuyển Prompt 08C hoặc docs cleanup. |
+| Out-of-scope safety | PASS | `git diff --name-status` | Không sửa env thật, env examples, dashboard frontend, package, Dockerfile, scripts, RAG/raw SQL. |
+
 ## Prompt 08A Update - No-Chatwoot Architecture Directive Intake (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09
@@ -8,7 +27,7 @@ Ngày cập nhật: 2026-07-09
 |---|---|---|---|
 | No-Chatwoot directive | Captured | `docs/NO_CHATWOOT_DIRECT_ARCHITECTURE_CONTEXT.md` | Chatwoot bị loại khỏi kiến trúc đích; không sinh thêm Chatwoot route/controller/service/model/env mới. |
 | Full reference scan | Done | `rg -n -i "chatwoot"` toàn repo, bỏ `node_modules`, `.next`, `dist`, `build`, `coverage`, `.git` | Tìm thấy backend runtime, Prisma, env, dashboard, docs, report, scripts/bat. |
-| Backend runtime blockers | OPEN | `backend/src/index.js`, `backend/src/webhook/chatwootHandler.js`, `backend/src/tenants/webhookHandler.js`, `backend/src/chatwoot/*`, `backend/src/adapters/chatwootAdapter.js`, handoff modules | Cần Prompt 08B; Prompt 08A không xóa code. |
+| Backend runtime blockers | CLOSED BY 08B | `backend/src/index.js`, `backend/src/webhook/chatwootHandler.js`, `backend/src/tenants/webhookHandler.js`, `backend/src/chatwoot/*`, `backend/src/adapters/chatwootAdapter.js`, handoff modules | Prompt 08B đã xóa route/client/adapter/webhook runtime Chatwoot; scripts/docs/schema/env/dashboard còn backlog riêng. |
 | Schema/data model blockers | OPEN | `Conversation.chatwootConversationId`, `Tenant.chatwootModel/chatwootAccountId/chatwootBaseUrl/chatwootApiTokenEnc/chatwootTeamId`, migrations 20260614120000 và 20260615150000 | Cần Prompt 08C migration/data policy; không sửa schema trong 08A. |
 | Env/config blockers | OPEN | `backend/.env.example`, `dashboard/.env.example`, `dashboard/src/lib/config/env.ts`, `docs/ENV_POLICY.md`, `backend/src/infrastructure/services/config.js` | Còn `CHATWOOT_*` và `NEXT_PUBLIC_CHATWOOT_URL`; target mới không được thêm biến Chatwoot. |
 | Dashboard blockers | OPEN | settings/channel-configs/tenants pages và `dashboard/src/lib/api.ts` | Cần Prompt 08D để bỏ UI/API Chatwoot và đổi hướng sang Facebook direct. |

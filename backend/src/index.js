@@ -3,8 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const webhookHandler = require('./webhook/handler');
-const { handleChatwootWebhook } = require('./webhook/chatwootHandler');
-const { handleTenantWebhook }   = require('./tenants/webhookHandler');
 const tenantHandoff             = require('./tenants/handoff');
 const dashboardApi = require('./api/dashboard');
 const facebookMenu = require('./facebook/menu');
@@ -24,7 +22,6 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors());
-// Lưu raw body để validate HMAC-SHA256 signature từ Chatwoot
 app.use(express.json({
   limit: '5mb',
   verify: (req, _res, buf) => { req.rawBody = buf; },
@@ -34,15 +31,6 @@ app.use('/uploads', express.static('uploads'));
 // Facebook Webhook routes (direct - legacy)
 app.get('/webhook', webhookHandler.verifyWebhook);
 app.post('/webhook', webhookHandler.handleMessage);
-
-// Chatwoot webhook — owner (backward compat)
-app.post('/chatwoot-webhook', handleChatwootWebhook);
-
-// Chatwoot webhook — per-tenant (mỗi tenant 1 URL riêng)
-app.post('/chatwoot-webhook/:slug', (req, res, next) => {
-  console.log(`[IncomingWebhook] POST /chatwoot-webhook/${req.params.slug} | event: ${req.body?.event || '?'}`);
-  next();
-}, handleTenantWebhook);
 
 // Dashboard API routes
 app.use('/api', dashboardApi);

@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-09
-Trạng thái hiện tại: **Prompt 08A đã hoàn tất phần intake/audit tài liệu cho chỉ thị kiến trúc No-Chatwoot.**
-Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08A chỉ cập nhật docs/report, không xóa runtime code, không sửa Prisma schema/migrations, không sửa dashboard source, package hoặc DevOps. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
+Trạng thái hiện tại: **Prompt 08B đã hoàn tất gỡ Chatwoot runtime khỏi backend, giữ direct Facebook webhook `/webhook`.**
+Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend route/client/webhook/adapter runtime Chatwoot; Prisma schema/migrations, env policy, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -38,7 +38,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 15 — Tenant authorization hardening P1 detail resources | ✅ Done | Prompt 07C harden knowledge/prompts/quick-reply/content-package/package-items/appointments; runtime smoke PASS |
 | Phase 16 — Legacy/global route classification | ✅ Done with warnings | Prompt 07D classify và patch platform-only routes; còn follow-up tenant handoff/RAG upload-scrape |
 | Phase 17A — No-Chatwoot architecture intake/audit | ✅ Done with warnings | Prompt 08A; renumbering after new architecture directive |
-| Phase 17B — Backend Chatwoot runtime removal | ⬜ Planned | Prompt 08B; xóa route/client/webhook/handoff sync Chatwoot an toàn |
+| Phase 17B — Backend Chatwoot runtime removal | ✅ Done with warnings | Prompt 08B xóa route `/chatwoot-webhook*`, Chatwoot client/adapter/webhook handler, bỏ handoff sync Chatwoot; runtime smoke PASS 16/16 |
 | Phase 17C — Prisma/env No-Chatwoot cleanup plan | ⬜ Planned | Prompt 08C; lập migration/env cleanup, không db push |
 | Phase 17D — Dashboard No-Chatwoot cleanup | ⬜ Planned | Prompt 08D; xóa UI/API public env Chatwoot |
 | Phase 18 — RAG/raw SQL hardening | ⬜ Planned | Prompt 09; chèn sau No-Chatwoot migration scan |
@@ -47,6 +47,27 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 08B — Backend Chatwoot runtime removal
+
+- [x] Preflight Git/env: branch `chore/prompt-05r-docs-local-run`, working tree sạch trước patch, `.env`/`.env.local` gitignored, không có env tracked/staged.
+- [x] Xác nhận commit Prompt 08A `9851bd1` tồn tại.
+- [x] Baseline static validation trước patch PASS cho backend entry/API/webhook/handoff/settings/prompts và `npx prisma validate`.
+- [x] Xóa đăng ký route runtime `POST /chatwoot-webhook` và `POST /chatwoot-webhook/:slug` khỏi `backend/src/index.js`.
+- [x] Giữ nguyên direct Facebook webhook `GET /webhook` và `POST /webhook`.
+- [x] Xóa backend runtime files Chatwoot: owner webhook, tenant webhook, Chatwoot API client, Chatwoot crypto helper, Chatwoot adapter, integration README.
+- [x] Bỏ dashboard backend route Chatwoot test và lookup inboxes: `/api/settings/chatwoot-test`, `/api/channel-configs/lookup-inboxes`.
+- [x] Bỏ handoff sync qua Chatwoot trong `telegram/handoff.js` và `tenants/handoff.js`; owner outbound Facebook direct giữ theo `sendFBMessage`, tenant outbound direct được ghi rõ là chưa implemented thay vì fallback sang Chatwoot.
+- [x] Thay helper mã hóa credential runtime bằng `backend/src/infrastructure/services/credentialCrypto.js` không mang tên Chatwoot.
+- [x] Tenant registry không còn decrypt/cache `_decryptedApiToken` hoặc `_webhookSecret` phục vụ Chatwoot.
+- [x] Static validation sau patch PASS: `node --check` các file backend trọng tâm, `credentialCrypto.js`, repository/controller routes đã tách; `npx prisma validate`.
+- [x] Runtime smoke PASS 16/16: `/chatwoot-webhook*` 404, route test/lookup Chatwoot cũ 404, `/webhook` verify lỗi 403, prompts/settings/handoff và tenant guard regression PASS.
+- [x] Không sửa Prisma schema/migrations, env examples/policy, dashboard frontend/API client, RAG/raw SQL, package, Dockerfile hoặc scripts.
+- [x] Tạo report Prompt 08B: `report/PROMPT_08B_BACKEND_CHATWOOT_RUNTIME_REMOVAL_REPORT.md`.
+
+Trạng thái: **PASS WITH WARNINGS**.
+Remaining references hợp lệ trong phạm vi 08B: `backend/src/api/dashboard.js` còn field Prisma cũ `chatwoot*` vì schema/env cleanup để Prompt 08C; `backend/src/infrastructure/services/config.js` còn warning `CHATWOOT_*` để Prompt 08C; README placeholder dưới `backend/src/domain`/`backend/src/infrastructure` còn chữ Chatwoot để docs cleanup sau; dashboard frontend và DevOps scripts còn backlog Prompt 08D/10.
+Next khuyến nghị: **Prompt 08C — Prisma/env No-Chatwoot cleanup plan** trước khi xóa field/data cũ; sau đó **Prompt 08D** dashboard No-Chatwoot cleanup, rồi **Prompt 09** RAG/raw SQL hardening.
 
 ### Prompt 08A — No-Chatwoot architecture directive intake & impact audit
 
@@ -60,7 +81,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 - [x] Không sửa runtime source, Prisma schema/migrations, RAG/raw SQL, webhook logic, dashboard frontend, package hoặc DevOps scripts.
 
 Trạng thái: **PASS WITH WARNINGS**.
-Blocking references còn lại: backend runtime vẫn có `/chatwoot-webhook`, `/chatwoot-webhook/:slug`, `backend/src/chatwoot/*`, `chatwootAdapter`, tenant/Telegram handoff sync qua Chatwoot; Prisma schema/migrations còn field `chatwoot*`; env example/dashboard helper/dashboard pages còn Chatwoot UI/API; `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt` còn luồng Chatwoot. Historical reports giữ nguyên để làm bằng chứng quá khứ.
+Blocking references tại thời điểm Prompt 08A: backend runtime vẫn có `/chatwoot-webhook`, `/chatwoot-webhook/:slug`, `backend/src/chatwoot/*`, `chatwootAdapter`, tenant/Telegram handoff sync qua Chatwoot; Prisma schema/migrations còn field `chatwoot*`; env example/dashboard helper/dashboard pages còn Chatwoot UI/API; `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt` còn luồng Chatwoot. Sau Prompt 08B, nhóm backend runtime đã được xử lý; schema/env/dashboard/scripts vẫn là backlog. Historical reports giữ nguyên để làm bằng chứng quá khứ.
 Next khuyến nghị: **Prompt 08B — backend Chatwoot runtime removal** trước RAG/raw SQL; sau đó **Prompt 08C** schema/env cleanup plan, **Prompt 08D** dashboard cleanup, rồi **Prompt 09** RAG/raw SQL hardening.
 
 ### Prompt 07D — Legacy/global route authorization classification

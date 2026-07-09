@@ -27,13 +27,6 @@ function clearDialogState(context) {
   return rest;
 }
 
-function createTenantChatwootClient(tenant) {
-  const { createClientFromTenant } = require('../chatwoot/api');
-  const { decryptIfPresent } = require('../chatwoot/crypto');
-  const enrichedTenant = { ...tenant, _decryptedApiToken: decryptIfPresent(tenant.chatwootApiTokenEnc) };
-  return createClientFromTenant(enrichedTenant);
-}
-
 // ==================== HANDOFF EVENTS RECORDING ====================
 
 async function recordHandoffEvent({
@@ -368,7 +361,8 @@ async function relayToStaff(conversation, tenant, messageText) {
 }
 
 /**
- * Staff gõ tin nhắn trong Telegram → forward tới khách qua Chatwoot API.
+ * Staff gõ tin nhắn trong Telegram.
+ * Tenant outbound trực tiếp chưa có implementation an toàn trong Prompt 08B.
  */
 async function relayStaffMessage(telegramChatId, text) {
   const conversation = await prisma.conversation.findFirst({
@@ -382,36 +376,11 @@ async function relayStaffMessage(telegramChatId, text) {
     await bot().sendMessage(telegramChatId, 'ℹ️ Bạn không có cuộc hội thoại đang mở.');
     return;
   }
-  const staff = conversation.assignedTenantStaff;
-
-  // Lấy tenant để dùng đúng Chatwoot client
-  const tenant = await prisma.tenant.findUnique({ where: { id: staff.tenantId } });
-  if (!tenant) return;
-
-  const cwClient = createTenantChatwootClient(tenant);
-
-  try {
-    await cwClient.sendAgentMessage(conversation.chatwootConversationId, text);
-  } catch (e) {
-    console.error('[TenantHandoff] relayStaffMessage via Chatwoot failed:', e.message);
-    await bot().sendMessage(telegramChatId, '❌ Gửi tin nhắn thất bại. Kiểm tra kết nối Chatwoot của tenant.');
-    return;
-  }
-
-  await prisma.message.create({
-    data: {
-      conversationId: conversation.id,
-      direction: 'staff_outbound',
-      content:   text,
-      metadata:  { staffId: staff.id, staffName: staff.name, tenantId: staff.tenantId },
-    },
-  });
-
-  const settings = getTenantSettings(tenant);
-  resetSessionTimer(
-    conversation.id, conversation.fbUserId,
-    conversation.fbUserName || 'Khách', settings.sessionTimeoutSeconds, tenant
+  await bot().sendMessage(
+    telegramChatId,
+    'ℹ️ Gửi trả lời tenant trực tiếp chưa được hỗ trợ trong backend hiện tại. Cần prompt riêng để nối outbound Facebook theo tenant.'
   );
+  return false;
 }
 
 // ==================== CLAIM ====================
@@ -519,13 +488,6 @@ async function claimConversation(telegramChatId, conversationId, callbackQuery =
 
   if (tenant) broadcastToGroup(tenant, `✅ ${staff.name} tiếp nhận → ${displayName}`);
 
-  // Sync Chatwoot
-  if (updated.chatwootConversationId && tenant) {
-    createTenantChatwootClient(tenant)
-      .handoffToHuman(updated.chatwootConversationId)
-      .catch(e => console.error('[TenantHandoff] Chatwoot handoffToHuman failed:', e.message));
-  }
-
   resetSessionTimer(conversationId, updated.fbUserId, displayName, settings.sessionTimeoutSeconds, tenant);
 
   // Ghi event claim
@@ -594,12 +556,6 @@ async function takeoverConversation(telegramChatId, conversationId) {
     }
   );
 
-  if (updated.chatwootConversationId && tenant) {
-    createTenantChatwootClient(tenant)
-      .handoffToHuman(updated.chatwootConversationId)
-      .catch(e => console.error('[TenantHandoff] Chatwoot handoffToHuman failed:', e.message));
-  }
-
   if (tenant) broadcastToGroup(tenant, `✋ ${staff.name} tiếp quản từ bot → ${displayName}`);
   resetSessionTimer(conversationId, updated.fbUserId, displayName, settings.sessionTimeoutSeconds, tenant);
 
@@ -650,13 +606,6 @@ async function endSession(conversationId, reason = 'timeout') {
     },
   });
 
-  // Sync Chatwoot
-  if (conversation.chatwootConversationId && tenant) {
-    createTenantChatwootClient(tenant)
-      .botTakeOver(conversation.chatwootConversationId)
-      .catch(e => console.error('[TenantHandoff] botTakeOver failed:', e.message));
-  }
-
   const staffName   = conversation.assignedTenantStaff?.name || 'Nhân viên';
   const displayName = conversation.fbUserName || 'Khách hàng';
 
@@ -691,14 +640,7 @@ async function endSession(conversationId, reason = 'timeout') {
   });
 
   const handled = await handleEndedHumanSession(conversation, tenant);
-  if (!handled && conversation.chatwootConversationId && tenant) {
-    createTenantChatwootClient(tenant)
-      .sendMessage(
-        conversation.chatwootConversationId,
-        'Tu van vien vua ket thuc phien. Bot se tiep tuc ho tro ban, vui long gui lai cau hoi de minh xu ly nhe.'
-      )
-      .catch(e => console.error('[TenantHandoff] fallback send failed:', e.message));
-  }
+  if (!handled) console.warn('[TenantHandoff] Tenant outbound fallback is not implemented.');
 }
 
 async function endSessionByStaff(telegramChatId) {
@@ -748,13 +690,6 @@ async function handlePendingTimeout(conversationId, originalMessage, notifiedCha
     },
   });
 
-  // Sync Chatwoot
-  if (conversation.chatwootConversationId && tenant) {
-    createTenantChatwootClient(tenant)
-      .botTakeOver(conversation.chatwootConversationId)
-      .catch(e => console.error('[TenantHandoff] botTakeOver (timeout) failed:', e.message));
-  }
-
   for (const chatId of notifiedChatIds) {
     try {
       await bot().sendMessage(chatId, `⏰ [${tenant?.name}] Không ai tiếp nhận — bot tự động trả lời ${conversation.fbUserName || 'khách hàng'}.`);
@@ -781,7 +716,7 @@ async function handlePendingTimeout(conversationId, originalMessage, notifiedCha
 }
 
 async function handleEndedHumanSession(conversation, tenant, originalMessage = null) {
-  if (!conversation?.chatwootConversationId || !tenant) return false;
+  if (!conversation || !tenant) return false;
 
   const lastMessage = originalMessage
     ? { direction: 'inbound', content: originalMessage }
@@ -804,8 +739,8 @@ async function handleEndedHumanSession(conversation, tenant, originalMessage = n
     });
     if (!reply) return false;
 
-    await createTenantChatwootClient(tenant).sendMessage(conversation.chatwootConversationId, reply);
-    return true;
+    console.warn('[TenantHandoff] Bot generated tenant reply but outbound direct channel is not implemented yet.');
+    return false;
   } catch (e) {
     console.error('[TenantHandoff] Bot takeover failed:', e.message);
     return false;

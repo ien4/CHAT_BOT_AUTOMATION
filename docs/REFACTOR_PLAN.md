@@ -1,5 +1,42 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 08B — Backend Chatwoot runtime removal (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 08B đã thực hiện phase backend runtime removal cho chỉ thị No-Chatwoot. Phạm vi chỉ ở backend source/docs/report, không đổi schema, migrations, env policy, dashboard frontend, package hoặc DevOps.
+
+Thay đổi đã áp dụng:
+
+- Xóa route runtime Chatwoot khỏi `backend/src/index.js`: không còn `POST /chatwoot-webhook` và `POST /chatwoot-webhook/:slug`.
+- Giữ direct Facebook endpoint `GET /webhook` và `POST /webhook`.
+- Xóa các module runtime Chatwoot: `webhook/chatwootHandler.js`, `tenants/webhookHandler.js`, `chatwoot/api.js`, `chatwoot/crypto.js`, `adapters/chatwootAdapter.js`, `infrastructure/integrations/chatwoot/README.md`.
+- Xóa dashboard backend route test/lookup Chatwoot trong `backend/src/api/dashboard.js`: `/settings/chatwoot-test` và `/channel-configs/lookup-inboxes`.
+- Đổi `maskTenant.webhookUrl` thành `null`; `/tenants/:id/webhook-info` trả `410` để tránh hướng dẫn webhook Chatwoot cũ.
+- Bỏ sync Chatwoot trong `telegram/handoff.js` và `tenants/handoff.js`.
+- Thêm `backend/src/infrastructure/services/credentialCrypto.js` làm helper mã hóa generic cho credential legacy còn tồn tại trong schema.
+- `tenants/registry.js` không còn decrypt/cache token/secret Chatwoot runtime.
+
+Validation:
+
+- Static validation PASS: `node --check` cho backend entry/API/webhook/handoff/settings/prompts/repositories và `credentialCrypto.js`.
+- `npx prisma validate` PASS.
+- Runtime smoke PASS 16/16 bằng Express app tạm: `/chatwoot-webhook*` trả 404; route Chatwoot test/lookup cũ trả 404; `/webhook` verify lỗi trả 403; prompts/settings/handoff/tenant guard regression PASS.
+
+Không thay đổi:
+
+- Không sửa `backend/prisma/schema.prisma` hoặc migrations.
+- Không sửa `.env`, `.env.example`, env policy, dashboard frontend/API client.
+- Không sửa RAG/raw SQL, package files, Dockerfile hoặc scripts.
+- Không gọi migration/db push/docker compose/start-all.
+
+Backlog sau 08B:
+
+- **Prompt 08C**: Prisma/env No-Chatwoot cleanup plan cho `chatwoot*` fields, `CHATWOOT_*` config warnings, migrations/data policy. Không dùng `db push`.
+- **Prompt 08D**: dashboard No-Chatwoot cleanup cho settings/channel-configs/tenants UI và API client.
+- **Prompt 10/DevOps**: cleanup `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt`, backend scripts cũ sau khi schema/dashboard đã rõ.
+- **Prompt 09**: RAG/raw SQL hardening sau khi No-Chatwoot backend/dashboard/schema blocker được đóng.
+
 ## Prompt 08A — No-Chatwoot architecture intake/audit (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09

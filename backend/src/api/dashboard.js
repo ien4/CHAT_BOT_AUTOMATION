@@ -8,7 +8,7 @@ const llmFactory = require('../llm/factory');
 const contextManager = require('../bot/context');
 const facebookMenu = require('../facebook/menu');
 const getPrisma = require('../db');
-const { encryptIfPresent, decryptIfPresent } = require('../chatwoot/crypto');
+const { encryptIfPresent } = require('../infrastructure/services/credentialCrypto');
 const tenantRegistry = require('../tenants/registry');
 const createPromptRoutes = require('../presentation/http/routes/dashboard/prompts.routes');
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
@@ -1625,47 +1625,6 @@ router.post('/handoff/:conversationId/assign', authMiddleware, platformAdminOnly
 
 router.use('/settings', createSettingsRoutes({ authMiddleware, prisma }));
 
-// ==================== CHATWOOT SETTINGS ====================
-
-router.get('/settings/chatwoot-test', authMiddleware, platformAdminOnly, async (req, res) => {
-  const axios = require('axios');
-  const baseUrl = process.env.CHATWOOT_BASE_URL;
-  const accountId = process.env.CHATWOOT_ACCOUNT_ID;
-  const apiToken = process.env.CHATWOOT_API_TOKEN;
-
-  if (!baseUrl || !accountId || !apiToken) {
-    return res.json({
-      success: false,
-      error: 'Thiếu biến môi trường CHATWOOT_BASE_URL, CHATWOOT_ACCOUNT_ID hoặc CHATWOOT_API_TOKEN',
-      config: { baseUrl: !!baseUrl, accountId: !!accountId, apiToken: !!apiToken },
-    });
-  }
-
-  try {
-    const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/accounts/${accountId}/conversations`;
-    const response = await axios.get(url, {
-      headers: { 'api_access_token': apiToken },
-      timeout: 8000,
-      params: { page: 1 },
-    });
-    res.json({
-      success: true,
-      chatwootUrl: baseUrl,
-      accountId,
-      totalConversations: response.data?.data?.meta?.all_count ?? null,
-      webhookUrl: `${process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3001}`}/chatwoot-webhook`,
-    });
-  } catch (error) {
-    const status = error.response?.status;
-    let message = error.message;
-    if (status === 401) message = 'API token không hợp lệ (401 Unauthorized)';
-    else if (status === 404) message = 'Account ID không tồn tại (404)';
-    else if (error.code === 'ECONNREFUSED') message = `Không kết nối được tới ${baseUrl} — Chatwoot chưa chạy?`;
-    else if (error.code === 'ETIMEDOUT') message = `Timeout khi kết nối tới ${baseUrl}`;
-    res.json({ success: false, error: message, httpStatus: status || null });
-  }
-});
-
 // ==================== FACEBOOK PAGES ====================
 
 router.get('/facebook-pages', authMiddleware, platformAdminOnly, async (req, res) => {
@@ -1966,78 +1925,6 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
 
 // ==================== CHANNEL CONFIGS ====================
 
-// Kéo danh sách inboxes từ Chatwoot để người dùng chọn thay vì tự điền ID
-// Khi tenantScope được set → dùng credentials của tenant đó (dedicated) hoặc global (shared)
-router.get('/channel-configs/lookup-inboxes', authMiddleware, async (req, res) => {
-  try {
-    const axios = require('axios');
-    const tenantId = getTenantScope(req);
-
-    let baseUrl, accountId, apiToken;
-
-    if (tenantId) {
-      const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-      if (!tenant) return res.status(404).json({ error: 'Tenant không tồn tại' });
-      baseUrl     = tenant.chatwootModel === 'dedicated' ? tenant.chatwootBaseUrl : process.env.CHATWOOT_BASE_URL;
-      accountId   = tenant.chatwootAccountId;
-      apiToken    = tenant.chatwootApiToken;
-    } else {
-      baseUrl   = process.env.CHATWOOT_BASE_URL;
-      accountId = process.env.CHATWOOT_ACCOUNT_ID;
-      apiToken  = process.env.CHATWOOT_API_TOKEN;
-    }
-
-    if (!baseUrl || !accountId || !apiToken) {
-      return res.status(400).json({ error: 'Chưa cấu hình đầy đủ Chatwoot credentials' });
-    }
-
-    const response = await axios.get(
-      `${baseUrl}/api/v1/accounts/${accountId}/inboxes`,
-      { headers: { api_access_token: apiToken }, timeout: 8000 }
-    );
-
-    const inboxes = (response.data?.payload || []).map(inbox => ({
-      inboxId: String(inbox.id),
-      name: inbox.name,
-      channelType: mapChatwootChannel(inbox.channel_type),
-      chatwootChannelType: inbox.channel_type,
-    }));
-
-    // Đánh dấu những inbox đã được cấu hình
-    let configuredIds;
-    if (tenantId) {
-      const configured = await prisma.tenantChannelConfig.findMany({ where: { tenantId }, select: { inboxId: true } });
-      configuredIds = new Set(configured.map(c => c.inboxId));
-    } else {
-      const configured = await prisma.channelConfig.findMany({ select: { inboxId: true } });
-      configuredIds = new Set(configured.map(c => c.inboxId));
-    }
-
-    res.json(inboxes.map(i => ({ ...i, alreadyConfigured: configuredIds.has(i.inboxId) })));
-  } catch (error) {
-    if (error.response) {
-      return res.status(502).json({ error: `Chatwoot API lỗi: ${error.response.status} ${error.response.data?.error || ''}` });
-    }
-    res.status(500).json({ error: 'Không kết nối được với Chatwoot: ' + error.message });
-  }
-});
-
-// facebook.Page → facebook, Channel::WebWidget → web, Channel::Whatsapp → whatsapp, ...
-function mapChatwootChannel(chatwootType) {
-  const map = {
-    'Channel::FacebookPage': 'facebook',
-    'Channel::WebWidget': 'web',
-    'Channel::Whatsapp': 'whatsapp',
-    'Channel::Email': 'email',
-    'Channel::Instagram': 'facebook',
-    'Channel::Line': 'web',
-    'Channel::Telegram': 'web',
-    'Channel::Sms': 'whatsapp',
-    'Channel::Api': 'web',
-  };
-  return map[chatwootType] || 'web';
-}
-
 router.get('/channel-configs', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
@@ -2158,7 +2045,7 @@ function maskTenant(t) {
     webhookSecretEnc: undefined,
     hasApiToken:     !!t.chatwootApiTokenEnc,
     hasWebhookSecret: !!t.webhookSecretEnc,
-    webhookUrl: `${process.env.APP_BASE_URL || ''}/chatwoot-webhook/${t.slug}`,
+    webhookUrl: null,
   };
 }
 
@@ -2470,16 +2357,11 @@ router.get('/tenants/:id/webhook-info', authMiddleware, tenantPathAccessOnly, as
   try {
     const tenant = await prisma.tenant.findUnique({ where: { id: req.params.id } });
     if (!tenant) return res.status(404).json({ error: 'Not found' });
-    const baseUrl = process.env.APP_BASE_URL || 'https://your-server.com';
-    res.json({
-      webhookUrl: `${baseUrl}/chatwoot-webhook/${tenant.slug}`,
-      instructions: [
-        '1. Trong Chatwoot: Settings → Integrations → Agent Bots → New Agent Bot',
-        `2. Điền Webhook URL: ${baseUrl}/chatwoot-webhook/${tenant.slug}`,
-        '3. Copy "Bot Access Token" từ Chatwoot → dùng để gửi tin nhắn về',
-        '4. (Khuyến nghị) Tạo Webhook Secret → điền vào cấu hình tenant để bảo mật',
-        '5. Vào Inbox Settings → Configuration → gán Agent Bot vừa tạo',
-      ],
+    res.status(410).json({
+      error: 'Tenant webhook info theo kiến trúc inbox trung gian cũ đã bị loại bỏ.',
+      target: 'direct-facebook-webhook',
+      webhookUrl: null,
+      tenantSlug: tenant.slug,
     });
   } catch (e) {
     res.status(500).json({ error: 'Internal server error' });

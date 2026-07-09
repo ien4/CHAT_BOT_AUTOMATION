@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+
 const ALGORITHM = 'aes-256-gcm';
 
 function getKey() {
@@ -9,7 +10,6 @@ function getKey() {
   return key;
 }
 
-// Returns "ivHex:tagHex:ctHex"
 function encrypt(plaintext) {
   if (!plaintext) throw new Error('Cannot encrypt empty value');
   const iv = crypto.randomBytes(12);
@@ -29,7 +29,6 @@ function decrypt(ciphertext) {
   return Buffer.concat([decipher.update(Buffer.from(ctHex, 'hex')), decipher.final()]).toString('utf8');
 }
 
-// Null-safe: skip null/undefined
 function encryptIfPresent(value) {
   return value ? encrypt(value) : null;
 }
@@ -38,31 +37,4 @@ function decryptIfPresent(value) {
   return value ? decrypt(value) : null;
 }
 
-// Validate HMAC-SHA256 signature from Chatwoot
-// Chatwoot signs: HMAC-SHA256("${timestamp}.${body}", secret)
-// Headers: X-Chatwoot-Signature: sha256=<hex>, X-Chatwoot-Timestamp: <unix_ts>
-function validateWebhookSignature(rawBody, signatureHeader, secret, timestamp) {
-  if (!secret) return true; // No secret configured → accept all
-  if (!signatureHeader) return false;
-
-  // Chatwoot signs "timestamp.body" when timestamp header is present
-  const payload = timestamp ? `${timestamp}.${rawBody.toString('utf8')}` : rawBody;
-
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-
-  const received = signatureHeader.replace(/^sha256=/, '');
-
-  try {
-    const expBuf = Buffer.from(expected, 'hex');
-    const recBuf = Buffer.from(received, 'hex');
-    if (expBuf.length !== recBuf.length) return false;
-    return crypto.timingSafeEqual(expBuf, recBuf);
-  } catch {
-    return false;
-  }
-}
-
-module.exports = { encrypt, decrypt, encryptIfPresent, decryptIfPresent, validateWebhookSignature };
+module.exports = { encrypt, decrypt, encryptIfPresent, decryptIfPresent };
