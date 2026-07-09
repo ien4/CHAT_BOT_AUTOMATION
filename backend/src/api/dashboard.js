@@ -65,6 +65,30 @@ function tenantPathAccessOnly(req, res, next) {
   return next();
 }
 
+async function findScopedById(model, id, tenantId, args = {}) {
+  if (tenantId) {
+    return model.findFirst({
+      ...args,
+      where: { ...(args.where || {}), id, tenantId },
+    });
+  }
+
+  return model.findUnique({
+    ...args,
+    where: { id },
+  });
+}
+
+async function hasContentPackageAccess(packageId, tenantId) {
+  if (!tenantId) return true;
+
+  const pkg = await prisma.contentPackage.findFirst({
+    where: { id: packageId, tenantId },
+    select: { id: true },
+  });
+  return Boolean(pkg);
+}
+
 // ==================== AUTH ROUTES ====================
 
 router.post('/auth/login', async (req, res) => {
@@ -348,8 +372,8 @@ router.get('/knowledge', authMiddleware, async (req, res) => {
 
 router.get('/knowledge/:id', authMiddleware, async (req, res) => {
   try {
-    const item = await prisma.knowledgeBase.findUnique({
-      where: { id: req.params.id },
+    const tenantId = getTenantScope(req);
+    const item = await findScopedById(prisma.knowledgeBase, req.params.id, tenantId, {
       select: {
         id: true,
         title: true,
@@ -418,9 +442,8 @@ router.put('/knowledge/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const item = await prisma.knowledgeBase.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const item = await prisma.knowledgeBase.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!item) return res.status(404).json({ error: 'Not found' });
-      if (item.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền chỉnh sửa mục này' });
     }
     const success = await ragPipeline.updateDocument(req.params.id, req.body);
     if (!success) return res.status(404).json({ error: 'Not found or update failed' });
@@ -434,9 +457,8 @@ router.delete('/knowledge/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const item = await prisma.knowledgeBase.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const item = await prisma.knowledgeBase.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!item) return res.status(404).json({ error: 'Not found' });
-      if (item.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền xóa mục này' });
     }
     const success = await ragPipeline.deleteDocument(req.params.id);
     if (!success) return res.status(404).json({ error: 'Not found' });
@@ -584,7 +606,8 @@ router.use('/prompts', createPromptRoutes({ authMiddleware, getTenantScope, pris
 
 router.get('/prompts/:id', authMiddleware, async (req, res) => {
   try {
-    const template = await prisma.promptTemplate.findUnique({ where: { id: req.params.id } });
+    const tenantId = getTenantScope(req);
+    const template = await findScopedById(prisma.promptTemplate, req.params.id, tenantId);
     if (!template) return res.status(404).json({ error: 'Not found' });
     res.json(template);
   } catch (error) {
@@ -620,9 +643,8 @@ router.put('/prompts/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const tpl = await prisma.promptTemplate.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const tpl = await prisma.promptTemplate.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!tpl) return res.status(404).json({ error: 'Not found' });
-      if (tpl.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền chỉnh sửa prompt này' });
     }
 
     const { name, intentType, layer, systemPrompt, userPromptTemplate, modelPreference, isActive } = req.body;
@@ -649,9 +671,8 @@ router.delete('/prompts/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const tpl = await prisma.promptTemplate.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const tpl = await prisma.promptTemplate.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!tpl) return res.status(404).json({ error: 'Not found' });
-      if (tpl.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền xóa prompt này' });
     }
     await prisma.promptTemplate.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -799,7 +820,8 @@ router.get('/quick-reply-menus', authMiddleware, async (req, res) => {
 
 router.get('/quick-reply-menus/:id', authMiddleware, async (req, res) => {
   try {
-    const menu = await prisma.quickReplyMenu.findUnique({ where: { id: req.params.id } });
+    const tenantId = getTenantScope(req);
+    const menu = await findScopedById(prisma.quickReplyMenu, req.params.id, tenantId);
     if (!menu) return res.status(404).json({ error: 'Not found' });
     res.json(menu);
   } catch (error) {
@@ -839,9 +861,8 @@ router.put('/quick-reply-menus/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const menu = await prisma.quickReplyMenu.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const menu = await prisma.quickReplyMenu.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!menu) return res.status(404).json({ error: 'Not found' });
-      if (menu.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền chỉnh sửa menu này' });
     }
     const { intentType, pageId, items, isActive } = req.body;
     const data = {};
@@ -869,9 +890,8 @@ router.delete('/quick-reply-menus/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const menu = await prisma.quickReplyMenu.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const menu = await prisma.quickReplyMenu.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!menu) return res.status(404).json({ error: 'Not found' });
-      if (menu.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền xóa menu này' });
     }
     await prisma.quickReplyMenu.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1007,8 +1027,8 @@ router.get('/content-packages', authMiddleware, async (req, res) => {
 
 router.get('/content-packages/:id', authMiddleware, async (req, res) => {
   try {
-    const pkg = await prisma.contentPackage.findUnique({
-      where: { id: req.params.id },
+    const tenantId = getTenantScope(req);
+    const pkg = await findScopedById(prisma.contentPackage, req.params.id, tenantId, {
       include: {
         items: { orderBy: { order: 'asc' } },
       },
@@ -1039,9 +1059,8 @@ router.put('/content-packages/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const pkg = await prisma.contentPackage.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const pkg = await prisma.contentPackage.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!pkg) return res.status(404).json({ error: 'Not found' });
-      if (pkg.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền chỉnh sửa gói này' });
     }
     const { name, description, coverUrl, isActive, isPublic } = req.body;
     const pkg = await prisma.contentPackage.update({
@@ -1058,9 +1077,8 @@ router.delete('/content-packages/:id', authMiddleware, async (req, res) => {
   try {
     const tenantId = getTenantScope(req);
     if (tenantId) {
-      const pkg = await prisma.contentPackage.findUnique({ where: { id: req.params.id }, select: { tenantId: true } });
+      const pkg = await prisma.contentPackage.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true } });
       if (!pkg) return res.status(404).json({ error: 'Not found' });
-      if (pkg.tenantId !== tenantId) return res.status(403).json({ error: 'Không có quyền xóa gói này' });
     }
     await prisma.contentPackage.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -1073,6 +1091,11 @@ router.delete('/content-packages/:id', authMiddleware, async (req, res) => {
 
 router.get('/content-packages/:packageId/items', authMiddleware, async (req, res) => {
   try {
+    const tenantId = getTenantScope(req);
+    if (!(await hasContentPackageAccess(req.params.packageId, tenantId))) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     const items = await prisma.contentPackageItem.findMany({
       where: { packageId: req.params.packageId },
       orderBy: { order: 'asc' },
@@ -1085,6 +1108,11 @@ router.get('/content-packages/:packageId/items', authMiddleware, async (req, res
 
 router.post('/content-packages/:packageId/items', authMiddleware, async (req, res) => {
   try {
+    const tenantId = getTenantScope(req);
+    if (!(await hasContentPackageAccess(req.params.packageId, tenantId))) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     const { type, title, content, url, fileUrl, description, tags, order } = req.body;
     if (!type || !title) return res.status(400).json({ error: 'Loại và tiêu đề là bắt buộc' });
 
@@ -1109,6 +1137,11 @@ router.post('/content-packages/:packageId/items', authMiddleware, async (req, re
 
 router.put('/content-packages/:packageId/items/:itemId', authMiddleware, async (req, res) => {
   try {
+    const tenantId = getTenantScope(req);
+    if (!(await hasContentPackageAccess(req.params.packageId, tenantId))) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     const { type, title, content, url, fileUrl, description, tags, order } = req.body;
     const data = {};
     if (type !== undefined) data.type = type;
@@ -1120,10 +1153,20 @@ router.put('/content-packages/:packageId/items/:itemId', authMiddleware, async (
     if (tags !== undefined) data.tags = tags;
     if (order !== undefined) data.order = order;
 
-    const item = await prisma.contentPackageItem.update({
-      where: { id: req.params.itemId },
-      data,
-    });
+    let item;
+    if (tenantId) {
+      const result = await prisma.contentPackageItem.updateMany({
+        where: { id: req.params.itemId, packageId: req.params.packageId },
+        data,
+      });
+      if (result.count === 0) return res.status(404).json({ error: 'Not found' });
+      item = await prisma.contentPackageItem.findUnique({ where: { id: req.params.itemId } });
+    } else {
+      item = await prisma.contentPackageItem.update({
+        where: { id: req.params.itemId },
+        data,
+      });
+    }
     res.json(item);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update item' });
@@ -1132,7 +1175,19 @@ router.put('/content-packages/:packageId/items/:itemId', authMiddleware, async (
 
 router.delete('/content-packages/:packageId/items/:itemId', authMiddleware, async (req, res) => {
   try {
-    await prisma.contentPackageItem.delete({ where: { id: req.params.itemId } });
+    const tenantId = getTenantScope(req);
+    if (!(await hasContentPackageAccess(req.params.packageId, tenantId))) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    if (tenantId) {
+      const result = await prisma.contentPackageItem.deleteMany({
+        where: { id: req.params.itemId, packageId: req.params.packageId },
+      });
+      if (result.count === 0) return res.status(404).json({ error: 'Not found' });
+    } else {
+      await prisma.contentPackageItem.delete({ where: { id: req.params.itemId } });
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete item' });
@@ -1239,7 +1294,12 @@ router.get('/appointments', authMiddleware, async (req, res) => {
 router.put('/appointments/:id', authMiddleware, async (req, res) => {
   try {
     const { status, notes } = req.body;
-    const before = await prisma.appointment.findUnique({ where: { id: req.params.id } });
+    const tenantId = getTenantScope(req);
+    const before = tenantId
+      ? await prisma.appointment.findFirst({ where: { id: req.params.id, tenantId } })
+      : await prisma.appointment.findUnique({ where: { id: req.params.id } });
+    if (tenantId && !before) return res.status(404).json({ error: 'Not found' });
+
     const appointment = await prisma.appointment.update({
       where: { id: req.params.id },
       data: { status, notes },

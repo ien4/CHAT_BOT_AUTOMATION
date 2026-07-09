@@ -1,5 +1,42 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 07C — Detail resource tenant guard (PASS)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 07C xử lý P1 detail resource routes còn lại trong `backend/src/api/dashboard.js`, không tách repository và không đổi public API contract.
+
+Thay đổi đã thực hiện:
+
+- Thêm helper nhỏ `findScopedById(model, id, tenantId, args)` để detail GET dùng `findFirst({ id, tenantId })` khi request có tenant scope, còn platform không scope giữ `findUnique({ id })` như cũ.
+- Thêm helper `hasContentPackageAccess(packageId, tenantId)` để guard `ContentPackageItem` qua parent `ContentPackage.tenantId`.
+- Harden `GET/PUT/DELETE /api/knowledge/:id`: tenant mismatch trả `404`; PUT/DELETE cross-tenant bị chặn trước khi gọi RAG pipeline.
+- Harden `GET/PUT/DELETE /api/prompts/:id`: tenant mismatch trả `404`; `POST /api/prompts` giữ logic scoped hiện hữu.
+- Harden `GET/PUT/DELETE /api/quick-reply-menus/:id`: tenant mismatch trả `404`.
+- Harden `GET/PUT/DELETE /api/content-packages/:id`: tenant mismatch trả `404`.
+- Harden `GET/POST/PUT/DELETE /api/content-packages/:packageId/items...`: verify parent package trước, và tenant update/delete item ràng buộc thêm `packageId`.
+- Harden `PUT /api/appointments/:id`: tenant mismatch trả `404`; platform no-scope giữ behavior hiện hữu.
+
+Validation:
+
+- Baseline static validation trước patch PASS.
+- Static validation sau patch PASS: `node --check` cho `src/index.js`, `src/db.js`, `src/api/dashboard.js`, settings/prompts controllers/routes, repositories; `npx prisma validate`; `git diff --check`.
+- Runtime smoke PASS 47/47 bằng Express app tạm mount `dashboardApi`: no-token 401, own tenant 200, cross-tenant 404, platform no-scope không bị chặn.
+- Regression smoke PASS: `GET /api/prompts`, `GET /api/prompts?layer=intent`, `GET /api/settings/telegram-destinations`, `GET/PUT /api/settings/handoff`, P0 `/api/tenants/:id/staff`, 07B conversation detail/messages.
+- Test data local cleanup PASS; leftover `test_07c_*` = 0.
+
+Không thay đổi:
+
+- Không sửa Prisma schema/migrations.
+- Không sửa RAG pipeline, webhook, tenant handoff, bot engine, dashboard frontend, package hoặc DevOps scripts.
+- Không xử lý legacy/global staff/handoff/analytics/facebook/global Chatwoot trong Prompt 07C.
+
+Tiếp theo:
+
+- **Prompt 08 — RAG/raw SQL hardening**: xử lý `$queryRawUnsafe`, vector/raw SQL và schema/runtime mismatch quanh `knowledge_base.embedding`.
+- **Prompt 07D — legacy/global route classification** nếu muốn đóng tiếp các route quyền chưa rõ trước RAG.
+- **Prompt 06D prompt detail/write repository** chỉ nên làm sau khi detail/write ownership guard đã rõ và không mở lại lỗ cross-tenant.
+
 ## Prompt 07B — Conversation tenant guard (PASS)
 
 Ngày cập nhật: 2026-07-09

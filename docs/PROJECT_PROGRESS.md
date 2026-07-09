@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-09
-Trạng thái hiện tại: **Prompt 07B đã hoàn tất — P1 conversation list/detail/messages đã tenant-scoped; tenant user không đọc được conversation/messages của tenant khác.**
-Lưu ý bắt buộc: Prompt 07B chỉ sửa 3 route conversations trong `backend/src/api/dashboard.js`. Không sửa detail resource khác (`knowledge/prompts/quick-reply/content-package/appointments`), không sửa schema/migrations/webhook/RAG/handoff/bot/dashboard frontend/package/DevOps. Runtime smoke tạo sample conversation/message tối thiểu trên DB local `localhost:5433` và cleanup PASS.
+Trạng thái hiện tại: **Prompt 07C đã hoàn tất — P1 detail resource tenant guard đã được harden cho knowledge, prompts, quick-reply, content packages, package items và appointments.**
+Lưu ý bắt buộc: Prompt 07C chỉ sửa `backend/src/api/dashboard.js` và docs/report. Không sửa Prisma schema/migrations, RAG pipeline, webhook, tenant handoff, bot engine, dashboard frontend, package hoặc DevOps. Runtime smoke local `localhost:5433` PASS 47/47, cleanup dữ liệu `test_07c_*` PASS.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -35,12 +35,35 @@ Lưu ý bắt buộc: Prompt 07B chỉ sửa 3 route conversations trong `backen
 | Phase 12 — Tenant safety audit | ✅ Done — NEEDS FIX logged | Prompt 07 audit xong; P0/P1 tenant authorization gaps đã được phân loại |
 | Phase 13 — Tenant authorization hardening P0 | ✅ Done | Prompt 07A thêm `tenantPathAccessOnly` cho `/api/tenants/:id/*`; runtime denied smoke PASS |
 | Phase 14 — Tenant authorization hardening P1 conversations | ✅ Done | Prompt 07B tenant-scope `/api/conversations`, detail, messages; cross-tenant smoke PASS |
-| Phase 15 — Tenant authorization hardening P1 detail resources | ⬜ Planned | Prompt 07C — knowledge/prompts/quick-reply/content-package/package-items/appointments |
-| Phase 16 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
-| Phase 17 — Dashboard feature split | ⬜ Planned | Prompt 09 |
-| Phase 18 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
+| Phase 15 — Tenant authorization hardening P1 detail resources | ✅ Done | Prompt 07C harden knowledge/prompts/quick-reply/content-package/package-items/appointments; runtime smoke PASS |
+| Phase 16 — Legacy/global route classification | ⬜ Planned | Prompt 07D nếu cần phân loại staff/handoff/analytics/facebook/global Chatwoot |
+| Phase 17 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 18 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 19 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 07C — Detail resource tenant guard
+
+- [x] Preflight Git/env: branch `chore/prompt-05r-docs-local-run`, `.env`/`.env.local` gitignored, không có env tracked/staged.
+- [x] Xác nhận commit Prompt 07B `34496c61060561048e645e8dbea8b80894d95a5e` tồn tại.
+- [x] Đọc context bắt buộc: report Prompt 07/07A/07B, docs progress/checklist/refactor/architecture/local guide, `dashboard.js`, `schema.prisma`.
+- [x] Baseline static validation trước patch PASS.
+- [x] Route map detail resource hoàn tất cho `knowledge`, `prompts`, `quick-reply-menus`, `content-packages`, `content-package-items`, `appointments`.
+- [x] Schema ownership map xác nhận `KnowledgeBase`, `PromptTemplate`, `QuickReplyMenu`, `ContentPackage`, `Appointment` có `tenantId`; `ContentPackageItem` guard qua `ContentPackage.tenantId`.
+- [x] Patch detail GET/update/delete: tenant-scoped request chỉ thấy resource thuộc tenant; cross-tenant trả `404`, không dùng `403` cho detail mismatch.
+- [x] Patch package items: verify parent package tenant ownership trước khi list/create/update/delete item; tenant branch update/delete item ràng buộc thêm `packageId`.
+- [x] Giữ platform behavior khi không có tenant scope; không tự thêm `tenantId: null` cho detail route cũ.
+- [x] Không sửa schema/migrations/RAG/webhook/handoff/bot/dashboard frontend/package/DevOps.
+- [x] Static validation sau patch PASS: `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check`.
+- [x] Runtime smoke PASS 47/47 bằng Express app tạm mount `dashboardApi`: no-token 401, own tenant 200, cross tenant 404, platform không bị chặn, regression prompts/settings/handoff/P0/07B PASS.
+- [x] Cleanup test data PASS: leftover `test_07c_*` bằng 0 cho knowledge/prompts/quick/package/items/conversations/messages/appointments.
+- [x] Tạo report Prompt 07C: `report/PROMPT_07C_DETAIL_RESOURCE_TENANT_GUARD_REPORT.md`.
+
+Trạng thái: **PASS**.
+Residual risk còn lại: legacy/global routes (`staff/handoff/analytics/facebook/global Chatwoot`) cần Prompt 07D nếu muốn phân loại quyền rõ hơn; RAG/raw SQL và schema mismatch `knowledge_base.embedding NOT NULL` để Prompt 08; Prompt 06D chỉ làm sau khi ownership/detail guard đã rõ.
+Commit: `Harden detail resource tenant authorization` (xem `git log -1` để lấy hash HEAD).
+Next khuyến nghị: **Prompt 08 — RAG/raw SQL hardening** nếu chấp nhận legacy/global routes để Prompt 07D riêng; hoặc **Prompt 07D — legacy/global route classification** nếu muốn đóng tiếp các route quyền chưa rõ trước RAG.
 
 ### Prompt 07B — Tenant authorization hardening P1 conversations
 

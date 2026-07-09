@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 07C Update - Detail Resource Tenant Guard (PASS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Knowledge detail guard | Fixed | `GET/PUT/DELETE /api/knowledge/:id` dùng ownership check theo `{ id, tenantId }` khi request có tenant scope | Cross-tenant trả `404`; PUT/DELETE cross-tenant bị chặn trước khi gọi RAG pipeline. |
+| Prompts detail/write guard | Fixed | `GET/PUT/DELETE /api/prompts/:id` tenant-scoped bằng `findScopedById` hoặc pre-check `{ id, tenantId }` | `POST /api/prompts` đã scoped từ trước bằng `getTenantScope(req)`. |
+| Quick reply detail/write guard | Fixed | `GET/PUT/DELETE /api/quick-reply-menus/:id` tenant-scoped bằng `{ id, tenantId }` | Cross-tenant không leak resource tồn tại. |
+| Content package detail/write guard | Fixed | `GET/PUT/DELETE /api/content-packages/:id` tenant-scoped bằng `{ id, tenantId }` | Platform không có tenant scope giữ lookup theo id như cũ. |
+| Content package items guard | Fixed | `GET/POST/PUT/DELETE /api/content-packages/:packageId/items...` verify parent package bằng `{ id: packageId, tenantId }` trước khi query item | `ContentPackageItem` không có `tenantId`, isolation đi qua `ContentPackage.tenantId`; tenant update/delete item ràng buộc thêm `packageId`. |
+| Appointment update guard | Fixed | `PUT /api/appointments/:id` dùng `findFirst({ id, tenantId })` khi có tenant scope | Own update smoke dùng payload không đổi status/notes để không kích hoạt notification. |
+| Static validation | PASS | `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime cross-tenant smoke | PASS | 47/47 route checks PASS: own 200, cross 404, platform 200, no-token 401 | Smoke bằng Express app tạm mount `dashboardApi`, DB local `localhost:5433`. |
+| Regression smoke | PASS | prompts list/layer 200, telegram destinations 200, handoff GET/PUT 200, P0 tenant staff guard 403, 07B conversation detail/messages 404 | Không start `src/index.js`, không kích hoạt startup side effect. |
+| Test data cleanup | PASS | leftover `test_07c_*` = 0 cho knowledge/prompts/quick/package/items/conversations/messages/appointments | Knowledge sample dùng vector zero 768 chiều vì DB local hiện còn `embedding NOT NULL`; không sửa schema. |
+| Source changed | Có, scoped | `backend/src/api/dashboard.js`, docs/report | Không sửa RAG pipeline, webhook, tenant handoff, bot, dashboard frontend, package, DevOps. |
+| P1 residual | OPEN | legacy/global staff/handoff/analytics/facebook/global Chatwoot | Cần Prompt 07D nếu muốn phân loại quyền riêng. |
+| P2 residual | OPEN | RAG/raw SQL và schema/runtime mismatch quanh `knowledge_base.embedding` | Chuyển Prompt 08. |
+
 ## Prompt 07B Update - Conversation Tenant Guard (PASS)
 
 Ngày cập nhật: 2026-07-09
