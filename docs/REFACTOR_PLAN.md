@@ -1,5 +1,42 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 07A — Tenant authorization hardening P0 (PASS WITH FIXES)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 07A xử lý đúng P0 từ Prompt 07 trong phạm vi nhỏ: nhóm nested route `/api/tenants/:id/*` trong `backend/src/api/dashboard.js`.
+
+Thay đổi đã thực hiện:
+
+- Thêm middleware `tenantPathAccessOnly(req, res, next)` gần auth/role middleware hiện có.
+- Platform admin (`req.user.tenantId` rỗng/null) được đi qua như behavior hiện hữu.
+- Tenant user chỉ được truy cập path tenant khi `req.user.tenantId === req.params.id`; nếu khác trả `403` với `{ error }`.
+- Gắn guard vào đúng 12 route P0:
+  - `GET/POST/PUT/DELETE /tenants/:id/staff...`
+  - `GET/POST/DELETE /tenants/:id/channel-configs...`
+  - `GET/POST/PUT/DELETE /tenants/:id/knowledge...`
+  - `GET /tenants/:id/webhook-info`
+- Với child write/delete trong cùng nhóm P0, đã ràng buộc thêm `tenantId: req.params.id` cho `TenantStaff` update/delete và `TenantChannelConfig` delete để không thể dùng `sid/cid` của tenant khác sau khi path guard đã pass.
+
+Validation:
+
+- Baseline static validation trước patch PASS.
+- Static validation sau patch PASS: `node --check` cho dashboard/settings/prompts/repository trọng tâm và `npx prisma validate`.
+- Runtime denied smoke PASS bằng Express app tạm chỉ mount `dashboardApi`: no-token 401, tenant cùng path 200, tenant khác path 403, platform path 200.
+- Regression smoke PASS: `/api/prompts`, `/api/prompts?layer=intent`, `/api/settings/telegram-destinations`, handoff GET/PUT đều 200.
+- Không start `src/index.js`; không kích hoạt Telegram polling hoặc Facebook menu setup.
+
+Không thay đổi:
+
+- Không sửa Prisma schema/migrations.
+- Không sửa webhook, tenant handoff, RAG, bot engine, dashboard frontend, package hoặc DevOps scripts.
+- Không sửa P1 conversation/detail/messages/detail resource routes trong Prompt 07A.
+
+Tiếp theo bắt buộc:
+
+- **Prompt 07B — Tenant authorization hardening P1**: xử lý `/api/conversations`, `/api/conversations/:id`, `/api/conversations/:id/messages`, detail routes như `knowledge/prompts/quick-reply/content-package/package-items/appointments`, và phân loại legacy global routes.
+- **Prompt 08** chỉ nên chạy sau 07B nếu route detail/write vẫn còn mở; nếu cần đi nhanh, Prompt 08 chỉ xử lý RAG raw SQL và không mở rộng dashboard API.
+
 ## Prompt 07 — Tenant safety audit + local DB preflight (NEEDS FIX)
 
 Ngày cập nhật: 2026-07-09

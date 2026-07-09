@@ -55,6 +55,16 @@ function platformAdminOnly(req, res, next) {
   next();
 }
 
+function tenantPathAccessOnly(req, res, next) {
+  if (!req.user?.tenantId) return next();
+
+  if (req.user.tenantId !== req.params.id) {
+    return res.status(403).json({ error: 'Không có quyền truy cập tenant này' });
+  }
+
+  return next();
+}
+
 // ==================== AUTH ROUTES ====================
 
 router.post('/auth/login', async (req, res) => {
@@ -2201,7 +2211,7 @@ router.delete('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res
 
 // ==================== TENANT STAFF ====================
 
-router.get('/tenants/:id/staff', authMiddleware, async (req, res) => {
+router.get('/tenants/:id/staff', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const staff = await prisma.tenantStaff.findMany({
       where: { tenantId: req.params.id },
@@ -2213,7 +2223,7 @@ router.get('/tenants/:id/staff', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/tenants/:id/staff', authMiddleware, async (req, res) => {
+router.post('/tenants/:id/staff', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const { name, telegramId, telegramChatId } = req.body;
     if (!name || !telegramId || !telegramChatId) {
@@ -2229,16 +2239,21 @@ router.post('/tenants/:id/staff', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/tenants/:id/staff/:sid', authMiddleware, async (req, res) => {
+router.put('/tenants/:id/staff/:sid', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const { name, isOnDuty, isActive } = req.body;
     const data = {};
     if (name     !== undefined) data.name     = name;
     if (isOnDuty !== undefined) data.isOnDuty = isOnDuty;
     if (isActive !== undefined) data.isActive = isActive;
-    const staff = await prisma.tenantStaff.update({
-      where: { id: req.params.sid },
+    const result = await prisma.tenantStaff.updateMany({
+      where: { id: req.params.sid, tenantId: req.params.id },
       data,
+    });
+    if (result.count === 0) return res.status(404).json({ error: 'Not found' });
+
+    const staff = await prisma.tenantStaff.findUnique({
+      where: { id: req.params.sid },
     });
     res.json(staff);
   } catch (e) {
@@ -2246,9 +2261,13 @@ router.put('/tenants/:id/staff/:sid', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/tenants/:id/staff/:sid', authMiddleware, async (req, res) => {
+router.delete('/tenants/:id/staff/:sid', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
-    await prisma.tenantStaff.delete({ where: { id: req.params.sid } });
+    const result = await prisma.tenantStaff.deleteMany({
+      where: { id: req.params.sid, tenantId: req.params.id },
+    });
+    if (result.count === 0) return res.status(404).json({ error: 'Not found' });
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete staff' });
@@ -2257,7 +2276,7 @@ router.delete('/tenants/:id/staff/:sid', authMiddleware, async (req, res) => {
 
 // ==================== TENANT CHANNEL CONFIGS ====================
 
-router.get('/tenants/:id/channel-configs', authMiddleware, async (req, res) => {
+router.get('/tenants/:id/channel-configs', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const configs = await prisma.tenantChannelConfig.findMany({
       where: { tenantId: req.params.id },
@@ -2269,7 +2288,7 @@ router.get('/tenants/:id/channel-configs', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/tenants/:id/channel-configs', authMiddleware, async (req, res) => {
+router.post('/tenants/:id/channel-configs', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const { inboxId, channelType, name, knowledgeFilter } = req.body;
     if (!inboxId || !channelType || !name) {
@@ -2294,9 +2313,13 @@ router.post('/tenants/:id/channel-configs', authMiddleware, async (req, res) => 
   }
 });
 
-router.delete('/tenants/:id/channel-configs/:cid', authMiddleware, async (req, res) => {
+router.delete('/tenants/:id/channel-configs/:cid', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
-    await prisma.tenantChannelConfig.delete({ where: { id: req.params.cid } });
+    const result = await prisma.tenantChannelConfig.deleteMany({
+      where: { id: req.params.cid, tenantId: req.params.id },
+    });
+    if (result.count === 0) return res.status(404).json({ error: 'Not found' });
+
     const tenant = await prisma.tenant.findUnique({ where: { id: req.params.id } });
     if (tenant) tenantRegistry.invalidate(tenant.slug);
     res.json({ success: true });
@@ -2307,7 +2330,7 @@ router.delete('/tenants/:id/channel-configs/:cid', authMiddleware, async (req, r
 
 // ==================== TENANT KNOWLEDGE BASE ====================
 
-router.get('/tenants/:id/knowledge', authMiddleware, async (req, res) => {
+router.get('/tenants/:id/knowledge', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const items = await prisma.knowledgeBase.findMany({
       where: { tenantId: req.params.id, isActive: true },
@@ -2320,7 +2343,7 @@ router.get('/tenants/:id/knowledge', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/tenants/:id/knowledge', authMiddleware, async (req, res) => {
+router.post('/tenants/:id/knowledge', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const { title, content, category = 'general', type, tags = [] } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'title và content là bắt buộc' });
@@ -2331,7 +2354,7 @@ router.post('/tenants/:id/knowledge', authMiddleware, async (req, res) => {
   }
 });
 
-router.put('/tenants/:id/knowledge/:kid', authMiddleware, async (req, res) => {
+router.put('/tenants/:id/knowledge/:kid', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const existing = await prisma.knowledgeBase.findFirst({
       where: { id: req.params.kid, tenantId: req.params.id },
@@ -2344,7 +2367,7 @@ router.put('/tenants/:id/knowledge/:kid', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/tenants/:id/knowledge/:kid', authMiddleware, async (req, res) => {
+router.delete('/tenants/:id/knowledge/:kid', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const existing = await prisma.knowledgeBase.findFirst({
       where: { id: req.params.kid, tenantId: req.params.id },
@@ -2359,7 +2382,7 @@ router.delete('/tenants/:id/knowledge/:kid', authMiddleware, async (req, res) =>
 
 // ==================== TENANT WEBHOOK INFO ====================
 
-router.get('/tenants/:id/webhook-info', authMiddleware, async (req, res) => {
+router.get('/tenants/:id/webhook-info', authMiddleware, tenantPathAccessOnly, async (req, res) => {
   try {
     const tenant = await prisma.tenant.findUnique({ where: { id: req.params.id } });
     if (!tenant) return res.status(404).json({ error: 'Not found' });

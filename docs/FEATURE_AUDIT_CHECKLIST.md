@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 07A Update - Tenant Authorization Hardening P0 (PASS WITH FIXES)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| P0 route scope | Fixed | 12 route `/api/tenants/:id/*` nested staff/channel-configs/knowledge/webhook-info | Không sửa route P1/P2 ngoài nhóm này. |
+| Middleware guard | Done | `tenantPathAccessOnly(req,res,next)` trong `backend/src/api/dashboard.js` | Platform admin (`tenantId=null`) đi qua; tenant user chỉ đi qua khi `req.user.tenantId === req.params.id`. |
+| Route wiring | PASS | Mọi nested route P0 có `authMiddleware, tenantPathAccessOnly` | Parent tenant CRUD vẫn giữ `platformAdminOnly`. |
+| Child resource hardening | PASS | `TenantStaff` update/delete và `TenantChannelConfig` delete dùng `tenantId: req.params.id` | Chặn bypass bằng `sid/cid` của tenant khác trong cùng nhóm route P0. |
+| Static validation | PASS | `node --check` các file backend trọng tâm, `npx prisma validate` | Không sửa schema/migrations. |
+| Runtime denied smoke | PASS | Tenant token gọi tenant khác: staff/webhook-info/PUT staff → 403 | JWT ký trong memory, không in token/secret. |
+| Runtime allow smoke | PASS | Tenant token gọi cùng tenant staff → 200; platform token gọi staff → 200 | Không tạo tenant fake trong DB; list rỗng là behavior hiện hữu khi tenant id không có dữ liệu. |
+| Regression smoke | PASS | `/api/prompts` 200 len=7; `?layer=intent` 200 len=6; telegram destinations 200; handoff GET/PUT 200 | Smoke bằng Express app tạm mount `dashboardApi`, không start `src/index.js`. |
+| Source changed | Có, scoped | `backend/src/api/dashboard.js` | Chỉ sửa P0 guard trong dashboard API. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/bot/dashboard FE/package/DevOps | Không thêm package, không tạo PrismaClient mới. |
+| P1 residual | OPEN | conversations/detail/messages/detail resource routes | Chuyển Prompt 07B. |
+
 ## Prompt 07 Update - Tenant Safety Audit + Local DB Preflight (NEEDS FIX)
 
 Ngày cập nhật: 2026-07-09

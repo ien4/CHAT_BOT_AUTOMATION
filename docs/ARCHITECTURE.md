@@ -1,5 +1,16 @@
 # ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 07A bổ sung
+
+Prompt 07A thêm guard P0 cho dashboard tenant routes mà không đổi kiến trúc module lớn:
+
+- `backend/src/api/dashboard.js` có thêm middleware `tenantPathAccessOnly`.
+- Middleware này nằm cùng khu vực auth/role middleware hiện hữu, không tạo dependency mới và không tạo PrismaClient mới.
+- Platform admin tiếp tục đi qua nested tenant routes.
+- Tenant admin chỉ được truy cập `/api/tenants/:id/*` khi `req.user.tenantId` trùng `req.params.id`.
+- Các route child write/delete trong nhóm P0 được ràng buộc thêm tenant id ở thao tác DB để tránh dùng `sid/cid` của tenant khác.
+- P1 conversation/detail/resource ownership guard chưa xử lý trong Prompt 07A và được chuyển sang Prompt 07B.
+
 ## Prompt 06C bổ sung
 
 Prompt 06C mở rộng repository layer cho `GET /prompts` mà không đổi public API hoặc tenant scope hiện hữu:

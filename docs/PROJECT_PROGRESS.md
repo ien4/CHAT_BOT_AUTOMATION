@@ -1,8 +1,8 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-09
-Trạng thái hiện tại: **Prompt 07 đã hoàn tất audit tenant safety + local DB preflight — runtime smoke PASS trên default/local scope nhưng kết luận NEEDS FIX vì phát hiện route tenant/detail còn thiếu guard ownership/platform.**
-Lưu ý bắt buộc: Prompt 07 không sửa source runtime theo guardrail. Local DB pgvector đã chạy ở `localhost:5433`, lỗi P1001 không còn xuất hiện trong preflight. Backend trên port `3001` đã có sẵn trước prompt và được dùng để smoke test; prompt không start/stop process đó. Local DB hiện `tenant_count=0`, `tenant_prompt_count=0`, `tenant_conversation_count=0`, nên chưa thể runtime verify cross-tenant bằng tenant sample.
+Trạng thái hiện tại: **Prompt 07A đã hoàn tất — P0 `/api/tenants/:id/*` đã có `tenantPathAccessOnly`; tenant user bị chặn khi gọi tenant id khác, platform admin vẫn đi qua.**
+Lưu ý bắt buộc: Prompt 07A chỉ sửa nhóm P0 nested tenant routes trong `backend/src/api/dashboard.js`. Không sửa P1 conversation/detail routes, không sửa schema/migrations/webhook/RAG/handoff/bot/dashboard frontend/package/DevOps. Runtime smoke dùng Express app tạm chỉ mount `dashboardApi`, không start `src/index.js`, không kích hoạt Telegram/Facebook startup side effect.
 
 ## 1. Nguyên tắc cập nhật
 
@@ -32,13 +32,35 @@ Lưu ý bắt buộc: Prompt 07 không sửa source runtime theo guardrail. Loca
 | Phase 10c — Handoff settings accessor fix | ✅ Done | Prompt 05D-FIX sửa accessor + Prisma payload schema compatibility; `GET/PUT /settings/handoff` runtime PASS |
 | Phase 10d — PUT handoff settings route split | ✅ Done | Prompt 05E tách `PUT /settings/handoff` sang settings controller/routes; runtime GET/PUT PASS |
 | Phase 11 — Repository layer | ✅ Started | Prompt 06 tạo `handoffSettingsRepository`; Prompt 06B tạo `telegramDestinationsRepository`; Prompt 06C tạo `promptTemplatesRepository`; runtime settings/prompts smoke PASS |
-| Phase 12 — Tenant safety audit | ⚠️ Done — NEEDS FIX | Prompt 07 audit xong; phát hiện P0/P1 tenant authorization gaps cần Prompt 07A trước khi refactor tiếp |
-| Phase 13 — Tenant authorization hardening | ⬜ Planned | Prompt 07A — thêm guard ownership/platform cho route tenant/detail có rủi ro |
-| Phase 14 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
-| Phase 15 — Dashboard feature split | ⬜ Planned | Prompt 09 |
-| Phase 16 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
+| Phase 12 — Tenant safety audit | ✅ Done — NEEDS FIX logged | Prompt 07 audit xong; P0/P1 tenant authorization gaps đã được phân loại |
+| Phase 13 — Tenant authorization hardening P0 | ✅ Done | Prompt 07A thêm `tenantPathAccessOnly` cho `/api/tenants/:id/*`; runtime denied smoke PASS |
+| Phase 14 — Tenant authorization hardening P1 | ⬜ Planned | Prompt 07B — conversation/detail/message/resource ownership guard |
+| Phase 15 — RAG/raw SQL hardening | ⬜ Planned | Prompt 08 |
+| Phase 16 — Dashboard feature split | ⬜ Planned | Prompt 09 |
+| Phase 17 — DevOps/deploy hardening | ⬜ Planned | Prompt 10 |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 07A — Tenant authorization hardening P0
+
+- [x] Preflight Git/env: branch `chore/prompt-05r-docs-local-run`, working tree sạch trước sửa, `.env`/`.env.local` gitignored, không có env tracked/staged.
+- [x] Xác nhận commit Prompt 07 `5ec08c7e32c3173ac0fdc0c276fdf90d1835cef6` tồn tại.
+- [x] Đọc context bắt buộc: report Prompt 07, progress/checklist/refactor/architecture/local guide, `dashboard.js`, `schema.prisma`.
+- [x] Baseline static validation trước patch PASS.
+- [x] Route map P0 xác nhận 12 route `/api/tenants/:id/*` chỉ có `authMiddleware`.
+- [x] Thêm `tenantPathAccessOnly(req,res,next)` gần auth/role middleware.
+- [x] Gắn `tenantPathAccessOnly` vào đúng 12 route P0 nested tenant.
+- [x] Ràng buộc thêm `tenantId: req.params.id` cho `TenantStaff` update/delete và `TenantChannelConfig` delete để child id không bypass path tenant.
+- [x] Không sửa P1/P2 conversation/detail/resource routes trong prompt này.
+- [x] Static validation sau patch PASS: `node --check` các file backend trọng tâm và `npx prisma validate`.
+- [x] Runtime smoke PASS bằng Express app tạm chỉ mount `dashboardApi`: no-token 401, tenant same-path 200, tenant other-path 403, platform path 200, prompts/settings/handoff regression 200.
+- [x] Không start `src/index.js`, không kích hoạt Telegram/Facebook startup side effect, không in token/secret, không tạo tenant fake trong DB.
+- [x] Tạo report Prompt 07A: `report/PROMPT_07A_TENANT_AUTHORIZATION_HARDENING_REPORT.md`.
+
+Trạng thái: **PASS WITH FIXES**.
+Residual risk còn lại: **P1** conversation/detail/messages và detail resource routes vẫn cần Prompt 07B; RAG raw SQL vẫn để Prompt 08.
+Commit: `Harden tenant path authorization` (xem `git log -1` để lấy hash HEAD).
+Next bắt buộc: **Prompt 07B — tenant authorization hardening P1** hoặc nếu tạm chấp nhận P1 thì Prompt 08, nhưng không nên mở rộng route detail/write trước 07B.
 
 ### Prompt 07 — Tenant safety audit + local DB preflight
 
