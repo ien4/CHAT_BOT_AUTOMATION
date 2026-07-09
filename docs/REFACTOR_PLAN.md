@@ -1,5 +1,36 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 07B — Conversation tenant guard (PASS)
+
+Ngày cập nhật: 2026-07-09
+
+Prompt 07B xử lý P1 conversation routes trong `backend/src/api/dashboard.js`:
+
+- `GET /api/conversations`: giữ pagination/order/include hiện hữu, thêm `where.tenantId` khi `getTenantScope(req)` trả tenant id.
+- `GET /api/conversations/:id`: với tenant-scoped request, kiểm tra conversation `{ id, tenantId }` trước khi gọi `contextManager.getConversationSummary(id)`; cross-tenant trả `404`.
+- `GET /api/conversations/:id/messages`: vì `Message` không có `tenantId`, route kiểm tra `Conversation.tenantId` trước rồi mới query messages theo `conversationId`.
+- Platform admin không có tenant scope vẫn giữ behavior hiện tại; platform có `tenantScope` được filter theo scope đó.
+
+Validation:
+
+- Baseline static validation trước patch PASS.
+- Static validation sau patch PASS: `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check`.
+- Runtime cross-tenant smoke PASS bằng Express app tạm chỉ mount `dashboardApi`.
+- Test data local được tạo tối thiểu và cleanup PASS: 2 messages + 2 conversations đã xóa.
+- Regression smoke PASS: prompts, telegram destinations, handoff GET/PUT và P0 tenant path guard.
+
+Không thay đổi:
+
+- Không sửa Prisma schema/migrations.
+- Không sửa webhook, tenant handoff, RAG, bot engine, dashboard frontend, package hoặc DevOps scripts.
+- Không sửa P1 detail resource routes trong Prompt 07B.
+
+Tiếp theo bắt buộc:
+
+- **Prompt 07C — detail resource tenant guard** cho `knowledge`, `prompts`, `quick-reply-menus`, `content-packages`, `content-package-items`, `appointments`.
+- Không làm **Prompt 06D prompt detail/write repository** trước khi Prompt 07C hoàn tất guard cho detail/write routes.
+- **Prompt 08 RAG/raw SQL hardening** nên chạy sau khi route ownership đã rõ hơn; nếu chạy trước thì chỉ xử lý RAG raw SQL, không mở dashboard API scope.
+
 ## Prompt 07A — Tenant authorization hardening P0 (PASS WITH FIXES)
 
 Ngày cập nhật: 2026-07-09

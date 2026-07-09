@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 07B Update - Conversation Tenant Guard (PASS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Conversation list guard | Fixed | `GET /api/conversations` dùng `getTenantScope(req)` và thêm `where.tenantId` khi có scope | Platform không có `tenantScope` vẫn giữ behavior hiện tại. |
+| Conversation detail guard | Fixed | `GET /api/conversations/:id` pre-check `{ id, tenantId }` khi request có tenant scope | Cross-tenant trả `404`, success shape giữ qua `contextManager.getConversationSummary`. |
+| Conversation messages guard | Fixed | `GET /api/conversations/:id/messages` pre-check conversation `{ id, tenantId }` trước khi query messages | `Message` không có `tenantId`; isolation đi qua `Conversation.tenantId`. |
+| Static validation | PASS | `node --check` các file backend trọng tâm, `npx prisma validate`, `git diff --check` | Không sửa schema/migrations. |
+| Runtime cross-tenant smoke | PASS | Tenant A list có conv A, không có conv B; detail/messages B → 404 | Tạo sample local tối thiểu trên DB localhost. |
+| Platform behavior | PASS | Platform token detail conv A/B → 200 | Không có tenant scope thì behavior cũ giữ nguyên. |
+| Regression smoke | PASS | prompts 200, prompts layer intent 200, telegram destinations 200, handoff GET/PUT 200, P0 tenant path guard 403 | Smoke bằng Express app tạm mount `dashboardApi`, không start `src/index.js`. |
+| Test data cleanup | PASS | Xóa 2 messages và 2 conversations tạo bởi smoke | Không tạo tenant fake; không chạm production DB. |
+| Source changed | Có, scoped | `backend/src/api/dashboard.js` | Chỉ sửa 3 route conversations. |
+| Behavior-critical modules | Không đổi | Không sửa webhook/RAG/tenant handoff/bot/dashboard FE/package/DevOps | Không thêm package, không tạo PrismaClient mới. |
+| P1 residual | OPEN | detail resource routes: knowledge/prompts/quick-reply/content-package/package-items/appointments | Chuyển Prompt 07C. |
+
 ## Prompt 07A Update - Tenant Authorization Hardening P0 (PASS WITH FIXES)
 
 Ngày cập nhật: 2026-07-09

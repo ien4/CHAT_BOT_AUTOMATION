@@ -220,7 +220,9 @@ router.get('/stats', authMiddleware, async (req, res) => {
 router.get('/conversations', authMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
+    const tenantId = getTenantScope(req);
     const where = status ? { status } : {};
+    if (tenantId) where.tenantId = tenantId;
 
     const [conversations, total] = await Promise.all([
       prisma.conversation.findMany({
@@ -252,6 +254,17 @@ router.get('/conversations', authMiddleware, async (req, res) => {
 
 router.get('/conversations/:id', authMiddleware, async (req, res) => {
   try {
+    const tenantId = getTenantScope(req);
+    if (tenantId) {
+      const scopedConversation = await prisma.conversation.findFirst({
+        where: { id: req.params.id, tenantId },
+        select: { id: true },
+      });
+      if (!scopedConversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+    }
+
     const conversation = await contextManager.getConversationSummary(req.params.id);
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
@@ -265,6 +278,17 @@ router.get('/conversations/:id', authMiddleware, async (req, res) => {
 
 router.get('/conversations/:id/messages', authMiddleware, async (req, res) => {
   try {
+    const tenantId = getTenantScope(req);
+    if (tenantId) {
+      const scopedConversation = await prisma.conversation.findFirst({
+        where: { id: req.params.id, tenantId },
+        select: { id: true },
+      });
+      if (!scopedConversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+    }
+
     const messages = await prisma.message.findMany({
       where: { conversationId: req.params.id },
       orderBy: { createdAt: 'asc' },
