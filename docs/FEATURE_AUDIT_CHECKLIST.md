@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 08A Update - No-Chatwoot Architecture Directive Intake (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| No-Chatwoot directive | Captured | `docs/NO_CHATWOOT_DIRECT_ARCHITECTURE_CONTEXT.md` | Chatwoot bị loại khỏi kiến trúc đích; không sinh thêm Chatwoot route/controller/service/model/env mới. |
+| Full reference scan | Done | `rg -n -i "chatwoot"` toàn repo, bỏ `node_modules`, `.next`, `dist`, `build`, `coverage`, `.git` | Tìm thấy backend runtime, Prisma, env, dashboard, docs, report, scripts/bat. |
+| Backend runtime blockers | OPEN | `backend/src/index.js`, `backend/src/webhook/chatwootHandler.js`, `backend/src/tenants/webhookHandler.js`, `backend/src/chatwoot/*`, `backend/src/adapters/chatwootAdapter.js`, handoff modules | Cần Prompt 08B; Prompt 08A không xóa code. |
+| Schema/data model blockers | OPEN | `Conversation.chatwootConversationId`, `Tenant.chatwootModel/chatwootAccountId/chatwootBaseUrl/chatwootApiTokenEnc/chatwootTeamId`, migrations 20260614120000 và 20260615150000 | Cần Prompt 08C migration/data policy; không sửa schema trong 08A. |
+| Env/config blockers | OPEN | `backend/.env.example`, `dashboard/.env.example`, `dashboard/src/lib/config/env.ts`, `docs/ENV_POLICY.md`, `backend/src/infrastructure/services/config.js` | Còn `CHATWOOT_*` và `NEXT_PUBLIC_CHATWOOT_URL`; target mới không được thêm biến Chatwoot. |
+| Dashboard blockers | OPEN | settings/channel-configs/tenants pages và `dashboard/src/lib/api.ts` | Cần Prompt 08D để bỏ UI/API Chatwoot và đổi hướng sang Facebook direct. |
+| DevOps/script blockers | OPEN | `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt`; root `scripts/` không tồn tại, `backend/scripts/` có Chatwoot helpers | Không sửa script trong 08A; cần Prompt 10/DevOps sau khi runtime/schema/dashboard rõ. |
+| Direct architecture validation | WARNINGS | Backend port 3001 PASS; dashboard port 3002 PASS; local DB 5433 PASS; Prisma 5.22.0; Socket.io chưa thấy code thật | Mismatch: sample/dummy `localhost:5432` trong docs policy không khớp local pgvector `localhost:5433`; `/api/settings/webhook` không phải Meta webhook endpoint. |
+| Docs/current architecture | OPEN | `docs/ARCHITECTURE.md`, `docs/ENV_POLICY.md`, `docs/FEATURE_INVENTORY.md`, `MULTITENANT_PROGRESS.md` còn mô tả Chatwoot | Tài liệu mới phải coi Chatwoot deprecated/removed target; historical docs/report không rewrite hàng loạt. |
+| Historical reports | Preserved | `report/PROMPT_01...` đến `PROMPT_07D...` còn Chatwoot | Giữ để bảo toàn audit trail, không dùng làm kiến trúc đích. |
+| Runtime source changed | NO | `git diff --name-status` dự kiến chỉ docs/report | Đúng phạm vi Prompt 08A. |
+
 ## Prompt 07D Update - Legacy/Global Route Authorization Classification (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09

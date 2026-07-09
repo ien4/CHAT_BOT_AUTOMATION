@@ -1,5 +1,48 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 08A — No-Chatwoot architecture intake/audit (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-09
+
+User đã đưa chỉ thị kiến trúc mới: **không dùng Chatwoot trong kiến trúc đích**. Vì vậy roadmap được chèn lại trước RAG/raw SQL hardening. Đây là renumbering after new architecture directive, không xóa lịch sử prompt cũ.
+
+Quy tắc từ Prompt 08A trở đi:
+
+- Chatwoot là deprecated/removed target, không phải thành phần kiến trúc đích.
+- Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot.
+- Luồng đích: Facebook Messenger API -> Backend Express custom -> Dashboard nội bộ Next.js -> PostgreSQL/pgvector.
+- Socket.io/WebSocket chỉ được claim nếu code thật xuất hiện; Prompt 08A chưa tìm thấy Socket.io trong source/package.
+- Historical reports có thể giữ chữ Chatwoot để làm bằng chứng quá khứ, nhưng docs kiến trúc mới không được coi Chatwoot là target.
+
+Scan Prompt 08A tìm thấy các nhóm removal backlog:
+
+| Nhóm | File tiêu biểu | Hành động tiếp theo |
+|---|---|---|
+| Backend runtime | `backend/src/index.js`, `backend/src/webhook/chatwootHandler.js`, `backend/src/tenants/webhookHandler.js`, `backend/src/chatwoot/*`, `backend/src/adapters/chatwootAdapter.js`, `backend/src/telegram/handoff.js`, `backend/src/tenants/handoff.js` | Prompt 08B: bỏ route/client/adapter/sync Chatwoot và chuyển inbound/outbound về direct Facebook/custom backend. |
+| Prisma/schema | `backend/prisma/schema.prisma`, migrations `20260614120000_multitenant`, `20260615150000_add_conv_chatwoot_and_grace` | Prompt 08C: lập migration/data cleanup plan, không dùng `db push`. |
+| Env/config | `backend/.env.example`, `dashboard/.env.example`, `dashboard/src/lib/config/env.ts`, `docs/ENV_POLICY.md`, config warning helper | Prompt 08C/08D: bỏ `CHATWOOT_*`, `NEXT_PUBLIC_CHATWOOT_URL`, giữ policy không secret. |
+| Dashboard | `dashboard/src/app/dashboard/settings/page.tsx`, `channel-configs/page.tsx`, `tenants/page.tsx`, `dashboard/src/lib/api.ts` | Prompt 08D: bỏ UI/API Chatwoot, đổi copy và API target sang direct Facebook/backend. |
+| DevOps/scripts | `start-all.bat`, `stop-all.bat`, `webhook-urls-current.txt`, `backend/scripts/update-chatwoot-agentbot-url.js` | Prompt 10/DevOps: cleanup script sau khi runtime/dashboard/schema đã rõ. |
+| Docs current | `docs/ARCHITECTURE.md`, `docs/ENV_POLICY.md`, `docs/FEATURE_INVENTORY.md`, `MULTITENANT_PROGRESS.md` | Cập nhật dần, không rewrite historical evidence bừa. |
+
+Roadmap mới:
+
+- **Phase 17A — No-Chatwoot architecture intake/audit**: đã hoàn tất trong Prompt 08A, docs/report-only.
+- **Phase 17B — Backend Chatwoot runtime removal**: xóa/disable route `/chatwoot-webhook*`, Chatwoot client/adapter, tenant webhook Chatwoot, handoff sync Chatwoot; giữ Facebook direct `/webhook`.
+- **Phase 17C — Prisma/env No-Chatwoot cleanup plan**: thiết kế migration additive/safe hoặc staged removal cho `chatwoot*` fields, env example/config policy; không `db push`.
+- **Phase 17D — Dashboard No-Chatwoot cleanup**: bỏ settings/channel-config/tenant UI Chatwoot, public env Chatwoot, API client usage.
+- **Phase 18 — RAG/raw SQL hardening**: xử lý sau khi No-Chatwoot blocker đã được map và phase backend removal ít nhất đã rõ.
+- **Phase 19 — Dashboard feature split**.
+- **Phase 20 — DevOps/deploy hardening**.
+- **Phase 21 — Project structure consolidation** sau security/DevOps.
+
+Mismatches cần nhớ:
+
+- Local DB hiện tại theo docs/runtime là `localhost:5433` với `bbotech-pgvector-local`; sample validate `localhost:5432` chỉ là dummy và không đại diện môi trường local hiện tại.
+- Actual Facebook Meta webhook endpoint trong code là `GET/POST /webhook`; `GET /api/settings/webhook` chỉ là dashboard config endpoint.
+- Dashboard dev port xác nhận từ `dashboard/package.json` là `3002`.
+- Backend default port xác nhận từ `backend/.env.example`, `backend/src/infrastructure/services/config.js` và `backend/src/index.js` là `3001`.
+
 ## Prompt 07D — Legacy/global route authorization classification (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09
