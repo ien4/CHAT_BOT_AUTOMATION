@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 09C Update - Tenant Handoff Raw SQL Hardening (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Handoff raw SQL audit | Done | `backend/src/tenants/handoff.js` | 1 `$queryRawUnsafe` trong `getHandoffAnalytics` (group-by-day). |
+| Convert sang tagged template | Done | `$queryRaw` | Parameterize `tenantId` + `since` (Date); giữ query/response shape. |
+| Period sanitize | Verified | switch enum `24h/7d/30d`+default | Không đưa raw string vào SQL. |
+| Tenant scope | Preserved | `WHERE tenant_id = ${tenantId}` | Không bỏ tenant filter. |
+| Static validation | PASS | backend `node --check` (7 files), `prisma validate`, dashboard `tsc --noEmit` | |
+| Module smoke | PASS 10/10 | script tạm, DB local | Isolation A/B, invalid/null period no-crash, injection tenantId→0 rows, cleanup leftover=0. |
+| No external call | Verified | `getHandoffAnalytics` chỉ đọc DB | Không gọi Telegram/Facebook thật. |
+| Unsafe còn lại trong handoff.js | 0 | rg scan | Còn `backend/scripts/seed.js` (ngoài phạm vi). |
+
 ## Prompt 08G Update - Login Auth Production Readiness Fix (PASS)
 
 Ngày cập nhật: 2026-07-10

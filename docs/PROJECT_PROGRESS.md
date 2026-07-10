@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 08G đã fix login (self-heal admin dev + production auth guard) và bỏ thông tin tài khoản mẫu khỏi UI login; runtime login smoke 11/11 PASS.**
+Trạng thái hiện tại: **Prompt 09C đã harden tenant handoff raw SQL: chuyển `$queryRawUnsafe` trong `backend/src/tenants/handoff.js` (`getHandoffAnalytics`) sang `$queryRaw` tagged template parameterize `tenantId`+`since`; module smoke tenant isolation 10/10 PASS. Raw SQL unsafe còn lại chỉ ở `backend/scripts/seed.js`.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật

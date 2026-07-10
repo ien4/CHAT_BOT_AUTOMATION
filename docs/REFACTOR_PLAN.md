@@ -1,5 +1,22 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 09C — Tenant handoff raw SQL hardening (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+Đã làm:
+
+- Chuyển `$queryRawUnsafe` duy nhất trong `backend/src/tenants/handoff.js` (`getHandoffAnalytics`, group-by-day) sang `$queryRaw` tagged template; parameterize `tenantId` + `since` (Date).
+- `period` giữ nguyên switch enum (`24h/7d/30d` + default 7d) — không đưa raw string vào SQL; tenant filter giữ nguyên.
+- Module smoke PASS: tenant isolation A/B, invalid/null period không crash, injection-style tenantId parameterized → 0 rows, cleanup `test-09c-*` leftover=0.
+- `backend/src/tenants/handoff.js` không còn `$queryRawUnsafe`/`$executeRawUnsafe`.
+
+Không làm: không sửa schema/migration/package/scripts/Docker/RAG/analytics/dashboard UI; không gọi Telegram/Facebook thật; không push remote.
+
+Next:
+
+- **Prompt 10**: DevOps/deploy hardening, hoặc **Prompt 10A** dọn `$queryRawUnsafe` còn lại trong `backend/scripts/seed.js`.
+
 ## Prompt 08G — Login auth production readiness fix (PASS)
 
 Ngày cập nhật: 2026-07-10

@@ -80,14 +80,14 @@ async function getHandoffAnalytics(tenantId, period = '7d') {
       by: ['staffId', 'staffName', 'eventType'], where,
       _count: true,
     }),
-    // Group by day
-    prisma.$queryRawUnsafe(`
+    // Group by day — tagged template parameterize tenantId + since (Date)
+    prisma.$queryRaw`
       SELECT DATE(created_at) as day, event_type, COUNT(*)::int as count
       FROM handoff_events
-      WHERE tenant_id = $1 AND created_at >= $2
+      WHERE tenant_id = ${tenantId} AND created_at >= ${since}
       GROUP BY day, event_type
       ORDER BY day ASC
-    `, tenantId, since),
+    `,
   ]);
 
   // Parse the raw query result
