@@ -1,5 +1,22 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 19A — Dashboard analytics feature split (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/analytics/page.tsx` (374→54 dòng) thành orchestrator mỏng.
+- Tạo `dashboard/src/features/analytics/`: `hooks/useAnalytics.ts`, `components/` (9 component 1:1 với các block UI), `lib/formatters.ts`, `types.ts`, `index.ts` (barrel).
+- Giữ nguyên UI/text/layout/className/loading-error state/filter days; API vẫn `analyticsApi.get` read-only.
+- Không sửa backend/`api.ts`/package/dependency/schema. Dashboard `npm run quality` (typecheck + build 19 routes) PASS.
+
+Không làm: không redesign, không đổi text/API contract, không sửa page khác, không thêm dependency, không lint (ESLint chưa cài — theo 10C), không push remote.
+
+Next:
+
+- **Prompt 19B** — tách `dashboard/src/app/dashboard/prompts/page.tsx` (write nhẹ, backend đã có `promptTemplatesRepository`) sang `features/`, cùng pattern hook + components; giữ UI/behavior.
+
 ## Prompt 10C — Quality gate + Phase 19 readiness (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-10

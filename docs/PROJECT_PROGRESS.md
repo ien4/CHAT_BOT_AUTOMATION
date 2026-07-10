@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 10C đã đóng quality gate + chuẩn bị Phase 19. Thêm `npm run quality` cho backend (syntax + prisma validate) và dashboard (typecheck + build) — đều PASS; tạo `docs/QUALITY_GATE.md`. ESLint chưa cài nên lint non-interactive để prompt dependency riêng (PASS WITH WARNINGS phần lint). Production smoke dry-run local PASS 9/9. Phase 19 readiness: candidate #1 = `dashboard/src/app/dashboard/analytics/page.tsx` (read-only, backend đã harden 09B), kế hoạch tại `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md`. Chưa sửa page UI. Production rollout thật CHƯA chạy.**
+Trạng thái hiện tại: **Prompt 19A đã tách `dashboard/src/app/dashboard/analytics/page.tsx` (374→54 dòng, orchestrator mỏng) sang `dashboard/src/features/analytics/**` (hook `useAnalytics` + 9 components + formatters + types + barrel). Giữ nguyên UI/text/layout/className và API `analyticsApi.get` read-only; không đổi backend/API/dependency. Dashboard `npm run quality` (typecheck + build 19 routes) PASS. Production rollout thật CHƯA chạy.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -46,7 +46,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
 | Phase 18 — RAG/raw SQL hardening | ✅ Done | Prompt 09 RAG raw SQL PASS; Prompt 09B analytics raw SQL PASS; Prompt 09C tenant handoff raw SQL PASS; Prompt 10A seed raw SQL cleanup PASS WITH WARNINGS. `backend/src`+`backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn README documentation-only |
 | Phase 18b — Quality gate | ✅ Done | Prompt 10C: `npm run quality` backend (syntax+prisma validate) + dashboard (typecheck+build) PASS; ESLint chưa cài (lint để prompt dependency riêng); production smoke dry-run local 9/9. `docs/QUALITY_GATE.md` |
-| Phase 19 — Dashboard feature split | ⬜ Planned | Readiness done ở 10C: candidate #1 = analytics page; `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md`. Bắt đầu ở Prompt 19A |
+| Phase 19 — Dashboard feature split | ✅ Started | Prompt 19A: analytics page tách sang `features/analytics/**` (hook + 9 components), UI/API giữ nguyên, dashboard quality PASS. Candidate kế: `prompts/page.tsx` (Prompt 19B) |
 | Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 

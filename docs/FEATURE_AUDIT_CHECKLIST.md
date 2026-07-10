@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 19A Update - Dashboard Analytics Feature Split (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Analytics page split | Done | `analytics/page.tsx` 374→54 dòng | Orchestrator mỏng: gọi hook + render components. |
+| Data hook | Created | `features/analytics/hooks/useAnalytics.ts` | Giữ nguyên loading/error/data + filter days; gọi `analyticsApi.get`. |
+| Components tách | Created | `features/analytics/components/*` (9 file) | Filters, SummaryCards, BotVsHandoff, IntentDistribution, StaffResponseTimes, HourlyActivity, DailyActivity, HandoffStatus, FallbackAnalysis. |
+| Types/formatters | Created | `features/analytics/types.ts`, `lib/formatters.ts`, `index.ts` | `Analytics` type + `formatTime`/`getHandoffRate`/INTENT maps. |
+| UI/text/layout | Preserved | git diff | Không đổi text/className/layout; chỉ componentize. |
+| API contract | Unchanged | rg scan | Chỉ `analyticsApi.get` read-only; không POST/PUT/DELETE/fetch mới. |
+| Backend/dependency | Unchanged | — | Không sửa backend/api.ts/package/dependency. |
+| Dashboard quality | PASS | `npm run quality` | typecheck + build 19 routes; `/dashboard/analytics` build OK. |
+
 ## Prompt 10C Update - Quality Gate + Phase 19 Readiness (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-10
