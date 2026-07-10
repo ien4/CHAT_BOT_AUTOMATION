@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 08F Update - No-Chatwoot Schema Migration Removal (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| DB backup trước migration | Done | `backups/prompt-08f-before-schema-drop-<timestamp>.dump` | pg_dump custom-format từ container `bbotech-pgvector-local`, size > 0, **không commit**, `backups/` đã ignored. |
+| Legacy field runtime scan | Clean | backend/src, dashboard/src | 0 phụ thuộc cột legacy; gỡ write `chatwootModel/chatwootAccountId` + strip `maskTenant` trong `backend/src/api/dashboard.js`. Chỉ còn 3 README kiến trúc (docs). |
+| Schema patch | Applied | `backend/prisma/schema.prisma` | Xóa `tenants.chatwootModel/AccountId/BaseUrl/ApiTokenEnc/TeamId/webhookSecretEnc` + `conversations.chatwootConversationId`. |
+| Migration mới | Created + applied | `backend/prisma/migrations/20260710025758_remove_no_chatwoot_legacy_columns` | `--create-only` rồi thay body bằng SQL drop legacy tối thiểu (auto-SQL chạm drift + `knowledge_base.embedding` nên không dùng nguyên trạng). |
+| Apply local/test | PASS | `prisma migrate deploy` + `generate` + `validate` | Không `db push`, không `--accept-data-loss`, không reset; DB còn 0 cột/index legacy. |
+| Static validation | PASS | backend `node --check`, `prisma validate`, dashboard `tsc --noEmit`, `npm run build` | |
+| Runtime smoke | PASS 13/13 | Express app tạm, DB local | Tenant create/update payload mới không lộ field legacy; route legacy 404; webhook 403; cleanup leftover = 0. |
+| Production rollout | DEFERRED | — | Cần backup + `migrate deploy` riêng trên production, ngoài phạm vi 08F. |
+
 ## Prompt 08C Update - Prisma/Env No-Chatwoot Cleanup Plan (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09

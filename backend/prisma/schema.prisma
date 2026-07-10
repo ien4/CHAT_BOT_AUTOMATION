@@ -102,7 +102,6 @@ model Conversation {
   pageContext           Json?         @map("page_context")
   assignedTenantStaffId String?       @map("assigned_tenant_staff_id")
   tenantId              String?       @map("tenant_id")
-  chatwootConversationId String?      @map("chatwoot_conversation_id")
   botGraceUntil         DateTime?     @map("bot_grace_until")
   appointments          Appointment[]
   assignedStaff         Staff?        @relation(fields: [assignedStaffId], references: [id])
@@ -270,12 +269,6 @@ model Tenant {
   slug                   String                @unique
   name                   String
   isActive               Boolean               @default(true) @map("is_active")
-  chatwootModel          String                @default("dedicated") @map("chatwoot_model")
-  chatwootAccountId      String                @map("chatwoot_account_id")
-  chatwootBaseUrl        String?               @map("chatwoot_base_url")
-  chatwootApiTokenEnc    String?               @map("chatwoot_api_token_enc")
-  chatwootTeamId         String?               @map("chatwoot_team_id")
-  webhookSecretEnc       String?               @map("webhook_secret_enc")
   telegramGroupChatId    String?               @map("telegram_group_chat_id")
   pendingTimeoutSeconds  Int                   @default(30) @map("pending_timeout_seconds")
   sessionTimeoutSeconds  Int                   @default(30) @map("session_timeout_seconds")

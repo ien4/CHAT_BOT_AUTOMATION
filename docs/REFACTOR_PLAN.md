@@ -1,5 +1,30 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 08F — No-Chatwoot schema migration removal (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+Prompt 08F đã drop các cột schema legacy Chatwoot trên DB local/test bằng migration có kiểm soát, sau khi 08D/08E đã stop-write.
+
+Đã làm:
+
+- Backup DB local trước migration: `backups/prompt-08f-before-schema-drop-<timestamp>.dump` (không commit, `backups/` ignored).
+- Gỡ runtime write legacy còn sót trong `backend/src/api/dashboard.js` (`POST /api/tenants` không còn set `chatwootModel/chatwootAccountId`; `maskTenant` không còn strip cột legacy).
+- Patch `backend/prisma/schema.prisma`: xóa 6 field `Tenant` + `Conversation.chatwootConversationId`.
+- Tạo migration `20260710025758_remove_no_chatwoot_legacy_columns` bằng `--create-only`; thay body auto-generate (rộng hơn dự kiến, chạm drift + `knowledge_base.embedding`) bằng SQL drop legacy tối thiểu đã review.
+- Apply local/test bằng `prisma migrate deploy` (không `db push`, không `--accept-data-loss`, không reset).
+- Validation + runtime smoke tenant create/update PASS 13/13; DB còn 0 cột/index legacy.
+
+Không làm (giữ nguyên phạm vi):
+
+- Không xóa migration lịch sử; không rewrite historical report.
+- Không sửa RAG/vector/knowledge columns, direct Facebook webhook, tenant handoff, bot engine, package files, Dockerfile/scripts.
+- Không chạy migration trên production (rollout production cần backup + `migrate deploy` riêng).
+
+Next:
+
+- **Prompt 09**: RAG/raw SQL hardening, hoặc quality gate (ESLint non-interactive) để đưa lint vào validation.
+
 ## Prompt 08C — Prisma/env No-Chatwoot cleanup plan (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-09

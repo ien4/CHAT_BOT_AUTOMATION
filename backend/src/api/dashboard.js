@@ -2038,22 +2038,12 @@ router.delete('/channel-configs/:id', authMiddleware, async (req, res) => {
 // Mask credentials trước khi trả về client — không bao giờ expose raw token
 
 const TENANT_COMPAT_MODE = 'direct-facebook';
-const TENANT_COMPAT_ACCOUNT_ID = 'direct-facebook';
 
 function maskTenant(t) {
-  // Không expose cột legacy Chatwoot ra client. Schema chưa drop nên cột vẫn tồn
-  // tại trong DB, nhưng response chỉ trả field trung tính direct-facebook.
-  const {
-    chatwootModel,
-    chatwootAccountId,
-    chatwootBaseUrl,
-    chatwootApiTokenEnc,
-    chatwootTeamId,
-    webhookSecretEnc,
-    ...rest
-  } = t;
+  // Cột legacy đã bị drop khỏi schema/DB. Response chỉ trả field trung tính
+  // direct-facebook để giữ contract client hiện có.
   return {
-    ...rest,
+    ...t,
     integrationMode: TENANT_COMPAT_MODE,
     messagingMode: TENANT_COMPAT_MODE,
   };
@@ -2103,10 +2093,6 @@ router.post('/tenants', authMiddleware, platformAdminOnly, async (req, res) => {
     const tenant = await prisma.tenant.create({
       data: {
         slug, name,
-        // Compatibility: cột legacy NOT NULL vẫn tồn tại trong schema chưa drop.
-        // Backend tự set giá trị trung tính direct-facebook, không nhận từ client.
-        chatwootModel:     TENANT_COMPAT_MODE,
-        chatwootAccountId: TENANT_COMPAT_ACCOUNT_ID,
         telegramGroupChatId:  telegramGroupChatId || null,
         pendingTimeoutSeconds:  pendingTimeoutSeconds  ?? 30,
         sessionTimeoutSeconds:  sessionTimeoutSeconds  ?? 30,
@@ -2131,7 +2117,7 @@ router.put('/tenants/:id', authMiddleware, platformAdminOnly, async (req, res) =
       defaultPersona, isActive,
     } = req.body;
 
-    // Stop-write legacy: không còn nhận/ghi field Chatwoot từ client.
+    // Stop-write legacy: không còn nhận/ghi field tích hợp cũ từ client.
     const data = {};
     if (name              !== undefined) data.name              = name;
     if (telegramGroupChatId !== undefined) data.telegramGroupChatId = telegramGroupChatId || null;

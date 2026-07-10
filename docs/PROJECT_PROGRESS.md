@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
-Ngày cập nhật: 2026-07-09
-Trạng thái hiện tại: **Prompt 08C đã hoàn tất cleanup env/config No-Chatwoot và lập kế hoạch schema migration an toàn.**
+Ngày cập nhật: 2026-07-10
+Trạng thái hiện tại: **Prompt 08F đã drop cột schema legacy Chatwoot trên DB local/test bằng migration có kiểm soát (backup trước, không db push).**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -40,13 +40,27 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17A — No-Chatwoot architecture intake/audit | ✅ Done with warnings | Prompt 08A; renumbering after new architecture directive |
 | Phase 17B — Backend Chatwoot runtime removal | ✅ Done with warnings | Prompt 08B xóa route `/chatwoot-webhook*`, Chatwoot client/adapter/webhook handler, bỏ handoff sync Chatwoot; runtime smoke PASS 16/16 |
 | Phase 17C — Prisma/env No-Chatwoot cleanup plan | ✅ Done with warnings | Prompt 08C cleanup env example/config policy, tạo `NO_CHATWOOT_SCHEMA_ENV_CLEANUP_PLAN`; schema/migrations chưa sửa |
-| Phase 17D — Dashboard No-Chatwoot cleanup | ⬜ Planned | Prompt 08D; xóa UI/API public env Chatwoot |
+| Phase 17D — Dashboard No-Chatwoot cleanup | ✅ Done | Prompt 08D dashboard cleanup + backend tenant create bridge |
+| Phase 17E — Tenant contract runtime smoke + stop-write | ✅ Done | Prompt 08E: payload tenant mới runtime 17/17 PASS, backend stop-write legacy |
+| Phase 17F — No-Chatwoot schema migration removal | ✅ Done | Prompt 08F drop 6 cột `tenants` + `conversations.chatwoot_conversation_id` + index legacy trên DB local/test; backup trước migration; runtime smoke 13/13 PASS |
 | Phase 18 — RAG/raw SQL hardening | ⬜ Planned | Prompt 09; chèn sau No-Chatwoot migration scan |
 | Phase 19 — Dashboard feature split | ⬜ Planned | Sau Prompt 09 |
 | Phase 20 — DevOps/deploy hardening | ⬜ Planned | Sau No-Chatwoot và RAG hardening |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 08F — No-Chatwoot schema migration removal
+
+- [x] Preflight Git/env: branch `chore/prompt-05r-docs-local-run`, working tree sạch, `.env`/`.env.local` gitignored, không env tracked; commit 08E `a5d5dc5` tồn tại.
+- [x] Backup DB local/test trước migration: `backups/prompt-08f-before-schema-drop-<timestamp>.dump` (pg_dump custom-format, size > 0, **không commit**, `backups/` đã ignored).
+- [x] Legacy field scan: backend/src runtime + dashboard/src 0 phụ thuộc cột legacy (chỉ còn 3 README kiến trúc là docs); gỡ runtime write `chatwootModel/chatwootAccountId` trong `POST /api/tenants` + strip trong `maskTenant`.
+- [x] Schema patch: xóa `tenants.chatwootModel/AccountId/BaseUrl/ApiTokenEnc/TeamId/webhookSecretEnc` + `conversations.chatwootConversationId`.
+- [x] Migration `--create-only`: `20260710025758_remove_no_chatwoot_legacy_columns`. Auto-SQL rộng hơn dự kiến (drift có sẵn + chạm `knowledge_base.embedding`) nên thay body bằng SQL drop legacy tối thiểu, đã review.
+- [x] Apply local/test bằng `prisma migrate deploy` (không `db push`, không `--accept-data-loss`, không reset); `prisma generate` + `validate` PASS; DB còn 0 cột/index legacy.
+- [x] Post-migration static validation PASS: backend `node --check`, `prisma validate`, dashboard `tsc --noEmit`, `npm run build`.
+- [x] Runtime smoke sau migration: 13/13 PASS (webhook 403, các route 404 legacy, prompts/settings 200, tenant create 201/update 200 không lộ field legacy, cleanup leftover = 0).
+- [x] Production rollout: cần backup + `migrate deploy` riêng, ngoài phạm vi prompt này.
 
 ### Prompt 08C — Prisma/env No-Chatwoot cleanup plan
 

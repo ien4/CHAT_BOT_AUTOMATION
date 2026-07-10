@@ -45,5 +45,8 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Local DB backups (never commit)
+backups/
+
 # Chatwoot (not deploying)
 /chatwoot/

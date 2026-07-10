@@ -1,6 +1,11 @@
 # NO-CHATWOOT SCHEMA & ENV CLEANUP PLAN
 
-Ngày cập nhật: 2026-07-09
+Ngày cập nhật: 2026-07-10
+
+> **Cập nhật Prompt 08F (2026-07-10):** Kế hoạch drop schema ở mục 5 đã được THỰC THI trên DB local/test `bbotech-pgvector-local`.
+> Migration `20260710025758_remove_no_chatwoot_legacy_columns` đã drop index `conversations_chatwoot_conversation_id_idx` + cột `conversations.chatwoot_conversation_id` và 6 cột `tenants.chatwoot_*`/`webhook_secret_enc`.
+> Backup local đã tạo trước migration (`backups/prompt-08f-before-schema-drop-<timestamp>.dump`, không commit). Không dùng `db push`, không `--accept-data-loss`, không reset. Runtime smoke tenant create/update PASS 13/13.
+> Production rollout vẫn cần backup + `prisma migrate deploy` riêng theo mục 5.
 
 ## 1. Mục tiêu
 
