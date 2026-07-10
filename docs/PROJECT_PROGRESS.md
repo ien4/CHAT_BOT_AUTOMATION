@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 10A đã dọn `$queryRawUnsafe` cuối cùng trong `backend/scripts/seed.js` (chuyển INSERT knowledge_base sang Prisma Client `create()`). Sau Prompt 09 (RAG) + 09B (analytics) + 09C (tenant handoff) + 10A (seed), `backend/src` và `backend/scripts` KHÔNG còn `$queryRawUnsafe`/`$executeRawUnsafe` runtime/script; chỉ còn 1 dòng README documentation-only. Rủi ro raw SQL unsafe: CLOSED.**
+Trạng thái hiện tại: **Prompt 10B đã hardening DevOps/deploy + fix drift `knowledge_base.embedding`. Migration `align_knowledge_embedding_nullable` (DROP NOT NULL, 0 rows) cho phép seed/insert content-first; drift smoke PASS 9/9. `start-all.bat` bỏ `db push --accept-data-loss` → `migrate deploy` + guard LOCAL ONLY; `backend/Dockerfile` tách migration khỏi startup (CMD chỉ `node src/index.js`); thêm `docs/DEPLOYMENT_POLICY.md` + `docs/PRODUCTION_ROLLOUT_CHECKLIST.md`. Raw SQL unsafe: CLOSED (Prompt 09/09B/09C/10A). Production rollout thật CHƯA chạy.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -45,8 +45,8 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17F — No-Chatwoot schema migration removal | ✅ Done | Prompt 08F drop 6 cột `tenants` + `conversations.chatwoot_conversation_id` + index legacy trên DB local/test; backup trước migration; runtime smoke 13/13 PASS |
 | Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
 | Phase 18 — RAG/raw SQL hardening | ✅ Done | Prompt 09 RAG raw SQL PASS; Prompt 09B analytics raw SQL PASS; Prompt 09C tenant handoff raw SQL PASS; Prompt 10A seed raw SQL cleanup PASS WITH WARNINGS. `backend/src`+`backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn README documentation-only |
-| Phase 19 — Dashboard feature split | ⬜ Planned | Sau raw SQL hardening |
-| Phase 20 — DevOps/deploy hardening | ⬜ Planned (next) | Prompt 10B; sau No-Chatwoot và raw SQL hardening. Kèm follow-up drift `knowledge_base.embedding NOT NULL` vs schema nullable |
+| Phase 19 — Dashboard feature split | ⬜ Planned | Sau DevOps hardening (Prompt 19) |
+| Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
 ## 3. Checklist chi tiết theo Prompt
@@ -596,14 +596,15 @@ Trạng thái: **PASS WITH WARNINGS — prompts repository done, default/local s
 | `$queryRawUnsafe` | Open | P0 | Prompt 08 |
 | Tenant scope chưa runtime verified toàn diện | Open | P0 | Prompt 07; Prompt 06C mới verify default/local scope vì local DB không có tenant sample |
 | Default credential/fallback | Open | P0 | Prompt riêng sau env policy |
-| `start-all.bat` có `db push --accept-data-loss` | Open | P0 | Prompt 10 |
-| Container start chạy `prisma migrate deploy` | Open | P0 | Prompt 10 |
+| `start-all.bat` có `db push --accept-data-loss` | Closed ở Prompt 10B | P0 | Thay bằng `prisma migrate deploy` + guard banner LOCAL ONLY; không còn lệnh executable destructive |
+| Container start chạy `prisma migrate deploy` | Closed ở Prompt 10B | P0 | `backend/Dockerfile` CMD chỉ còn `node src/index.js`; migration tách thành release step riêng (docs/DEPLOYMENT_POLICY.md) |
 | Runtime verification toàn hệ thống chưa chạy | Open | P0 | Đã verify nhóm settings/prompts nhỏ; route khác vẫn cần test |
 | Backend chưa có lint/typecheck thật | Open | P1 | Prompt quality gate riêng |
 | Dashboard lint chưa cấu hình | Open | P1 | Prompt quality gate riêng |
 | npm audit vulnerabilities | Open | P1 | Prompt security deps riêng |
 | Hard-code localhost trong script/root | Open | P1 | Prompt 10 |
-| `webhook-urls-current.txt` có thể stale | Open | P1 | Prompt 10 |
+| `webhook-urls-current.txt` có thể stale | Closed ở Prompt 10B | P1 | Thêm warning header local/stale + trỏ direct `/webhook` No-Chatwoot và docs/DEPLOYMENT_POLICY.md |
+| Drift `knowledge_base.embedding` NOT NULL vs schema nullable | Closed ở Prompt 10B | P0 | Migration `align_knowledge_embedding_nullable` DROP NOT NULL (0 rows, no vector index); drift smoke insert content-first PASS 9/9 |
 | `chatwoot/` folder không tồn tại ở root | Open | P1 | Prompt 10 |
 
 ## 6. Decision log

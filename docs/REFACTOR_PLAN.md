@@ -1,5 +1,23 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 10B — DevOps deploy hardening + embedding drift fix (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+Đã làm:
+
+- **Drift fix** `knowledge_base.embedding` (OPTION A): migration `20260710154312_align_knowledge_embedding_nullable` chạy `ALTER TABLE knowledge_base ALTER COLUMN embedding DROP NOT NULL`. DB align theo schema Prisma nullable; RAG search vốn đã filter `embedding IS NOT NULL`. Backup local trước migration; `migrate deploy` local PASS; drift smoke insert content-first PASS 9/9.
+- **`start-all.bat`**: bỏ `prisma db push --accept-data-loss` → `prisma migrate deploy` + guard banner LOCAL ONLY / DO NOT USE FOR PRODUCTION.
+- **`backend/Dockerfile`**: tách migration khỏi runtime startup — CMD chỉ `node src/index.js`; migration là release step riêng.
+- **`webhook-urls-current.txt`**: warning header local/stale + trỏ direct `/webhook` (No-Chatwoot).
+- **Deploy docs mới**: `docs/DEPLOYMENT_POLICY.md`, `docs/PRODUCTION_ROLLOUT_CHECKLIST.md`.
+
+Không làm: không sửa dashboard UI/auth, RAG/analytics/tenant handoff source, bot engine, package files, `.env`, migration lịch sử; không chạy full seed thật/production; không `db push`; không push remote.
+
+Next:
+
+- **Prompt 10C** — quality gate/lint non-interactive + production smoke checklist, hoặc **Prompt 19** — dashboard feature split.
+
 ## Prompt 10A — Seed raw SQL cleanup + progress sync (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-10

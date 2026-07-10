@@ -1,6 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 title Chat Automation - Start All
+
+:: ============================================================
+::  LOCAL DEVELOPMENT ONLY - DO NOT USE FOR PRODUCTION
+::  NEVER RUN `prisma db push` / `--accept-data-loss` AGAINST REAL DATA.
+::  Production DB thay doi PHAI qua `prisma migrate deploy` trong release step rieng.
+::  Xem: docs/DEPLOYMENT_POLICY.md va docs/PRODUCTION_ROLLOUT_CHECKLIST.md
+:: ============================================================
+
 set TENANT_SLUG=bbotech
 set CHATWOOT_AGENT_BOT_NAME=BBOTECH
 set WEBHOOK_SUMMARY=%~dp0webhook-urls-current.txt
@@ -134,14 +142,14 @@ echo.
 echo [5/8] Dang thiet lap database bot...
 
 cd /d "%~dp0backend"
-echo   - Chay prisma db push...
-call npx prisma db push --accept-data-loss
+echo   - Ap dung migration DB local (prisma migrate deploy - KHONG db push, KHONG accept-data-loss)...
+call npx prisma migrate deploy
 if %ERRORLEVEL% NEQ 0 (
-    echo   [LOI] Khong the dong bo database. Kiem tra lai PostgreSQL.
+    echo   [LOI] Khong the ap dung migration database. Kiem tra lai PostgreSQL / migration.
     pause
     exit /b 1
 ) else (
-    echo   - Database da dong bo thanh cong
+    echo   - Database migration da ap dung thanh cong
 )
 cd /d "%~dp0"
 

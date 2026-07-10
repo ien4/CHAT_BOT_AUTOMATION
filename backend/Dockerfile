@@ -20,5 +20,9 @@ RUN mkdir -p uploads
 
 EXPOSE 3001
 
-# Run migrations then start server
-CMD ["sh", "-c", "npx prisma migrate deploy && node src/index.js"]
+# Runtime container CHI start app. KHONG chay migration trong startup de tranh
+# migrate chay tren nhieu replica hoac auto-migrate ngoai kiem soat.
+# Migration la release/predeploy step rieng, chay 1 lan:
+#   docker compose run --rm backend npx prisma migrate deploy
+# Xem docs/DEPLOYMENT_POLICY.md + docs/PRODUCTION_ROLLOUT_CHECKLIST.md
+CMD ["node", "src/index.js"]

@@ -1,4 +1,13 @@
-Chat Automation - Current Webhook URLs
+========================================================================
+[CANH BAO] FILE NAY LA LOG LOCAL/STALE - KHONG DUNG LAM NGUON PRODUCTION.
+- Kien truc dich la No-Chatwoot: Facebook gui TRUC TIEP ve backend endpoint
+  that su la  GET/POST /webhook  (KHONG phai /chatwoot-webhook, KHONG qua Chatwoot).
+- URL cloudflared/ngrok ben duoi la tam thoi va co the doi moi lan start-all.
+- Webhook/domain production xem: docs/DEPLOYMENT_POLICY.md +
+  docs/PRODUCTION_ROLLOUT_CHECKLIST.md
+========================================================================
+
+Chat Automation - Current Webhook URLs (LOCAL)
 Generated at: 16/06/2026  8:55:15.21
 
 LOCAL

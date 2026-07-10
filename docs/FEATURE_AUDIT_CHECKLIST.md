@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 10B Update - DevOps Deploy Hardening + Embedding Drift Fix (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Embedding drift audit | Done | `information_schema` + migrations | DB `knowledge_base.embedding` NOT NULL (init migration `vector(768) NOT NULL`); schema Prisma `Unsupported("vector")?` nullable → drift. 0 rows, 0 vector index. |
+| Drift strategy | OPTION A | RAG search filter `embedding IS NOT NULL` | DB align theo schema nullable; RAG đã tolerate null embedding, add-path dùng fallback vector. |
+| Backup local | Done | `backups/prompt-10b-before-embedding-drift-fix-<ts>.dump` | pg_dump -Fc, size>0, TOC đọc được, **không commit** (gitignored). |
+| Migration mới | Created + applied | `backend/prisma/migrations/20260710154312_align_knowledge_embedding_nullable` | `ALTER TABLE knowledge_base ALTER COLUMN embedding DROP NOT NULL`; `migrate deploy` local PASS; cột giờ nullable. |
+| Drift smoke | PASS 9/9 | Prisma create/read/delete + `$queryRaw` | Insert content-first không embedding OK; embedding NULL trong DB; findMany không crash; cleanup leftover=0. |
+| `start-all.bat` destructive | Closed | `start-all.bat` | Bỏ `prisma db push --accept-data-loss` → `prisma migrate deploy` + guard banner LOCAL ONLY / DO NOT USE FOR PRODUCTION. |
+| Docker migration startup | Closed | `backend/Dockerfile` | CMD chỉ `node src/index.js`; migration là release step riêng. |
+| `webhook-urls-current.txt` | Hardened | file header | Warning local/stale + trỏ direct `/webhook` No-Chatwoot + docs. |
+| Deploy docs | Created | `docs/DEPLOYMENT_POLICY.md`, `docs/PRODUCTION_ROLLOUT_CHECKLIST.md` | Backup/migrate/rollback/health/webhook checklist. |
+| Static validation | PASS | backend `node --check` (6 files), `prisma validate`, dashboard `tsc --noEmit`, `docker compose config` | |
+| Regression smoke | PASS | backend :3001 | `/health` 200; `/webhook` no-token 403; `/chatwoot-webhook` 404. |
+| Destructive scan | Clean | rg `db push\|accept-data-loss` | Không còn executable; còn lại chỉ docs/reports/comment historical. |
+| Production rollout thật | NOT RUN | — | Chỉ local/test; production để release step theo checklist. |
+
 ## Prompt 10A Update - Seed Raw SQL Cleanup + Progress Sync (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-10
