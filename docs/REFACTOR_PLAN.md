@@ -1,5 +1,26 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 10A — Seed raw SQL cleanup + progress sync (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-10
+
+Đã làm:
+
+- Chuyển `$queryRawUnsafe` duy nhất trong `backend/scripts/seed.js` (INSERT `knowledge_base` build string + escaping thủ công) sang `prisma.knowledgeBase.create()` — input parameterize, giữ nguyên data shape.
+- Sau Prompt 09/09B/09C/10A: `backend/src` + `backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn 1 dòng README documentation-only.
+- Sync `docs/PROJECT_PROGRESS.md`: Phase 18 RAG/raw SQL → Done; trạng thái hiện tại → Prompt 10A; rủi ro raw SQL unsafe → Closed.
+- Static validation PASS; seed KHÔNG chạy thật (Option A) vì mutate DB rộng.
+
+Phát hiện (out of scope, logged):
+
+- `knowledge_base.embedding` trong DB local là NOT NULL nhưng schema Prisma khai `Unsupported("vector")?` (nullable) → drift. Cả raw SQL cũ lẫn Prisma create mới đều fail cùng constraint này (behavior parity, đã verify bằng psql rollback). Đây là lỗi tiền tồn tại, để Prompt 10B/DevOps xử lý cùng schema sync.
+
+Không làm: không sửa schema/migration/package/Docker/dashboard/RAG/analytics/tenant handoff; không chạy seed thật; không push remote.
+
+Next:
+
+- **Prompt 10B** — DevOps/deploy hardening (kèm đồng bộ drift `knowledge_base.embedding`).
+
 ## Prompt 09C — Tenant handoff raw SQL hardening (PASS)
 
 Ngày cập nhật: 2026-07-10

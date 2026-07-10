@@ -44,29 +44,19 @@ async function seed() {
         continue;
       }
 
-      // Thêm vào knowledge_base (không có embedding - sẽ thêm sau khi có API key)
-      const safeTitle = item.title.replace(/'/g, "''");
-      const safeContent = item.content.replace(/'/g, "''");
-      const safeCategory = (item.category || 'general').replace(/'/g, "''");
-      const sourceType = item.sourceType || 'file';
-      const sourceUrl = item.sourceUrl || null;
-
-      let sql;
-      if (sourceUrl) {
-        sql = `
-          INSERT INTO knowledge_base (id, title, content, category, source_type, source_url, is_active, created_at, updated_at)
-          VALUES (gen_random_uuid(), '${safeTitle}', '${safeContent}', '${safeCategory}', '${sourceType}', '${sourceUrl}', true, NOW(), NOW())
-          RETURNING id, title
-        `;
-      } else {
-        sql = `
-          INSERT INTO knowledge_base (id, title, content, category, source_type, is_active, created_at, updated_at)
-          VALUES (gen_random_uuid(), '${safeTitle}', '${safeContent}', '${safeCategory}', '${sourceType}', true, NOW(), NOW())
-          RETURNING id, title
-        `;
-      }
-
-      const result = await prisma.$queryRawUnsafe(sql);
+      // Thêm vào knowledge_base (không có embedding - sẽ thêm sau khi có API key).
+      // Cột embedding là vector Unsupported optional → Prisma Client insert NULL,
+      // dùng Prisma API thay vì raw SQL nên input được parameterize an toàn.
+      await prisma.knowledgeBase.create({
+        data: {
+          title: item.title,
+          content: item.content,
+          category: item.category || 'general',
+          sourceType: item.sourceType || 'file',
+          sourceUrl: item.sourceUrl || null,
+          isActive: true,
+        },
+      });
       console.log(`✅ Đã thêm: ${item.title} [${item.category}]`);
       success++;
     } catch (error) {

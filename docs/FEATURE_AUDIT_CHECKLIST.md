@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 10A Update - Seed Raw SQL Cleanup + Progress Sync (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Seed raw SQL audit | Done | `backend/scripts/seed.js` | 1 `$queryRawUnsafe` (INSERT knowledge_base, escaping thủ công `replace(/'/g,"''")`). |
+| Convert sang Prisma API | Done | `prisma.knowledgeBase.create()` | Bỏ raw SQL + escaping; input parameterize; giữ data shape (title/content/category/sourceType/sourceUrl/isActive). |
+| Unsafe raw SQL trong `backend/scripts` | Closed | rg scan | 0 match `$queryRawUnsafe`/`$executeRawUnsafe`. |
+| Unsafe raw SQL trong `backend/src` | Closed | rg scan | Chỉ còn 1 dòng README documentation-only. |
+| Static validation | PASS | backend `node --check` (6 files), `prisma validate`, dashboard `tsc --noEmit` | |
+| Seed execution | NOT RUN (by design) | Option A | Seed mutate DB rộng → không chạy thật. |
+| Behavior parity | Verified | psql rollback + Prisma rollback | Cả raw SQL cũ lẫn Prisma create mới đều dừng ở cùng constraint DB (embedding NOT NULL) → behavior không đổi. |
+| Drift phát hiện | Logged (out of scope) | `information_schema` | `knowledge_base.embedding` DB = NOT NULL nhưng schema Prisma = `Unsupported("vector")?` nullable → knowledge_base seed insert fail từ trước (pre-existing). Để Prompt 10B/DevOps. |
+
 ## Prompt 09C Update - Tenant Handoff Raw SQL Hardening (PASS)
 
 Ngày cập nhật: 2026-07-10

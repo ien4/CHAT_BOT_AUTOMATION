@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 09C đã harden tenant handoff raw SQL: chuyển `$queryRawUnsafe` trong `backend/src/tenants/handoff.js` (`getHandoffAnalytics`) sang `$queryRaw` tagged template parameterize `tenantId`+`since`; module smoke tenant isolation 10/10 PASS. Raw SQL unsafe còn lại chỉ ở `backend/scripts/seed.js`.**
+Trạng thái hiện tại: **Prompt 10A đã dọn `$queryRawUnsafe` cuối cùng trong `backend/scripts/seed.js` (chuyển INSERT knowledge_base sang Prisma Client `create()`). Sau Prompt 09 (RAG) + 09B (analytics) + 09C (tenant handoff) + 10A (seed), `backend/src` và `backend/scripts` KHÔNG còn `$queryRawUnsafe`/`$executeRawUnsafe` runtime/script; chỉ còn 1 dòng README documentation-only. Rủi ro raw SQL unsafe: CLOSED.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -44,9 +44,9 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17E — Tenant contract runtime smoke + stop-write | ✅ Done | Prompt 08E: payload tenant mới runtime 17/17 PASS, backend stop-write legacy |
 | Phase 17F — No-Chatwoot schema migration removal | ✅ Done | Prompt 08F drop 6 cột `tenants` + `conversations.chatwoot_conversation_id` + index legacy trên DB local/test; backup trước migration; runtime smoke 13/13 PASS |
 | Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
-| Phase 18 — RAG/raw SQL hardening | ⬜ Planned | Prompt 09; chèn sau No-Chatwoot migration scan |
-| Phase 19 — Dashboard feature split | ⬜ Planned | Sau Prompt 09 |
-| Phase 20 — DevOps/deploy hardening | ⬜ Planned | Sau No-Chatwoot và RAG hardening |
+| Phase 18 — RAG/raw SQL hardening | ✅ Done | Prompt 09 RAG raw SQL PASS; Prompt 09B analytics raw SQL PASS; Prompt 09C tenant handoff raw SQL PASS; Prompt 10A seed raw SQL cleanup PASS WITH WARNINGS. `backend/src`+`backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn README documentation-only |
+| Phase 19 — Dashboard feature split | ⬜ Planned | Sau raw SQL hardening |
+| Phase 20 — DevOps/deploy hardening | ⬜ Planned (next) | Prompt 10B; sau No-Chatwoot và raw SQL hardening. Kèm follow-up drift `knowledge_base.embedding NOT NULL` vs schema nullable |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
 ## 3. Checklist chi tiết theo Prompt
