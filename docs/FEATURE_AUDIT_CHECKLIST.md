@@ -767,3 +767,17 @@ Ngày cập nhật: 2026-07-10
 | Raw SQL còn lại | Backlog có chủ đích | Scan còn `backend/src/tenants/handoff.js` và `backend/scripts/seed.js` | Xử lý ở Prompt 09C/handoff hoặc Prompt 10 DevOps scripts. |
 
 Kết luận: Prompt 09B đã đóng raw SQL analytics và giữ nguyên contract dashboard; backlog raw unsafe còn lại là handoff runtime và seed script nội bộ.
+
+## Prompt 19A-FIX Feature Audit Update
+
+Ngày cập nhật: 2026-07-10
+
+| Nhóm | Trạng thái sau Prompt 19A-FIX | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| Next.js chunk runtime | Closed | Sau `npm run quality`, audit `.next/server` và clean `.next`, không còn `Cannot find module './20.js'` | Khi chạy build rồi quay lại dev server cũ, cần restart/clean cache nếu gặp chunk mismatch. |
+| Dashboard route smoke | PASS | Fresh dev server 3019: `/dashboard`, `/dashboard/analytics`, prompts, knowledge, settings, tenants, handoff, content-packages đều không 500/chunk error | Prompt 19B phải giữ dev-route smoke thật, không chỉ build. |
+| Analytics source split | No source bug found | `features/analytics` client boundary hợp lệ; page/hook/filter/toggle dùng `'use client'`, formatter/types không import client hook | Không cần rollback 19A. |
+| Backend smoke | PASS | Process 3001: health/login/prompts/settings/handoff/analytics/webhook/chatwoot 7/7 PASS | Không sửa backend trong prompt này. |
+| Legacy script scan | Existing backlog | Scan còn script Chatwoot legacy trong `backend/scripts`/`start-all.bat`, không phát sinh từ 19A-FIX | Xử lý riêng nếu mở prompt DevOps cleanup, không trộn với bug fix này. |
+
+Kết luận: Prompt 19A-FIX đã đóng regression runtime/chunk và thêm yêu cầu route smoke thật cho các bước split dashboard tiếp theo.

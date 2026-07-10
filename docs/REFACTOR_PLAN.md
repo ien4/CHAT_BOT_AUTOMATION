@@ -1046,3 +1046,23 @@ Kế hoạch tiếp theo:
 
 - Prompt 09C: harden `$queryRawUnsafe` trong `backend/src/tenants/handoff.js`, kèm tenant isolation và handoff runtime smoke.
 - Prompt 10 DevOps/security scripts: xử lý `backend/scripts/seed.js` nếu muốn kết thúc toàn bộ unsafe raw SQL còn lại.
+
+## Prompt 19A-FIX - Runtime bug sweep completed
+
+Mục tiêu đã hoàn tất:
+
+- Điều tra lỗi Next.js runtime `Cannot find module './20.js'` sau analytics feature split.
+- Không tìm thấy lỗi source import/barrel/client boundary trong `dashboard/src/features/analytics/**`.
+- Không tìm thấy backend regression liên quan analytics/auth trong smoke.
+- Root cause được phân loại là stale `.next` cache/dev server mismatch; đã clean `.next`, rebuild và route-smoke bằng dev server fresh.
+
+Validation:
+
+- Dashboard `npm run quality` PASS trước và sau clean `.next`.
+- Fresh dev server port 3019 PASS cho route smoke `/dashboard` và `/dashboard/analytics` cùng các route dashboard trọng yếu.
+- Backend `npm run quality` PASS; runtime smoke 7/7 PASS.
+
+Kế hoạch tiếp theo:
+
+- Prompt 19B có thể tiếp tục tách page tiếp theo nhưng bắt buộc thêm dev server route smoke thật sau typecheck/build.
+- Nếu gặp lại chunk error tương tự: dừng dev server cũ, xóa `dashboard/.next`, chạy `npm run quality`, start dev server fresh và smoke `_not-found` + route dashboard liên quan.

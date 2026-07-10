@@ -67,3 +67,21 @@ KHÔNG được sửa:
 ## 7. Sau 19A
 
 - Ứng viên kế tiếp gợi ý: `prompts/page.tsx` (write nhẹ, đã có repository backend) hoặc `staff/page.tsx`. Settings/Knowledge/Tenants để sau cùng vì write/external nặng.
+
+## 8. Prompt 19A-FIX - Runtime regression follow-up
+
+Prompt 19A phát sinh báo lỗi runtime Next.js sau khi chạy dev/build: `Cannot find module './20.js'` từ `.next/server/webpack-runtime.js` và `_not-found`.
+
+Kết quả Prompt 19A-FIX:
+
+- Không tìm thấy bug source trong analytics split: client boundary/import/barrel hợp lệ, không cần rollback.
+- Lỗi được phân loại là stale `.next` cache/dev server mismatch sau build/dev process cũ.
+- Đã clean `dashboard/.next`, chạy lại `npm run quality`, start dev server fresh port 3019 và route smoke `/dashboard`, `/dashboard/analytics`, `_not-found` cùng các route dashboard trọng yếu: PASS.
+- Backend quality + runtime smoke tối thiểu PASS; không sửa backend.
+
+Rule mới cho Prompt 19B trở đi:
+
+1. Không chỉ dựa vào `next build`; sau mỗi feature split phải chạy dev server thật trên port sạch và smoke route liên quan.
+2. Smoke tối thiểu: `/login`, `/dashboard`, route vừa tách, `_not-found`, và một vài route dashboard trọng yếu.
+3. Nếu thấy `Cannot find module './<number>.js'`, phải audit `.next/server`, dừng dev server cũ, clean `.next`, rebuild và smoke lại trước khi kết luận lỗi source.
+4. Chỉ tiếp tục Prompt 19B khi runtime smoke PASS hoặc PASS WITH WARNINGS có lý do rõ.

@@ -790,3 +790,18 @@ Gợi ý tiếp theo:
 
 - Prompt 09C: xử lý `$queryRawUnsafe` trong tenant handoff với tenant isolation/runtime smoke riêng.
 - Sau handoff, cân nhắc Prompt 10 DevOps/security scripts để xử lý seed script nếu vẫn cần loại bỏ toàn bộ unsafe raw SQL.
+
+## Prompt 19A-FIX - Full runtime bug sweep + Next.js chunk fix
+
+Ngày cập nhật: 2026-07-10
+
+- Đã xử lý regression runtime sau Prompt 19A: lỗi được báo `Cannot find module './20.js'` trong `.next/server/webpack-runtime.js` / `_not-found`.
+- Root cause phân loại: stale `.next` cache/dev server mismatch sau build/dev process cũ, không phải source split analytics và không phải backend.
+- Baseline sau `npm run quality` không còn tái hiện lỗi trên port 3019 hoặc process 3002 đang chạy sẵn; audit `.next/server/**/*.js` không còn reference thiếu `./20.js`.
+- Đã clean `dashboard/.next`, chạy lại `npm run quality`, start dev server fresh port 3019 và smoke route thật: `/`, `/login`, `/dashboard`, `/dashboard/analytics`, `/dashboard/prompts`, `/dashboard/knowledge`, `/dashboard/settings`, `/dashboard/tenants`, `/dashboard/handoff`, `/dashboard/content-packages`, route 404 đều không có server error/chunk error/500.
+- Backend smoke PASS 7/7 trên process 3001 đang chạy sẵn: health, login test token, prompts, settings/handoff, analytics `days=7`, webhook 403, chatwoot-webhook 404.
+- Không sửa source dashboard/backend/package/schema/migration; chỉ cập nhật docs/report. Phase 19 vẫn Started, Prompt 19B chỉ tiếp tục sau khi giữ rule dev server route smoke thật.
+
+Gợi ý tiếp theo:
+
+- Prompt 19B chỉ nên bắt đầu khi sau mỗi lần split page đều chạy `npm run quality`, clean/fresh dev server nếu cần, và route smoke thật trên các route dashboard trọng yếu.
