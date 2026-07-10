@@ -1,5 +1,26 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 10C — Quality gate + Phase 19 readiness (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-10
+
+Đã làm:
+
+- Thêm `npm run quality` an toàn (không thêm dependency): backend = `syntax` (`node --check` 6 file) + `prisma:validate`; dashboard = `typecheck` (`tsc --noEmit`) + `build`. Cả hai chạy PASS.
+- Tạo `docs/QUALITY_GATE.md` (required checks, lint status, smoke link).
+- Production smoke dry-run local PASS 9/9 (temp admin `test-10c-*`, cleanup=0).
+- Phase 19 readiness: chọn candidate #1 = `dashboard/src/app/dashboard/analytics/page.tsx` (read-only, backend harden 09B, đã có `features/analytics/`); kế hoạch `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md`. Chưa sửa page.
+
+Warning:
+
+- ESLint chưa cài ở cả backend/dashboard → lint non-interactive BLOCKED (OPTION C). Không tự `npm install`/sửa lock. Hướng dẫn bật lint ở `docs/QUALITY_GATE.md` cho prompt dependency riêng.
+
+Không làm: không sửa dashboard page/component UI, backend API behavior, schema/migrations, RAG/analytics/handoff/webhook/bot, Dockerfile/start-all; không thêm dependency; không production rollout; không push remote.
+
+Next:
+
+- **Prompt 19A** — tách `analytics/page.tsx` sang `features/analytics/**` (components + data hook), giữ UI/behavior, validate bằng `npm run quality` dashboard.
+
 ## Prompt 10B — DevOps deploy hardening + embedding drift fix (PASS)
 
 Ngày cập nhật: 2026-07-10

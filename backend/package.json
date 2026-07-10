@@ -8,7 +8,10 @@
     "dev": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "export": "node scripts/export-knowledge.js",
-    "import": "node scripts/import-knowledge.js"
+    "import": "node scripts/import-knowledge.js",
+    "syntax": "node --check src/index.js && node --check src/db.js && node --check src/api/dashboard.js && node --check src/rag/pipeline.js && node --check src/tenants/handoff.js && node --check scripts/seed.js",
+    "prisma:validate": "prisma validate",
+    "quality": "npm run syntax && npm run prisma:validate"
   },
   "keywords": [],
   "author": "",

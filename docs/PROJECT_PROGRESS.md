@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 10B đã hardening DevOps/deploy + fix drift `knowledge_base.embedding`. Migration `align_knowledge_embedding_nullable` (DROP NOT NULL, 0 rows) cho phép seed/insert content-first; drift smoke PASS 9/9. `start-all.bat` bỏ `db push --accept-data-loss` → `migrate deploy` + guard LOCAL ONLY; `backend/Dockerfile` tách migration khỏi startup (CMD chỉ `node src/index.js`); thêm `docs/DEPLOYMENT_POLICY.md` + `docs/PRODUCTION_ROLLOUT_CHECKLIST.md`. Raw SQL unsafe: CLOSED (Prompt 09/09B/09C/10A). Production rollout thật CHƯA chạy.**
+Trạng thái hiện tại: **Prompt 10C đã đóng quality gate + chuẩn bị Phase 19. Thêm `npm run quality` cho backend (syntax + prisma validate) và dashboard (typecheck + build) — đều PASS; tạo `docs/QUALITY_GATE.md`. ESLint chưa cài nên lint non-interactive để prompt dependency riêng (PASS WITH WARNINGS phần lint). Production smoke dry-run local PASS 9/9. Phase 19 readiness: candidate #1 = `dashboard/src/app/dashboard/analytics/page.tsx` (read-only, backend đã harden 09B), kế hoạch tại `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md`. Chưa sửa page UI. Production rollout thật CHƯA chạy.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -45,7 +45,8 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17F — No-Chatwoot schema migration removal | ✅ Done | Prompt 08F drop 6 cột `tenants` + `conversations.chatwoot_conversation_id` + index legacy trên DB local/test; backup trước migration; runtime smoke 13/13 PASS |
 | Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
 | Phase 18 — RAG/raw SQL hardening | ✅ Done | Prompt 09 RAG raw SQL PASS; Prompt 09B analytics raw SQL PASS; Prompt 09C tenant handoff raw SQL PASS; Prompt 10A seed raw SQL cleanup PASS WITH WARNINGS. `backend/src`+`backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn README documentation-only |
-| Phase 19 — Dashboard feature split | ⬜ Planned | Sau DevOps hardening (Prompt 19) |
+| Phase 18b — Quality gate | ✅ Done | Prompt 10C: `npm run quality` backend (syntax+prisma validate) + dashboard (typecheck+build) PASS; ESLint chưa cài (lint để prompt dependency riêng); production smoke dry-run local 9/9. `docs/QUALITY_GATE.md` |
+| Phase 19 — Dashboard feature split | ⬜ Planned | Readiness done ở 10C: candidate #1 = analytics page; `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md`. Bắt đầu ở Prompt 19A |
 | Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
@@ -599,8 +600,8 @@ Trạng thái: **PASS WITH WARNINGS — prompts repository done, default/local s
 | `start-all.bat` có `db push --accept-data-loss` | Closed ở Prompt 10B | P0 | Thay bằng `prisma migrate deploy` + guard banner LOCAL ONLY; không còn lệnh executable destructive |
 | Container start chạy `prisma migrate deploy` | Closed ở Prompt 10B | P0 | `backend/Dockerfile` CMD chỉ còn `node src/index.js`; migration tách thành release step riêng (docs/DEPLOYMENT_POLICY.md) |
 | Runtime verification toàn hệ thống chưa chạy | Open | P0 | Đã verify nhóm settings/prompts nhỏ; route khác vẫn cần test |
-| Backend chưa có lint/typecheck thật | Open | P1 | Prompt quality gate riêng |
-| Dashboard lint chưa cấu hình | Open | P1 | Prompt quality gate riêng |
+| Backend chưa có lint/typecheck thật | Partial ở Prompt 10C | P1 | Có `npm run quality` (syntax `node --check` + `prisma validate`); ESLint chưa cài (không thêm dependency) |
+| Dashboard lint chưa cấu hình | Partial ở Prompt 10C | P1 | Có `npm run quality` (typecheck + build); `next lint` cần cài ESLint (interactive) → để prompt dependency riêng, xem docs/QUALITY_GATE.md |
 | npm audit vulnerabilities | Open | P1 | Prompt security deps riêng |
 | Hard-code localhost trong script/root | Open | P1 | Prompt 10 |
 | `webhook-urls-current.txt` có thể stale | Closed ở Prompt 10B | P1 | Thêm warning header local/stale + trỏ direct `/webhook` No-Chatwoot và docs/DEPLOYMENT_POLICY.md |

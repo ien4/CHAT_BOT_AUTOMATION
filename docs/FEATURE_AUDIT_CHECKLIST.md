@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 10C Update - Quality Gate + Phase 19 Readiness (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Quality script audit | Done | `backend/package.json`, `dashboard/package.json` | Backend: không lint/typecheck; Dashboard: `next lint` (interactive). |
+| ESLint availability | Missing | `node_modules` check | Không có `eslint`/`eslint-config-next` ở cả 2; không config file. |
+| Backend quality script | Added | `npm run quality` = `syntax`+`prisma:validate` | `node --check` 6 file + `prisma validate`; không thêm dependency. |
+| Dashboard quality script | Added | `npm run quality` = `typecheck`+`build` | `tsc --noEmit` + `next build`; không thêm dependency. |
+| Backend quality run | PASS | `npm run quality` (backend) | syntax + prisma validate PASS. |
+| Dashboard quality run | PASS | `npm run quality` (dashboard) | typecheck exit 0; build 17 routes PASS. |
+| Dashboard lint non-interactive | BLOCKED (dependency) | — | ESLint chưa cài → OPTION C; hướng dẫn cài ở `docs/QUALITY_GATE.md`; không tự install. |
+| Production smoke dry-run (local) | PASS 9/9 | temp admin `test-10c-*`, backend :3001 | `/health` 200; login 200+token; `/api/prompts`(token) 200; `/api/settings/handoff`(token) 200; no-token 401; `/webhook` 403; `/chatwoot-webhook` 404; knowledge insert content-first OK; cleanup=0. |
+| Phase 19 readiness | Done | `docs/PHASE_19_DASHBOARD_FEATURE_SPLIT_PLAN.md` | Candidate #1 = `analytics/page.tsx` (read-only, 374 LOC, backend harden 09B). Chưa sửa page. |
+| Docs quality gate | Created | `docs/QUALITY_GATE.md` | Required checks + lint status + smoke link. |
+| Destructive scan | Clean | rg scripts/docker/package | Không executable; chỉ comment historical. |
+
 ## Prompt 10B Update - DevOps Deploy Hardening + Embedding Drift Fix (PASS)
 
 Ngày cập nhật: 2026-07-10
