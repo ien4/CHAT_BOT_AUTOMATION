@@ -670,3 +670,17 @@ Ngày cập nhật: 2026-07-10
 | RAG search tenant isolation | Verified local | `rag.search()` smoke: tenant row trả đúng scope, tenant khác không thấy | Full provider smoke không chạy để tránh external API. |
 
 Kết luận: Prompt 09 đã đóng P0 RAG/raw SQL runtime và tenant scope upload/scrape; còn lại raw SQL analytics/handoff/seed cần prompt riêng.
+
+## Prompt 09B Feature Audit Update
+
+Ngày cập nhật: 2026-07-10
+
+| Nhóm | Trạng thái sau Prompt 09B | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| Analytics `$queryRawUnsafe` | Closed trong `GET /api/analytics` | 4 query analytics đã chuyển sang Prisma `$queryRaw` tagged template, `sinceDate` là parameter | Không còn raw unsafe trong analytics route. |
+| `days` query param | Hardened | Default `30`, min `1`, max `365`; `abc` trả 200 với default, `999999` trả 200 với clamp | Có thể bổ sung test tự động sau khi có test runner. |
+| Analytics response contract | Preserved | Runtime smoke xác nhận các field `handoff`, `conversations`, `messages`, `intents` vẫn tồn tại | Không sửa dashboard UI trong prompt này. |
+| Analytics authorization | PASS | No-token 401, tenant token 403, platform token 200 | Tenant handoff raw SQL vẫn cần prompt riêng. |
+| Raw SQL còn lại | Backlog có chủ đích | Scan còn `backend/src/tenants/handoff.js` và `backend/scripts/seed.js` | Xử lý ở Prompt 09C/handoff hoặc Prompt 10 DevOps scripts. |
+
+Kết luận: Prompt 09B đã đóng raw SQL analytics và giữ nguyên contract dashboard; backlog raw unsafe còn lại là handoff runtime và seed script nội bộ.

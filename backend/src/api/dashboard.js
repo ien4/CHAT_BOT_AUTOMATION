@@ -79,6 +79,17 @@ async function findScopedById(model, id, tenantId, args = {}) {
   });
 }
 
+function sanitizeAnalyticsDays(value, defaultValue = 30, maxValue = 365) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  if (rawValue === undefined || rawValue === null || rawValue === '') return defaultValue;
+  if (typeof rawValue !== 'string' && typeof rawValue !== 'number') return defaultValue;
+
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed)) return defaultValue;
+
+  return Math.min(Math.max(parsed, 1), maxValue);
+}
+
 async function hasContentPackageAccess(packageId, tenantId) {
   if (!tenantId) return true;
 
@@ -1789,8 +1800,8 @@ router.get('/fb-subscription', authMiddleware, platformAdminOnly, async (req, re
  */
 router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
-    const { days = 30 } = req.query;
-    const sinceDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
+    const days = sanitizeAnalyticsDays(req.query.days);
+    const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     // 1. Handoff statistics
     const handoffConversations = await prisma.conversation.findMany({
@@ -1805,22 +1816,22 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
       where: { handoffStatus: 'bot', assignedStaffId: { not: null } },
     });
 
-        // 2. Staff response time (approximate: time from first message to first staff outbound)
-    // Use raw query with parameterized input to avoid SQL injection
-    const staffResponseTimes = await prisma.$queryRawUnsafe(`
+    // 2. Staff response time (approximate: time from first message to first staff outbound)
+    // Use Prisma tagged template so sinceDate stays parameterized.
+    const staffResponseTimes = await prisma.$queryRaw`
       SELECT m2.conversation_id, m2.created_at as response_time,
              m1.created_at as first_message,
              EXTRACT(EPOCH FROM (m2.created_at - m1.created_at)) AS response_seconds
       FROM messages m1
       INNER JOIN messages m2 ON m2.conversation_id = m1.conversation_id AND m2.direction = 'staff_outbound'
       WHERE m1.direction = 'inbound'
-        AND m1.created_at >= $1::timestamp
+        AND m1.created_at >= ${sinceDate}::timestamp
         AND m2.created_at >= m1.created_at
       ORDER BY m1.created_at DESC
       LIMIT 100
-    `, sinceDate).catch(() => []);
+    `.catch(() => []);
 
-        let avgResponseTime = 0;
+    let avgResponseTime = 0;
     let responseTimeList = [];
     if (Array.isArray(staffResponseTimes) && staffResponseTimes.length > 0) {
       responseTimeList = staffResponseTimes.map(r => Math.round(Number(r.response_seconds) || 0));
@@ -1828,15 +1839,15 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
     }
 
     // 3. Hourly activity
-    const hourlyActivity = await prisma.$queryRawUnsafe(`
+    const hourlyActivity = await prisma.$queryRaw`
       SELECT 
         EXTRACT(HOUR FROM created_at) AS hour,
         COUNT(*) AS count
       FROM messages
-      WHERE created_at >= $1::timestamp
+      WHERE created_at >= ${sinceDate}::timestamp
       GROUP BY EXTRACT(HOUR FROM created_at)
       ORDER BY hour
-    `, sinceDate).catch(() => []);
+    `.catch(() => []);
 
     // 4. Fallback rate (messages that went to fallback intent)
     const totalInbound = await prisma.message.count({
@@ -1847,17 +1858,17 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
     });
     const fallbackRate = totalInbound > 0 ? parseFloat((fallbackCount / totalInbound * 100).toFixed(1)) : 0;
 
-        // 5. Conversation duration (minutes, where status is not active)
-    const closedConversations = await prisma.$queryRawUnsafe(`
+    // 5. Conversation duration (minutes, where status is not active)
+    const closedConversations = await prisma.$queryRaw`
       SELECT 
         EXTRACT(EPOCH FROM (updated_at - created_at)) / 60 AS duration_minutes
       FROM conversations
-      WHERE status != 'active' AND created_at >= $1::timestamp
+      WHERE status != 'active' AND created_at >= ${sinceDate}::timestamp
       ORDER BY created_at DESC
       LIMIT 100
-    `, sinceDate).catch(() => []);
+    `.catch(() => []);
 
-            const avgDuration = Array.isArray(closedConversations) && closedConversations.length > 0
+    const avgDuration = Array.isArray(closedConversations) && closedConversations.length > 0
       ? closedConversations.reduce(function(sum, c) { return sum + Number(c.duration_minutes || 0); }, 0) / closedConversations.length
       : 0;
 
@@ -1883,18 +1894,18 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
       },
     });
 
-        // 8. Messages count (last 30 days, daily)
-    const dailyMessages = await prisma.$queryRawUnsafe(`
+    // 8. Messages count (selected period, daily)
+    const dailyMessages = await prisma.$queryRaw`
       SELECT 
         DATE(created_at) AS date,
         COUNT(*)::int AS total,
         SUM(CASE WHEN direction = 'inbound' THEN 1 ELSE 0 END)::int AS inbound,
         SUM(CASE WHEN direction = 'outbound' THEN 1 ELSE 0 END)::int AS outbound
       FROM messages
-      WHERE created_at >= $1::timestamp
+      WHERE created_at >= ${sinceDate}::timestamp
       GROUP BY DATE(created_at)
       ORDER BY date
-    `, sinceDate).catch(() => []);
+    `.catch(() => []);
 
     res.json({
       handoff: {

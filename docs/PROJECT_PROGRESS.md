@@ -772,3 +772,19 @@ Gợi ý tiếp theo:
 
 - Prompt 09B: chuyển raw SQL analytics sang `$queryRaw` tagged template và chuẩn hóa `days` limit.
 - Prompt 09C hoặc handoff-specific: xử lý `$queryRawUnsafe` trong `backend/src/tenants/handoff.js` với test tenant handoff riêng.
+
+## Prompt 09B - Analytics raw SQL hardening
+
+Ngày cập nhật: 2026-07-10
+
+- Đã xử lý 4 `$queryRawUnsafe` trong `GET /api/analytics` tại `backend/src/api/dashboard.js`, chuyển sang Prisma `$queryRaw` tagged template với `sinceDate` parameterized.
+- `days` đã được sanitize: default `30`, min `1`, max `365`; input không hợp lệ như `abc` dùng default, input quá lớn như `999999` bị clamp.
+- Runtime smoke `/api/analytics` PASS trên Express app tạm mount source mới: default, `days=7`, `days=abc`, `days=999999` đều 200 và giữ response shape; no-token 401, tenant token 403, platform token 200.
+- Auth/regression smoke PASS: `/api/prompts` 200, `/api/settings/handoff` 200, `/webhook` thiếu verify token 403, `/chatwoot-webhook` 404.
+- Validation PASS: backend syntax checks, Prisma validate, dashboard `tsc --noEmit`, `git diff --check` (chỉ warning CRLF/LF của Git trên Windows).
+- Raw SQL unsafe còn lại ngoài phạm vi Prompt 09B: `backend/src/tenants/handoff.js` và `backend/scripts/seed.js`.
+
+Gợi ý tiếp theo:
+
+- Prompt 09C: xử lý `$queryRawUnsafe` trong tenant handoff với tenant isolation/runtime smoke riêng.
+- Sau handoff, cân nhắc Prompt 10 DevOps/security scripts để xử lý seed script nếu vẫn cần loại bỏ toàn bộ unsafe raw SQL.

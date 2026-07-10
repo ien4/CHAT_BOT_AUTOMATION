@@ -933,3 +933,22 @@ Kế hoạch tiếp theo:
 
 - Prompt 09B: analytics raw SQL hardening.
 - Prompt handoff-specific: tenant handoff raw SQL + tenant isolation runtime smoke.
+
+## Prompt 09B - Analytics raw SQL hardening completed
+
+Mục tiêu đã hoàn tất:
+
+- `GET /api/analytics` giữ nguyên route/method/auth (`authMiddleware`, `platformAdminOnly`) và giữ response shape hiện hữu.
+- 4 query analytics (`staffResponseTimes`, `hourlyActivity`, `closedConversations`, `dailyMessages`) không còn dùng `$queryRawUnsafe`; đã chuyển sang `$queryRaw` tagged template với `sinceDate` parameterized.
+- `days` được chuẩn hóa an toàn trong JS trước khi tính `sinceDate`: default `30`, min `1`, max `365`.
+- Runtime analytics smoke PASS bằng platform admin token; `days=abc` và `days=999999` không crash.
+
+Không thay đổi:
+
+- Prisma schema/migrations, package files, Docker/scripts, dashboard UI/auth, RAG files, tenant handoff và direct Facebook webhook.
+- `.env` và `.env.local` không bị mở/in/stage.
+
+Kế hoạch tiếp theo:
+
+- Prompt 09C: harden `$queryRawUnsafe` trong `backend/src/tenants/handoff.js`, kèm tenant isolation và handoff runtime smoke.
+- Prompt 10 DevOps/security scripts: xử lý `backend/scripts/seed.js` nếu muốn kết thúc toàn bộ unsafe raw SQL còn lại.
