@@ -865,3 +865,44 @@ Validation:
 Kế hoạch tiếp theo:
 - Prompt schema-removal: backup DB rồi tạo migration drop cột/index legacy (`chatwoot_*`, `webhook_secret_enc` nếu không tái dùng, `conversations.chatwoot_conversation_id`).
 - Prompt quality gate: cấu hình ESLint non-interactive.
+
+## Prompt 08H - Browser login redirect fix completed
+
+Mục tiêu đã hoàn tất:
+
+- Fix regression đăng nhập trên browser: form Login đã hydrate lại đúng sau khi loại bỏ tình trạng dashboard dev server phục vụ chunk 404.
+- Login thành công chuyển sang `/dashboard` bằng `router.replace`, tránh quay ngược về trang login trong lịch sử browser.
+- Login page tự đưa user đã đăng nhập về Dashboard sau khi auth provider hydrate xong.
+- Failed login 401 không còn bị global interceptor redirect/reload, nên UI hiện được lỗi an toàn.
+- Admin seed không còn fallback mật khẩu mẫu local/dev.
+
+File đã sửa:
+
+- `backend/src/index.js`
+- `dashboard/src/app/login/page.tsx`
+- `dashboard/src/lib/api.ts`
+- `docs/PROJECT_PROGRESS.md`
+- `docs/FEATURE_AUDIT_CHECKLIST.md`
+- `docs/REFACTOR_PLAN.md`
+- `report/PROMPT_08H_BROWSER_LOGIN_REDIRECT_FIX_REPORT.md`
+
+Không thay đổi:
+
+- `.env` và `.env.local`
+- Prisma schema/migrations
+- RAG/raw SQL
+- Webhook handlers
+- Tenant handoff
+- Package/Docker/scripts
+
+Validation:
+
+- Backend syntax + Prisma validate PASS.
+- Dashboard typecheck + build PASS.
+- Backend auth smoke 8/8 PASS.
+- Browser redirect smoke PASS: hydrate, login đúng, refresh Dashboard, logout, login sai, không chunk 404.
+
+Kế hoạch tiếp theo:
+
+- Prompt 09: RAG/raw SQL hardening. Tập trung audit tenant scope, parameterized query và các đường truy vấn knowledge/search.
+- Nếu tiếp tục auth sau Prompt 09, nên có prompt riêng cho token/session storage hardening thay vì trộn vào RAG.

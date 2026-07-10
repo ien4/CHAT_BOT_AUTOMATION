@@ -639,3 +639,20 @@ Ngày cập nhật: 2026-07-09
 | Regression read routes + legacy 404 | PASS | prompts/settings/handoff/telegram-destinations 200; chatwoot-webhook/chatwoot-test/lookup-inboxes 404; webhook verify sai 403 | — |
 
 Kết luận: Prompt 08E đã đóng backend legacy stop-write và runtime-verify contract tenant mới; còn lại là migration drop schema legacy.
+
+## Prompt 08H Feature Audit Update
+
+Ngày cập nhật: 2026-07-10
+
+| Nhóm | Trạng thái sau Prompt 08H | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| Browser login hydration | Closed | Sau restart dashboard dev server, `_next/static` chunk không còn 404; eye toggle đổi `password` -> `text`; form gọi `/api/auth/login` | Cần restart dev server khi vừa chạy `next build` làm lệch chunk với server dev cũ. |
+| Login đúng credential | Closed | Browser smoke: login đúng vào `http://localhost:3002/dashboard`, có `token`/`user`, Dashboard render nội dung | Chưa đổi chiến lược lưu token trong localStorage. |
+| Refresh Dashboard | Closed | Browser smoke: refresh `/dashboard` vẫn giữ Dashboard, không bị kick về `/login` | Auth provider vẫn phụ thuộc localStorage hiện tại. |
+| Logout | Closed | Browser smoke: logout về `/login`, xóa `token` và `user` | Nên xem xét xóa thêm state liên quan nếu bổ sung key mới. |
+| Login sai credential | Closed | API interceptor bỏ qua 401 của `/auth/login`; page hiện lỗi an toàn `Sai tài khoản hoặc mật khẩu`, không lưu token | Thông điệp lỗi đã an toàn, không lộ credential. |
+| Admin seed password fallback | Closed | `backend/src/index.js` không còn fallback `admin123`; thiếu `ADMIN_PASSWORD` thì dừng seed admin | `admin123` chỉ còn là giá trị denylist weak secret trong config, không phải bypass/fallback. |
+| Sample credential trên Login UI | Closed | Scan không thấy sample credential/fallback/standalone token trong `dashboard/src` và `backend/src` | Không có. |
+| Env và secret hygiene | Preserved | Không stage `.env`; smoke script không in username/password/token/JWT/DB URL | Tiếp tục giữ policy này trong các prompt sau. |
+
+Kết luận: Prompt 08H đã đóng lỗi login redirect/hydration regression và lỗ hổng UX của failed-login 401; các hardening lớn hơn về token/session nên để prompt riêng.

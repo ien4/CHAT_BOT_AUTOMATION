@@ -124,11 +124,10 @@ async function seedDefaults() {
   const existingAdmin = await prisma.adminUser.findUnique({ where: { username: adminUsername } });
 
   if (!existingAdmin) {
-    // Production đã được assertProductionAuthEnv() đảm bảo ADMIN_PASSWORD mạnh;
-    // chỉ dev/local mới rơi về mật khẩu mặc định để tiện chạy thử.
-    const seedPassword = process.env.ADMIN_PASSWORD || (isProduction() ? null : 'admin123');
+    // Không seed bằng mật khẩu mẫu; local/staging/production đều phải cấu hình ADMIN_PASSWORD.
+    const seedPassword = process.env.ADMIN_PASSWORD;
     if (!seedPassword) {
-      console.error('FATAL: thiếu ADMIN_PASSWORD để tạo admin ban đầu trong production.');
+      console.error('FATAL: thiếu ADMIN_PASSWORD để tạo admin ban đầu.');
       process.exit(1);
     }
     const hash = await bcrypt.hash(seedPassword, 10);

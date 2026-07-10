@@ -726,3 +726,32 @@ Ngày cập nhật: 2026-07-09
 - Điều kiện để migration removal: backend đã stop-write (đạt ở 08E), dashboard không đọc legacy (đạt), cần backup DB + migration mới drop columns/indexes trên local/staging trước production.
 - Regression PASS: prompts/settings/handoff/telegram-destinations 200; `/webhook` verify sai 403; `/chatwoot-webhook`, `/api/settings/chatwoot-test`, `/api/channel-configs/lookup-inboxes` đều 404.
 - Next prompt đề xuất: 08F/schema-removal migration (drop cột legacy sau backup) hoặc quality-gate lint non-interactive.
+
+## Prompt 08H - Browser login redirect fix + auth flow regression
+
+Ngày cập nhật: 2026-07-10
+
+Phạm vi đã làm:
+
+- Điều tra lỗi đăng nhập đúng tài khoản nhưng không vào được Dashboard bằng browser smoke trên Chrome headless/CDP.
+- Nguyên nhân thật: dashboard dev server đang phục vụ `_next/static` chunk bị 404 sau build/dev mismatch, nên React không hydrate; form đăng nhập rơi vào native submit `/login?` và không gọi `/api/auth/login`.
+- Sửa source auth flow: login thành công dùng `router.replace('/dashboard')`, login page tự redirect về Dashboard nếu đã có user, nút submit bị khóa trong lúc auth provider đang hydrate.
+- Sửa API interceptor: 401 từ `/auth/login` không bị global redirect nữa, để login page hiện lỗi an toàn; 401 protected route vẫn xóa `token`, `user`, `selectedTenantId` và về `/login`.
+- Sửa backend seed admin: không còn fallback mật khẩu mẫu local/dev; mọi môi trường đều phải có `ADMIN_PASSWORD` khi cần tạo admin ban đầu.
+- Không sửa `.env`, Prisma schema/migrations, RAG/raw SQL, webhook, tenant handoff, package, Dockerfile hoặc scripts.
+
+Validation:
+
+- Backend: `node --check src/index.js`, `node --check src/api/dashboard.js`, `npx prisma validate` PASS.
+- Dashboard: `npx --no-install tsc --noEmit`, `npm run --if-present build` PASS.
+- `git diff --check` PASS, chỉ có warning CRLF/LF của Git trên Windows.
+- Backend auth smoke 8/8 PASS: health, login đúng/sai, protected prompts/settings/handoff/telegram-destinations, webhook verify sai 403, `chatwoot-webhook` 404.
+- Browser redirect smoke PASS: hydration hoạt động, login đúng vào `/dashboard`, refresh vẫn ở Dashboard, logout xóa localStorage và về `/login`, login sai hiện lỗi an toàn và không lưu token.
+- Sau smoke, dashboard dev server do Codex khởi động đã được dừng lại; backend đang chạy sẵn không bị dừng.
+
+Trạng thái: **PASS**.
+
+Gợi ý tiếp theo:
+
+- Prompt 09: RAG/raw SQL hardening, audit tenant scope và parameterized query cho các điểm truy vấn dữ liệu.
+- Nên tách prompt riêng cho auth storage hardening nếu muốn giảm rủi ro localStorage token về sau; không trộn với Prompt 09.
