@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
+const { Prisma } = require('@prisma/client');
 const ragPipeline = require('../rag/pipeline');
 const docParser = require('../rag/docParser');
 const llmFactory = require('../llm/factory');
@@ -413,22 +414,20 @@ router.post('/knowledge', authMiddleware, async (req, res) => {
         });
       res.status(201).json(result);
     } catch (ragError) {
-      // Fallback: thêm vào DB bằng raw SQL (bỏ qua trường embedding vector)
+      // Fallback: thêm bằng raw SQL parameterized với vector placeholder vì DB local vẫn bắt buộc embedding NOT NULL.
       console.warn('RAG add failed, using plain insert:', ragError.message);
-            const safeTitle = title.replace(/'/g, "''");
-      const safeContent = content.replace(/'/g, "''");
-      const safeCategory = (category || 'general').replace(/'/g, "''");
-      const safeType = (type || 'document').replace(/'/g, "''");
-      const tagsArray = tags || [];
-      const tagsLiteral = `{${tagsArray.map(t => `"${String(t).replace(/"/g, '\\"')}"`).join(',')}}`;
-      const safeTenantId = tenantId ? `'${tenantId.replace(/'/g, "''")}'` : 'NULL';
-      const result = await prisma.$queryRawUnsafe(`
-        INSERT INTO knowledge_base (id, title, content, category, type, tags, source_type, is_active, tenant_id, 
+      const tagsArray = Array.isArray(tags) ? tags.map((tag) => String(tag).trim()).filter(Boolean) : [];
+      const tagsSql = tagsArray.length > 0
+        ? Prisma.sql`ARRAY[${Prisma.join(tagsArray)}]::text[]`
+        : Prisma.sql`ARRAY[]::text[]`;
+      const fallbackVector = ragPipeline.fallbackVectorLiteral();
+      const result = await prisma.$queryRaw`
+        INSERT INTO knowledge_base (id, title, content, category, type, tags, source_type, embedding, is_active, tenant_id,
 created_at, updated_at)
-        VALUES (gen_random_uuid(), '${safeTitle}', '${safeContent}', '${safeCategory}', 
-'${safeType}', '${tagsLiteral}'::text[], 'manual', true, ${safeTenantId}, NOW(), NOW())
+        VALUES (gen_random_uuid(), ${String(title)}, ${String(content)}, ${String(category || 'general')},
+${String(type || 'document')}, ${tagsSql}, 'manual', ${fallbackVector}::vector, true, ${tenantId || null}, NOW(), NOW())
         RETURNING id, title
-      `);
+      `;
       res.status(201).json(result[0]);
     }
   } catch (error) {
@@ -476,6 +475,7 @@ router.post('/knowledge/upload', authMiddleware, upload.single('file'), async (r
     }
 
     const category = req.body.category || 'general';
+    const tenantId = getTenantScope(req);
 
     // Save file to disk
     const filePath = await docParser.saveUploadedFile(req.file);
@@ -491,6 +491,7 @@ router.post('/knowledge/upload', authMiddleware, upload.single('file'), async (r
           ...item,
           category: item.category || category,
           sourceType: 'file',
+          tenantId: tenantId || null,
         });
         results.push(result);
       } catch (err) {
@@ -517,6 +518,7 @@ router.post('/knowledge/scrape', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'URL là bắt buộc' });
     }
 
+    const tenantId = getTenantScope(req);
     const items = await docParser.scrapeWebsite(url);
     const results = [];
 
@@ -538,6 +540,7 @@ router.post('/knowledge/scrape', authMiddleware, async (req, res) => {
           sourceType: 'scrape',
           sourceUrl: url,
           parentId,
+          tenantId: tenantId || null,
         });
         if (result) {
           titleToId[item.title] = result.id;
@@ -559,16 +562,20 @@ router.post('/knowledge/scrape', authMiddleware, async (req, res) => {
 router.post('/knowledge/reindex', authMiddleware, platformAdminOnly, async (req, res) => {
   const { all = false } = req.body;
   try {
-    let entries;
-    if (all) {
-      entries = await prisma.$queryRawUnsafe(
-        `SELECT id, title, content FROM knowledge_base WHERE is_active = true`
-      );
-    } else {
-      entries = await prisma.$queryRawUnsafe(
-        `SELECT id, title, content FROM knowledge_base WHERE is_active = true AND embedding IS NULL`
-      );
-    }
+    const tenantId = getTenantScope(req);
+    const tenantCondition = tenantId
+      ? Prisma.sql`AND tenant_id = ${tenantId}`
+      : Prisma.empty;
+    const embeddingCondition = all
+      ? Prisma.empty
+      : Prisma.sql`AND embedding IS NULL`;
+    const entries = await prisma.$queryRaw`
+      SELECT id, title, content
+      FROM knowledge_base
+      WHERE is_active = true
+        ${tenantCondition}
+        ${embeddingCondition}
+    `;
 
     let embedded = 0;
     let failed = 0;
@@ -577,11 +584,12 @@ router.post('/knowledge/reindex', authMiddleware, platformAdminOnly, async (req,
         const text = `${entry.title}\n${entry.content}`.substring(0, 3000);
         const embedding = await llmFactory.generateEmbedding(text);
         if (embedding) {
-          const vectorLiteral = `[${embedding.join(',')}]`;
-          const safeId = entry.id.replace(/'/g, "''");
-          await prisma.$queryRawUnsafe(
-            `UPDATE knowledge_base SET embedding = '${vectorLiteral}'::vector, updated_at = NOW() WHERE id = '${safeId}'`
-          );
+          const vectorLiteral = ragPipeline.toPgVectorLiteral(embedding);
+          await prisma.$executeRaw`
+            UPDATE knowledge_base
+            SET embedding = ${vectorLiteral}::vector, updated_at = NOW()
+            WHERE id = ${entry.id}
+          `;
           embedded++;
         } else {
           failed++;

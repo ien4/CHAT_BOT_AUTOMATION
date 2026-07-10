@@ -656,3 +656,17 @@ Ngày cập nhật: 2026-07-10
 | Env và secret hygiene | Preserved | Không stage `.env`; smoke script không in username/password/token/JWT/DB URL | Tiếp tục giữ policy này trong các prompt sau. |
 
 Kết luận: Prompt 08H đã đóng lỗi login redirect/hydration regression và lỗ hổng UX của failed-login 401; các hardening lớn hơn về token/session nên để prompt riêng.
+
+## Prompt 09 Feature Audit Update
+
+Ngày cập nhật: 2026-07-10
+
+| Nhóm | Trạng thái sau Prompt 09 | Bằng chứng | Điểm còn mở |
+|---|---|---|---|
+| RAG `$queryRawUnsafe` | Closed trong runtime RAG | `backend/src/rag/pipeline.js` không còn `$queryRawUnsafe`; add/update/search dùng tagged template | Raw unsafe analytics/handoff/seed còn backlog ngoài RAG. |
+| Vector/pgvector safety | Hardened | `assertEmbeddingVector`, `toPgVectorLiteral`, clamp limit/threshold; DB smoke vector query PASS | Placeholder vector dùng khi provider lỗi do DB đang NOT NULL. |
+| Knowledge upload/scrape tenant scope | Closed | Upload/scrape truyền `tenantId: getTenantScope(req) || null` vào `ragPipeline.addDocument` | Multipart upload route chưa smoke HTTP vì không thêm package. |
+| Scrape URL SSRF guard | Basic guard done | `validateScrapeUrl()` chặn `file:`, localhost, private/internal IP literal; unit smoke PASS | Chưa có DNS resolution guard cho domain trỏ về private IP. |
+| RAG search tenant isolation | Verified local | `rag.search()` smoke: tenant row trả đúng scope, tenant khác không thấy | Full provider smoke không chạy để tránh external API. |
+
+Kết luận: Prompt 09 đã đóng P0 RAG/raw SQL runtime và tenant scope upload/scrape; còn lại raw SQL analytics/handoff/seed cần prompt riêng.

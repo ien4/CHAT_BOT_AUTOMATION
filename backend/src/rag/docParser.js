@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const net = require('net');
 const axios = require('axios');
 const cheerio = require('cheerio');
 
@@ -311,8 +312,9 @@ class DocParser {
    */
   async scrapeWebsite(url) {
     try {
-      console.log(`🌐 Scraping: ${url}`);
-      const response = await axios.get(url, {
+      const safeUrl = this.validateScrapeUrl(url);
+      console.log(`🌐 Scraping: ${safeUrl.href}`);
+      const response = await axios.get(safeUrl.href, {
         timeout: 30000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0',
@@ -322,7 +324,7 @@ class DocParser {
       const $ = cheerio.load(response.data);
       $('script, style, nav, footer, header, iframe, noscript, .menu, .sidebar, .ads').remove();
 
-      const pageTitle = $('title').text().trim() || new URL(url).hostname;
+      const pageTitle = $('title').text().trim() || safeUrl.hostname;
 
       // Tìm vùng nội dung chính
       const contentSelectors = ['main', 'article', '.content', '.main-content', '#content', '#main-content', '.post-content', '.entry-content', 'body'];
@@ -356,7 +358,7 @@ class DocParser {
         }
 
         const content = bodyParts.join('\n').trim();
-        headings.push({ tag, title, content, url });
+        headings.push({ tag, title, content, url: safeUrl.href });
       });
 
       if (headings.length >= 3) {
@@ -367,9 +369,9 @@ class DocParser {
         for (const h of headings) {
           const entry = {
             title: h.title,
-            content: h.content || `${h.title} — Xem thêm tại ${url}`,
+            content: h.content || `${h.title} — Xem thêm tại ${safeUrl.href}`,
             category: 'general',
-            sourceUrl: url,
+            sourceUrl: safeUrl.href,
           };
 
           if (h.tag === 'H1') {
@@ -399,7 +401,7 @@ class DocParser {
             title: pageTitle,
             content: fullText.substring(0, 6000),
             category: 'general',
-            sourceUrl: url,
+            sourceUrl: safeUrl.href,
           });
         }
       }
@@ -409,18 +411,86 @@ class DocParser {
       if (!hasH1 && results.length > 0 && results[0].title !== pageTitle) {
         results.unshift({
           title: pageTitle,
-          content: `Trang web: ${url}`,
+          content: `Trang web: ${safeUrl.href}`,
           category: 'general',
-          sourceUrl: url,
+          sourceUrl: safeUrl.href,
           _isPageRoot: true,
         });
       }
 
-      console.log(`✅ Scraped ${results.length} items from ${url}`);
+      console.log(`✅ Scraped ${results.length} items from ${safeUrl.href}`);
       return results;
     } catch (error) {
       throw new Error(`Web scraping error: ${error.message}`);
     }
+  }
+
+  validateScrapeUrl(inputUrl) {
+    let parsed;
+    try {
+      parsed = new URL(String(inputUrl));
+    } catch (error) {
+      throw new Error('Invalid scrape URL');
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Only http and https URLs are allowed');
+    }
+
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '').toLowerCase();
+    if (!hostname) {
+      throw new Error('Scrape URL hostname is required');
+    }
+
+    if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+      throw new Error('Localhost scrape URLs are not allowed');
+    }
+
+    if (this.isPrivateHostname(hostname)) {
+      throw new Error('Private or internal scrape URLs are not allowed');
+    }
+
+    return parsed;
+  }
+
+  isPrivateHostname(hostname) {
+    const ipVersion = net.isIP(hostname);
+    if (ipVersion === 4) {
+      const octets = hostname.split('.').map((part) => Number(part));
+      if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+        return true;
+      }
+
+      const [a, b] = octets;
+      return (
+        a === 0 ||
+        a === 10 ||
+        a === 127 ||
+        (a === 100 && b >= 64 && b <= 127) ||
+        (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168)
+      );
+    }
+
+    if (ipVersion === 6) {
+      const normalized = hostname.toLowerCase();
+      return (
+        normalized === '::' ||
+        normalized === '::1' ||
+        normalized.startsWith('fc') ||
+        normalized.startsWith('fd') ||
+        normalized.startsWith('fe8') ||
+        normalized.startsWith('fe9') ||
+        normalized.startsWith('fea') ||
+        normalized.startsWith('feb') ||
+        normalized.startsWith('::ffff:127.') ||
+        normalized.startsWith('::ffff:10.') ||
+        normalized.startsWith('::ffff:192.168.')
+      );
+    }
+
+    return false;
   }
 
   /**

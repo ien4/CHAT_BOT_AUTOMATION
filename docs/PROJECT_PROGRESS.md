@@ -755,3 +755,20 @@ Gợi ý tiếp theo:
 
 - Prompt 09: RAG/raw SQL hardening, audit tenant scope và parameterized query cho các điểm truy vấn dữ liệu.
 - Nên tách prompt riêng cho auth storage hardening nếu muốn giảm rủi ro localStorage token về sau; không trộn với Prompt 09.
+
+## Prompt 09 - RAG/raw SQL hardening phase 1
+
+Ngày cập nhật: 2026-07-10
+
+- Đã audit raw SQL/RAG và harden đường runtime RAG trong `backend/src/rag/pipeline.js`: thêm validate vector 768 chiều, clamp limit/threshold, chuyển RAG insert/update/search sang `$queryRaw`/`$executeRaw` tagged template.
+- Vì DB local hiện vẫn bắt buộc `knowledge_base.embedding NOT NULL`, fallback khi embedding provider lỗi dùng vector placeholder đã validate thay vì insert `NULL`; vector search lọc similarity không hữu hạn để placeholder không lọt kết quả.
+- `backend/src/api/dashboard.js`: fallback add knowledge và reindex đã bỏ `$queryRawUnsafe`; upload/scrape truyền `tenantId` từ `getTenantScope(req)`.
+- `backend/src/rag/docParser.js`: thêm guard scrape URL cơ bản, chỉ cho `http/https`, chặn `file:`, localhost và private/internal IP literal.
+- Raw unsafe còn lại là backlog ngoài RAG runtime: analytics dashboard, tenant handoff và script seed; chưa sửa tenant handoff theo giới hạn prompt.
+- Validation PASS: backend syntax, Prisma validate, dashboard typecheck, `git diff --check`.
+- Runtime smoke PASS: auth regression, helper vector/scrape guard, DB RAG add/update/search parameterized, tenant scope và cleanup `test-09-* = 0`.
+
+Gợi ý tiếp theo:
+
+- Prompt 09B: chuyển raw SQL analytics sang `$queryRaw` tagged template và chuẩn hóa `days` limit.
+- Prompt 09C hoặc handoff-specific: xử lý `$queryRawUnsafe` trong `backend/src/tenants/handoff.js` với test tenant handoff riêng.

@@ -906,3 +906,30 @@ Kế hoạch tiếp theo:
 
 - Prompt 09: RAG/raw SQL hardening. Tập trung audit tenant scope, parameterized query và các đường truy vấn knowledge/search.
 - Nếu tiếp tục auth sau Prompt 09, nên có prompt riêng cho token/session storage hardening thay vì trộn vào RAG.
+
+## Prompt 09 - RAG/raw SQL hardening phase 1 completed
+
+Mục tiêu đã hoàn tất:
+
+- RAG vector validation: khóa dimension 768, reject NaN/Infinity/string/malformed vector.
+- RAG SQL hardening: search/add/update/reindex dùng Prisma tagged template; không còn `$queryRawUnsafe` trong `backend/src/rag/pipeline.js`.
+- Knowledge tenant scope: upload/scrape/reindex dùng `getTenantScope(req)` theo contract hiện hữu.
+- Scrape safety: chặn protocol nguy hiểm và localhost/private IP literal trước khi fetch.
+
+Backlog có chủ đích:
+
+- `backend/src/api/dashboard.js` analytics còn `$queryRawUnsafe` với parameter positional, chưa xử lý trong Prompt 09.
+- `backend/src/tenants/handoff.js` còn `$queryRawUnsafe`, cần prompt handoff riêng.
+- `backend/scripts/seed.js` còn raw unsafe internal script, nên xử lý khi làm DevOps/security scripts.
+
+Validation:
+
+- Backend syntax + Prisma validate PASS.
+- Dashboard `tsc --noEmit` PASS.
+- Auth smoke PASS.
+- RAG helper + DB smoke PASS, cleanup test data PASS.
+
+Kế hoạch tiếp theo:
+
+- Prompt 09B: analytics raw SQL hardening.
+- Prompt handoff-specific: tenant handoff raw SQL + tenant isolation runtime smoke.
