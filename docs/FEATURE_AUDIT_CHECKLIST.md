@@ -1,5 +1,20 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 08G Update - Login Auth Production Readiness Fix (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Nguyên nhân login fail | Diagnosed | Diagnostic controlled (boolean, không in secret) | Hash admin DB local stale, không khớp `ADMIN_PASSWORD` hiện tại/`admin123`; seed cũ không update khi env đổi. |
+| Login UI cleanup | Done | `dashboard/src/app/login/page.tsx` | Bỏ "Mặc định: admin / admin123", placeholder trung tính, câu hướng dẫn an toàn. |
+| Frontend bypass removal | Done | `dashboard/src/lib/auth.tsx` | Gỡ standalone fallback `admin/admin123` + fake token. |
+| Backend dev self-heal | Done | `backend/src/index.js` seedDefaults | Dev-only: đồng bộ hash admin từ `ADMIN_PASSWORD`; không reset ở production. |
+| Backend production guard | Done | `backend/src/index.js` `assertProductionAuthEnv()` | Fail-fast khi `JWT_SECRET`/`ADMIN_PASSWORD` yếu/thiếu (chỉ khi `NODE_ENV=production`). |
+| Static validation | PASS | backend `node --check`, `prisma validate`, dashboard `tsc --noEmit`, `npm run build` | |
+| Runtime login smoke | PASS 11/11 | Express app tạm, DB local | Login đúng 200+token, sai 401, token→protected 200, webhook 403, legacy 404. |
+| Login UI credential scan | Clean | `dashboard/src` | 0 match `admin123`/credential mẫu/standalone. |
+
 ## Prompt 08F Update - No-Chatwoot Schema Migration Removal (PASS)
 
 Ngày cập nhật: 2026-07-10

@@ -1,7 +1,7 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-10
-Trạng thái hiện tại: **Prompt 08F đã drop cột schema legacy Chatwoot trên DB local/test bằng migration có kiểm soát (backup trước, không db push).**
+Trạng thái hiện tại: **Prompt 08G đã fix login (self-heal admin dev + production auth guard) và bỏ thông tin tài khoản mẫu khỏi UI login; runtime login smoke 11/11 PASS.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
 
 ## 1. Nguyên tắc cập nhật
@@ -43,12 +43,23 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17D — Dashboard No-Chatwoot cleanup | ✅ Done | Prompt 08D dashboard cleanup + backend tenant create bridge |
 | Phase 17E — Tenant contract runtime smoke + stop-write | ✅ Done | Prompt 08E: payload tenant mới runtime 17/17 PASS, backend stop-write legacy |
 | Phase 17F — No-Chatwoot schema migration removal | ✅ Done | Prompt 08F drop 6 cột `tenants` + `conversations.chatwoot_conversation_id` + index legacy trên DB local/test; backup trước migration; runtime smoke 13/13 PASS |
+| Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
 | Phase 18 — RAG/raw SQL hardening | ⬜ Planned | Prompt 09; chèn sau No-Chatwoot migration scan |
 | Phase 19 — Dashboard feature split | ⬜ Planned | Sau Prompt 09 |
 | Phase 20 — DevOps/deploy hardening | ⬜ Planned | Sau No-Chatwoot và RAG hardening |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 
 ## 3. Checklist chi tiết theo Prompt
+
+### Prompt 08G — Login auth production readiness fix
+
+- [x] Chẩn đoán login fail: hash mật khẩu admin trong DB local stale, không khớp `ADMIN_PASSWORD` hiện tại lẫn `admin123` (seed cũ chỉ tạo khi `adminCount===0`, không cập nhật khi env đổi).
+- [x] Login UI: bỏ dòng "Mặc định: admin / admin123", đổi placeholder username sang trung tính, thêm câu hướng dẫn "Vui lòng dùng tài khoản quản trị đã được cấp."
+- [x] Frontend `auth.tsx`: gỡ standalone fallback bypass (`admin/admin123` + fake token) — nguồn gây "đăng nhập rồi bị văng".
+- [x] Backend `index.js`: self-heal hash admin ở dev khi `ADMIN_PASSWORD` đổi; production guard `assertProductionAuthEnv()` fail-fast khi `JWT_SECRET`/`ADMIN_PASSWORD` yếu/thiếu; seed không rơi về `admin123` trong production.
+- [x] Static validation PASS: backend `node --check`, `prisma validate`, dashboard `tsc --noEmit`, `npm run build`.
+- [x] Runtime login smoke 11/11 PASS: health, login đúng 200+token, login sai 401, token → prompts/handoff/telegram 200, webhook 403, legacy Chatwoot 404.
+- [x] Không sửa Prisma schema/migrations, RAG, webhook direct Facebook, package files.
 
 ### Prompt 08F — No-Chatwoot schema migration removal
 

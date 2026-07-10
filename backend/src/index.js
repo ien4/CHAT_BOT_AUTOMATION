@@ -13,8 +13,20 @@ const alertQueue = require('./notifications/alertQueue');
 const formatters = require('./notifications/formatters');
 
 const getPrisma = require('./db');
+const { isProduction, isPlaceholderSecret } = require('./infrastructure/services/config');
 const prisma = getPrisma();
 const app = express();
+
+// Production auth safety: từ chối khởi động nếu secret auth yếu/thiếu.
+// Local/dev không bị ảnh hưởng (chỉ enforce khi NODE_ENV=production).
+function assertProductionAuthEnv() {
+  if (!isProduction()) return;
+  const weak = ['JWT_SECRET', 'ADMIN_PASSWORD'].filter((name) => isPlaceholderSecret(process.env[name]));
+  if (weak.length > 0) {
+    console.error(`FATAL: production yêu cầu ${weak.join(', ')} đặt giá trị mạnh (không để trống/placeholder/mặc định yếu). Dừng khởi động.`);
+    process.exit(1);
+  }
+}
 
 // Middleware
 app.use(helmet({
@@ -52,6 +64,8 @@ const PORT = process.env.PORT || 3001;
 
 async function start() {
   try {
+    assertProductionAuthEnv();
+
     await prisma.$connect();
     console.log('✅ Database connected');
 
@@ -105,21 +119,32 @@ async function start() {
 async function seedDefaults() {
   const bcrypt = require('bcryptjs');
 
-  // Seed default admin user
-  const adminCount = await prisma.adminUser.count();
-  if (adminCount === 0) {
-    const hash = await bcrypt.hash(
-      process.env.ADMIN_PASSWORD || 'admin123',
-      10
-    );
+  // Seed/sync admin user
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const existingAdmin = await prisma.adminUser.findUnique({ where: { username: adminUsername } });
+
+  if (!existingAdmin) {
+    // Production đã được assertProductionAuthEnv() đảm bảo ADMIN_PASSWORD mạnh;
+    // chỉ dev/local mới rơi về mật khẩu mặc định để tiện chạy thử.
+    const seedPassword = process.env.ADMIN_PASSWORD || (isProduction() ? null : 'admin123');
+    if (!seedPassword) {
+      console.error('FATAL: thiếu ADMIN_PASSWORD để tạo admin ban đầu trong production.');
+      process.exit(1);
+    }
+    const hash = await bcrypt.hash(seedPassword, 10);
     await prisma.adminUser.create({
-      data: {
-        username: process.env.ADMIN_USERNAME || 'admin',
-        passwordHash: hash,
-        role: 'admin',
-      },
+      data: { username: adminUsername, passwordHash: hash, role: 'admin' },
     });
-    console.log('✅ Default admin user created');
+    console.log('✅ Admin user created');
+  } else if (!isProduction() && process.env.ADMIN_PASSWORD) {
+    // Local/dev self-heal: nếu ADMIN_PASSWORD env đã đổi và không khớp hash cũ,
+    // đồng bộ lại để login local hoạt động. KHÔNG bao giờ tự reset ở production.
+    const matches = await bcrypt.compare(process.env.ADMIN_PASSWORD, existingAdmin.passwordHash);
+    if (!matches) {
+      const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      await prisma.adminUser.update({ where: { id: existingAdmin.id }, data: { passwordHash: hash } });
+      console.log('🔄 Local admin password re-synced from ADMIN_PASSWORD (dev only)');
+    }
   }
 
   // Seed default LLM providers

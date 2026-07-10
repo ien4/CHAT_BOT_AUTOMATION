@@ -50,7 +50,7 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="input-field"
-              placeholder="admin"
+              placeholder="Tên đăng nhập"
               required
             />
           </div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
           </button>
 
           <p className="text-xs text-gray-400 text-center">
-            Mặc định: admin / admin123
+            Vui lòng dùng tài khoản quản trị đã được cấp.
           </p>
         </form>
       </div>

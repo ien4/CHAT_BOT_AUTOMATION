@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 08G — Login auth production readiness fix (PASS)
+
+Ngày cập nhật: 2026-07-10
+
+Prompt 08G fix lỗi không đăng nhập được và làm cứng auth trước khi public.
+
+Đã làm:
+
+- Chẩn đoán: hash admin DB local stale (seed cũ chỉ tạo khi chưa có admin, không cập nhật khi `ADMIN_PASSWORD` env đổi) → login luôn 401.
+- Login UI (`dashboard/src/app/login/page.tsx`): bỏ thông tin tài khoản mẫu `admin / admin123`, placeholder trung tính, câu hướng dẫn an toàn.
+- `dashboard/src/lib/auth.tsx`: gỡ standalone fallback bypass (`admin/admin123` + fake token) — vốn gây "đăng nhập rồi bị văng" khi backend unreachable.
+- `backend/src/index.js`: dev-only self-heal đồng bộ hash admin từ `ADMIN_PASSWORD`; `assertProductionAuthEnv()` fail-fast production khi secret auth yếu/thiếu; seed không dùng `admin123` trong production.
+- Runtime login smoke 11/11 PASS.
+
+Không làm (giữ phạm vi):
+
+- Không sửa Prisma schema/migrations, không tạo migration, không `db push`, không reset DB.
+- Không sửa RAG/raw SQL, webhook direct Facebook, package files, Dockerfile/scripts.
+- Không thêm refresh token / redesign auth storage.
+
+Next:
+
+- **Prompt 09**: RAG/raw SQL hardening, hoặc Quality Gate ESLint non-interactive.
+
 ## Prompt 08F — No-Chatwoot schema migration removal (PASS)
 
 Ngày cập nhật: 2026-07-10

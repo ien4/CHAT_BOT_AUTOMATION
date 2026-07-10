@@ -56,33 +56,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (username: string, password: string) => {
-    try {
-      const { data } = await authApi.login(username, password);
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      // Tenant admin auto-scoped; platform admin starts with no scope (global view)
-      if (data.user.tenantId) {
-        setSelectedTenantIdState(data.user.tenantId);
-        localStorage.setItem('selectedTenantId', data.user.tenantId);
-      } else {
-        setSelectedTenantIdState(null);
-        localStorage.removeItem('selectedTenantId');
-      }
-    } catch (err: any) {
-      if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error') || !err.response) {
-        if (username === 'admin' && password === 'admin123') {
-          const standaloneUser: User = { id: 'standalone', username: 'admin', role: 'admin', tenantId: null };
-          const standaloneToken = 'standalone-token-' + Date.now();
-          setToken(standaloneToken);
-          setUser(standaloneUser);
-          localStorage.setItem('token', standaloneToken);
-          localStorage.setItem('user', JSON.stringify(standaloneUser));
-          return;
-        }
-      }
-      throw err;
+    // Không có fallback credential mặc định: mọi phiên đăng nhập phải qua backend auth thật.
+    const { data } = await authApi.login(username, password);
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    // Tenant admin auto-scoped; platform admin starts with no scope (global view)
+    if (data.user.tenantId) {
+      setSelectedTenantIdState(data.user.tenantId);
+      localStorage.setItem('selectedTenantId', data.user.tenantId);
+    } else {
+      setSelectedTenantIdState(null);
+      localStorage.removeItem('selectedTenantId');
     }
   };
 
