@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21B Update - Backend Route Consolidation quick-reply-menus read (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route được chọn | Done | `GET /quick-reply-menus` + `/:id` | READ_ONLY_LOW_RISK, tenant guard sẵn (07C). |
+| Controller tách | Created | `presentation/http/controllers/dashboard/quickReplyMenus.controller.js` | List + detail, giữ HTTP concern. |
+| Routes factory | Created | `presentation/http/routes/dashboard/quickReplyMenus.routes.js` | `router.use('/quick-reply-menus')` mount. |
+| Repository | Created | `infrastructure/repositories/quickReplyMenus.repository.js` | `findManyForScope`/`findByIdForScope`, không import Express/env. |
+| dashboard.js | Modified | mount thay 2 GET; POST/PUT/DELETE giữ nguyên | Fall-through smoke PASS. |
+| API contract | Preserved | path/method/auth/response shape | `authMiddleware`+`getTenantScope`, không đổi JSON. |
+| Static validation | PASS | `node --check`, `npm run quality`, `prisma validate` | — |
+| Runtime smoke | PASS | backend 3001 + DB local | 401 no-token, 200 list, 404 detail id ảo, regression PASS. |
+| External call | None | smoke chỉ read GET | Không gọi Facebook/Telegram/LLM thật. |
+| Dashboard/schema/package | Unchanged | git diff | Chỉ backend/src + docs/report. |
+
+Kết luận: consolidation route read-only thứ 1 hoàn tất, behavior giữ nguyên. Bước tiếp: 21B-2 (campaigns/channel-configs read) hoặc 21C/21D.
+
 ## Prompt 21A Update - Project Structure Consolidation Audit/Plan (PASS)
 
 Ngày cập nhật: 2026-07-11

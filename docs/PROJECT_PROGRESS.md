@@ -1,5 +1,25 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21B Backend route consolidation (quick-reply-menus read)
+
+Ngày cập nhật: 2026-07-11
+
+Trạng thái mới nhất: **PASS**. Tách 2 route read-only/low-risk `GET /api/quick-reply-menus` (list) và `GET /api/quick-reply-menus/:id` (detail) từ `backend/src/api/dashboard.js` sang `presentation/http/**` theo đúng pattern `prompts`/`settings`:
+
+- Tạo `backend/src/infrastructure/repositories/quickReplyMenus.repository.js` (`findManyForScope`, `findByIdForScope` — giữ nguyên where/orderBy/tenant scope).
+- Tạo `backend/src/presentation/http/controllers/dashboard/quickReplyMenus.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/quickReplyMenus.routes.js`.
+- `dashboard.js` mount `router.use('/quick-reply-menus', ...)` đúng vị trí cũ; POST/PUT/DELETE giữ nguyên bên dưới (fall-through hoạt động).
+
+Giữ nguyên public path/method/auth (`authMiddleware` + `getTenantScope`)/response shape. Không sửa dashboard source, schema/migrations, package, Docker/scripts.
+
+Validation:
+
+- Backend `npm run quality` + `npx prisma validate` PASS; `node --check` toàn bộ file mới + `dashboard.js`/`index.js` PASS.
+- Runtime smoke PASS (backend port 3001 local, DB `bbotech-pgvector-local`): regression health/prompts/handoff/telegram-destinations/analytics 200, webhook 403, chatwoot-webhook 404; route đã tách: no-token 401, list token 200 (mảng), detail id không tồn tại 404; POST empty body 400 (fall-through, không mutation). Không gọi external service thật; backend tự start đã dừng sạch sau smoke.
+
+Phase 21 vẫn **Started — audit/plan-only chuyển sang consolidation từng bước**; **chưa Done**. Chi tiết: `report/PROMPT_21B_BACKEND_ROUTE_CONSOLIDATION_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21A Project structure consolidation audit/plan
 
 Ngày cập nhật: 2026-07-11
@@ -113,7 +133,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 18b — Quality gate | ✅ Done | Prompt 10C: `npm run quality` backend (syntax+prisma validate) + dashboard (typecheck+build) PASS; ESLint chưa cài (lint để prompt dependency riêng); production smoke dry-run local 9/9. `docs/QUALITY_GATE.md` |
 | Phase 19 — Dashboard feature split | ✅ Started | Prompt 19A analytics, 19B prompts, 19C staff, 19D appointments đã tách sang `features/**`; UI/API giữ nguyên, route smoke thật PASS. Appointments mutation status NOT RUN BY DESIGN do notification risk |
 | Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
-| Phase 21 — Project structure consolidation | 🟡 Started — audit/plan-only | Prompt 21A audit cấu trúc + tạo `PROJECT_STRUCTURE_CONSOLIDATION_PLAN`; **chưa move code**, chưa restructure thật, chưa Done |
+| Phase 21 — Project structure consolidation | 🟡 Started | Prompt 21A audit cấu trúc + `PROJECT_STRUCTURE_CONSOLIDATION_PLAN`; Prompt 21B tách `GET /quick-reply-menus` list+detail sang presentation (runtime smoke PASS). Chưa Done |
 
 ## 3. Checklist chi tiết theo Prompt
 

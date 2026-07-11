@@ -12,6 +12,7 @@ const getPrisma = require('../db');
 const tenantRegistry = require('../tenants/registry');
 const createPromptRoutes = require('../presentation/http/routes/dashboard/prompts.routes');
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
+const createQuickReplyMenuRoutes = require('../presentation/http/routes/dashboard/quickReplyMenus.routes');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -818,34 +819,9 @@ router.post('/providers/:id/test', authMiddleware, platformAdminOnly, async (req
 
 // ==================== QUICK REPLY MENUS ====================
 
-router.get('/quick-reply-menus', authMiddleware, async (req, res) => {
-  try {
-    const { intentType, pageId } = req.query;
-    const tenantId = getTenantScope(req);
-    const where = { tenantId: tenantId ?? null };
-    if (intentType) where.intentType = intentType;
-    if (pageId) where.pageId = pageId;
-
-    const menus = await prisma.quickReplyMenu.findMany({
-      where,
-      orderBy: [{ intentType: 'asc' }, { createdAt: 'desc' }],
-    });
-    res.json(menus);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.get('/quick-reply-menus/:id', authMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantScope(req);
-    const menu = await findScopedById(prisma.quickReplyMenu, req.params.id, tenantId);
-    if (!menu) return res.status(404).json({ error: 'Not found' });
-    res.json(menu);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// GET /quick-reply-menus (list) + GET /quick-reply-menus/:id (detail) đã tách sang
+// presentation/http/routes/dashboard/quickReplyMenus.routes.js. POST/PUT/DELETE giữ nguyên bên dưới.
+router.use('/quick-reply-menus', createQuickReplyMenuRoutes({ authMiddleware, getTenantScope, prisma }));
 
 router.post('/quick-reply-menus', authMiddleware, async (req, res) => {
   try {
