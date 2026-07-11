@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 19C Update - Dashboard Staff Feature Split (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Staff page split | Done | `staff/page.tsx` 205->50 dòng | Page chỉ còn orchestrator gọi hook + components. |
+| Data/state hook | Created | `features/staff/hooks/useStaff.ts` | Giữ load, modal state, create/update/delete, toggle active/on-duty, toast, confirm. |
+| Components tách | Created | `features/staff/components/*` | Header, guide, form modal, loading, empty state, list. |
+| Types/formatters | Created | `features/staff/types.ts`, `lib/staffFormatters.ts`, `index.ts` | Staff type, form payload, initial/date formatter. |
+| UI/text/layout | Preserved | source diff + route smoke | Không redesign, không đổi className/text có chủ đích. |
+| API contract | Unchanged | focused rg scan | Vẫn dùng `staffApi.list/create/update/delete`; không thêm fetch trực tiếp hoặc external call. |
+| Mutation policy | PASS | staff API smoke 13/13 | Test prefix `Prompt 19C Test Staff`, cleanup leftover = 0. |
+| Dashboard validation | PASS | `npm run quality`, `npm run typecheck`, `npm run build` | Chạy baseline và sau refactor. |
+| Runtime route smoke | PASS | fresh dev server `3019` | `/dashboard/staff` và route dashboard trọng yếu không 500/chunk error. |
+| Backend smoke | PASS | backend port `3001` | Health/login/prompts/handoff/analytics/webhook/legacy + staff mutation PASS. |
+
+Kết luận: Staff feature split hoàn tất, giữ nguyên global staff semantics hiện tại. Prompt tiếp theo cần tiếp tục mutation-safe smoke nếu chọn page có create/update/delete.
+
 ## Prompt 19B Update - Dashboard Prompts Feature Split (PASS)
 
 Ngày cập nhật: 2026-07-11

@@ -1,5 +1,35 @@
 # PHASE 19 — DASHBOARD FEATURE SPLIT PLAN
 
+## Prompt 19C - `staff/page.tsx` done
+
+Ngày cập nhật: 2026-07-11
+
+Kết quả: **PASS**. Candidate #3 `dashboard/src/app/dashboard/staff/page.tsx` đã được tách sang `dashboard/src/features/staff/**` theo pattern hook + components + formatter/type/barrel. Page app route chỉ còn orchestrator mỏng, giữ nguyên route/UI/API behavior.
+
+File nguồn chính sau split:
+
+- `dashboard/src/app/dashboard/staff/page.tsx`
+- `dashboard/src/features/staff/hooks/useStaff.ts`
+- `dashboard/src/features/staff/components/StaffHeader.tsx`
+- `dashboard/src/features/staff/components/StaffGuide.tsx`
+- `dashboard/src/features/staff/components/StaffForm.tsx`
+- `dashboard/src/features/staff/components/StaffLoadingState.tsx`
+- `dashboard/src/features/staff/components/StaffEmptyState.tsx`
+- `dashboard/src/features/staff/components/StaffList.tsx`
+- `dashboard/src/features/staff/lib/staffFormatters.ts`
+- `dashboard/src/features/staff/types.ts`
+- `dashboard/src/features/staff/index.ts`
+
+Rule giữ lại cho các prompt Phase 19 tiếp theo:
+
+1. Luôn kiểm DB/backend readiness trước; nếu P1001 do `localhost:5433`, chỉ start `bbotech-pgvector-local`, không `db push`, không reset DB.
+2. Sau split dashboard phải chạy `npm run quality`, `npm run typecheck`, `npm run build`.
+3. Sau build phải clean `.next` và route smoke thật bằng fresh dev server port sạch.
+4. Mutation chỉ smoke với test prefix + cleanup chắc chắn; không delete/update dữ liệu thật.
+5. Không stage `.env`, `.env.local`, `.next`, backup, temp/log.
+
+Ứng viên 19D: `appointments/page.tsx` nếu có mutation checklist riêng, hoặc `content-packages/page.tsx` nếu chỉ tách UI và khóa rõ không chạy migrate action. Vẫn chưa chọn `settings`, `knowledge`, `tenants` nếu chưa có rollback/external side-effect riêng.
+
 ## Prompt 19B - `prompts/page.tsx` done
 
 Ngày cập nhật: 2026-07-11

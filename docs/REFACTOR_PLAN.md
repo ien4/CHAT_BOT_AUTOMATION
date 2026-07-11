@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 19C - Dashboard staff feature split (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/staff/page.tsx` thành orchestrator mỏng 50 dòng.
+- Tạo `dashboard/src/features/staff/`: `hooks/useStaff.ts`, `components/` (StaffHeader, StaffGuide, StaffForm, StaffLoadingState, StaffEmptyState, StaffList), `lib/staffFormatters.ts`, `types.ts`, `index.ts`.
+- Giữ nguyên route `/dashboard/staff`, UI text/layout/className, guide, modal form, loading/empty/list behavior, toast, confirm delete, toggle active/on-duty.
+- API vẫn đi qua `staffApi.list/create/update/delete` trong `dashboard/src/lib/api.ts`; không thêm direct fetch hoặc external provider call.
+- Staff mutation smoke chạy bằng prefix `Prompt 19C Test Staff` và cleanup còn 0.
+- Không sửa backend source, package, Prisma schema/migrations, env thật, Docker/script.
+
+Validation:
+
+- Backend: DB readiness PASS, `npm run quality` PASS, `prisma migrate deploy` PASS/no pending, backend/staff smoke PASS 13/13.
+- Dashboard: baseline và post-refactor `npm run quality`, `npm run typecheck`, `npm run build` PASS.
+- Runtime: clean `.next`, dev server fresh port `3019`, route smoke `/dashboard/staff` và các route trọng yếu PASS; không tái hiện chunk error.
+
+Next:
+
+- **Prompt 19D**: cân nhắc `appointments/page.tsx` với mutation checklist riêng, hoặc `content-packages/page.tsx` nếu chỉ tách UI trước và không chạy action migrate.
+- Vẫn tránh `settings/page.tsx`, `knowledge/page.tsx`, `tenants/page.tsx` nếu chưa có rollback/external side-effect checklist riêng.
+
 ## Prompt 19B - Dashboard prompts feature split (PASS)
 
 Ngày cập nhật: 2026-07-11
