@@ -1,5 +1,28 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 19B - Dashboard prompts feature split (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/prompts/page.tsx` thành orchestrator mỏng 51 dòng.
+- Tạo `dashboard/src/features/prompts/`: `hooks/usePrompts.ts`, `components/` (PromptsHeader, PromptTabs, PromptForm, PromptLoadingState, PromptEmptyState, PromptList), `lib/promptFormatters.ts`, `types.ts`, `index.ts`.
+- Giữ nguyên route `/dashboard/prompts`, UI text/layout/className, loading/empty/modal/list behavior, toast, confirm delete và payload create/update.
+- API vẫn đi qua `promptsApi.list/create/update/delete` trong `dashboard/src/lib/api.ts`; không thêm direct fetch hoặc external provider call.
+- Không sửa backend source, `package.json`, Prisma schema/migrations, env thật, Docker/script.
+
+Validation:
+
+- Backend: `npm run quality` PASS, `npx prisma migrate deploy` PASS/no pending, smoke 7/7 PASS.
+- Dashboard: baseline và post-refactor `npm run quality`, `npm run typecheck`, `npm run build` PASS.
+- Runtime: clean `.next`, dev server fresh port `3019`, route smoke `/dashboard/prompts` và các route trọng yếu PASS; không tái hiện `Cannot find module './<number>.js'`.
+
+Next:
+
+- **Prompt 19C**: ưu tiên `staff/page.tsx` hoặc một page write nhẹ có rollback/smoke rõ.
+- Tránh `settings/page.tsx`, `knowledge/page.tsx`, `tenants/page.tsx` trong prompt split kế tiếp nếu chưa có mutation/external side-effect checklist riêng.
+
 ## Prompt 19A — Dashboard analytics feature split (PASS)
 
 Ngày cập nhật: 2026-07-10

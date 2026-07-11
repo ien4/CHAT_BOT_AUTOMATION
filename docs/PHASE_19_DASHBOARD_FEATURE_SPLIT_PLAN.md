@@ -1,5 +1,35 @@
 # PHASE 19 — DASHBOARD FEATURE SPLIT PLAN
 
+## Prompt 19B - `prompts/page.tsx` done
+
+Ngày cập nhật: 2026-07-11
+
+Kết quả: **PASS**. Candidate #2 `dashboard/src/app/dashboard/prompts/page.tsx` đã được tách sang `dashboard/src/features/prompts/**` theo pattern hook + components + formatter/type/barrel. Page app route chỉ còn orchestrator mỏng, giữ nguyên route/UI/API behavior.
+
+File nguồn chính sau split:
+
+- `dashboard/src/app/dashboard/prompts/page.tsx`
+- `dashboard/src/features/prompts/hooks/usePrompts.ts`
+- `dashboard/src/features/prompts/components/PromptsHeader.tsx`
+- `dashboard/src/features/prompts/components/PromptTabs.tsx`
+- `dashboard/src/features/prompts/components/PromptForm.tsx`
+- `dashboard/src/features/prompts/components/PromptLoadingState.tsx`
+- `dashboard/src/features/prompts/components/PromptEmptyState.tsx`
+- `dashboard/src/features/prompts/components/PromptList.tsx`
+- `dashboard/src/features/prompts/lib/promptFormatters.ts`
+- `dashboard/src/features/prompts/types.ts`
+- `dashboard/src/features/prompts/index.ts`
+
+Rule giữ lại cho các prompt Phase 19 tiếp theo:
+
+1. Trước backend smoke, xác nhận DB local `bbotech-pgvector-local` đang chạy; nếu gặp P1001 do `localhost:5433`, chỉ start container này, không `db push`, không reset DB.
+2. Sau split dashboard phải chạy `npm run quality`, `npm run typecheck`, `npm run build`.
+3. Sau build phải clean/restart dev server nếu cần và route smoke thật bằng port sạch, tối thiểu `/login`, `/dashboard`, route vừa tách, route 404 giả, và vài route dashboard trọng yếu.
+4. Không kết luận PASS nếu còn 500/chunk error kiểu `Cannot find module './<number>.js'`.
+5. Không stage `.env`, `.env.local`, `.next`, backup, temp/log.
+
+Ứng viên kế tiếp: `staff/page.tsx` hoặc `appointments/page.tsx` nếu prompt sau có checklist mutation rõ. Không chọn `settings`, `knowledge`, `tenants` cho tới khi có kế hoạch rollback/external side effect riêng.
+
 Ngày cập nhật: 2026-07-10 (Prompt 10C — readiness, CHƯA sửa page)
 
 Kế hoạch tách feature cho dashboard. Prompt 10C chỉ chọn candidate + lập tiêu chí; **không** sửa page UI.

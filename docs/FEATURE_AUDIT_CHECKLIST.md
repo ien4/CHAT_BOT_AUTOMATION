@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 19B Update - Dashboard Prompts Feature Split (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Prompts page split | Done | `prompts/page.tsx` 317->51 dòng | Page chỉ còn orchestrator gọi hook + components. |
+| Data/state hook | Created | `features/prompts/hooks/usePrompts.ts` | Giữ `selectedTenantId` reload, loading, modal state, create/update/delete, toast, confirm. |
+| Components tách | Created | `features/prompts/components/*` | Header, tabs, form modal, loading, empty state, list. |
+| Types/formatters | Created | `features/prompts/types.ts`, `lib/promptFormatters.ts`, `index.ts` | TABS, intent map, default layer/intent, filter/count. |
+| UI/text/layout | Preserved | source diff + route smoke | Không redesign, không đổi className/text có chủ đích. |
+| API contract | Unchanged | focused rg scan | Vẫn dùng `promptsApi.list/create/update/delete`; không thêm fetch trực tiếp hoặc provider call. |
+| Backend/package/schema | Unchanged | `git diff --name-status` | Không sửa backend source, package, Prisma schema/migration. |
+| Dashboard validation | PASS | `npm run quality`, `npm run typecheck`, `npm run build` | Chạy trước và sau refactor. |
+| Runtime route smoke | PASS | fresh dev server `3019` | `/dashboard/prompts` và route dashboard trọng yếu không 500/chunk error. |
+| Backend smoke | PASS | backend port `3001` | Health/login/prompts/handoff/analytics/webhook/legacy 7/7 PASS. |
+
+Kết luận: Prompts feature split đã hoàn tất theo pattern Phase 19, không đổi behavior. Điểm còn mở là tiếp tục tách page nhỏ tiếp theo với route smoke thật sau mỗi lần split.
+
 ## Prompt 19A Update - Dashboard Analytics Feature Split (PASS)
 
 Ngày cập nhật: 2026-07-10

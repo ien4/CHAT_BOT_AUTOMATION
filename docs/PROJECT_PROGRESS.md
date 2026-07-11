@@ -1,5 +1,22 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 19B Dashboard prompts feature split
+
+Ngày cập nhật: 2026-07-11
+
+Trạng thái mới nhất: **PASS**. Đã tách `dashboard/src/app/dashboard/prompts/page.tsx` từ page client lớn thành orchestrator mỏng dùng `dashboard/src/features/prompts/**`: hook `usePrompts`, components header/tabs/form/loading/empty/list, formatter/type/barrel. Giữ nguyên UI text/layout/className, route `/dashboard/prompts`, API `promptsApi.list/create/update/delete`, toast, confirm delete, form payload và tenant reload theo `selectedTenantId`.
+
+Validation đã hoàn tất:
+
+- Backend DB readiness: container `bbotech-pgvector-local` đang chạy ở local port `5433`; `GET /health` backend port `3001` trả 200; `npx prisma migrate deploy` không có pending migration; **không gặp P1001**.
+- Backend preflight: `cd backend && npm run quality` PASS.
+- Backend smoke trước và sau refactor: PASS 7/7 gồm health, login token tạm, `/api/prompts`, `/api/settings/handoff`, `/api/analytics?days=7`, `/webhook` 403, `/chatwoot-webhook` 404; admin test prefix `prompt19b_` đã dọn.
+- Dashboard baseline trước refactor: `npm run quality`, `npm run typecheck`, `npm run build` PASS.
+- Dashboard sau refactor: `npm run quality`, `npm run typecheck`, `npm run build` PASS.
+- Fresh dev route smoke sau clean `.next` và start dev server port `3019`: `/`, `/login`, `/dashboard`, `/dashboard/prompts`, `/dashboard/analytics`, `/dashboard/knowledge`, `/dashboard/settings`, `/dashboard/tenants`, `/dashboard/handoff`, `/dashboard/content-packages`, route 404 giả đều không có 500/chunk error.
+
+Không thay đổi backend source, package, Prisma schema/migrations, env thật, `.next`, backup hoặc temp artifact. Prompt 19C nên ưu tiên `staff/page.tsx` hoặc một page write nhẹ có smoke/rollback rõ; tiếp tục tránh `settings`, `knowledge`, `tenants` cho tới khi có prompt riêng cho mutation/external rollback.
+
 Ngày cập nhật: 2026-07-10
 Trạng thái hiện tại: **Prompt 19A đã tách `dashboard/src/app/dashboard/analytics/page.tsx` (374→54 dòng, orchestrator mỏng) sang `dashboard/src/features/analytics/**` (hook `useAnalytics` + 9 components + formatters + types + barrel). Giữ nguyên UI/text/layout/className và API `analyticsApi.get` read-only; không đổi backend/API/dependency. Dashboard `npm run quality` (typecheck + build 19 routes) PASS. Production rollout thật CHƯA chạy.**
 Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành phần của kiến trúc đích. Không sinh thêm route/controller/service/model/env mới có từ khóa Chatwoot/CHATWOOT/chatwoot. Prompt 08B đã xóa backend runtime Chatwoot; Prompt 08C đã xóa Chatwoot env khỏi env example/config warning và tạo schema/env cleanup plan. Prisma schema/migrations, dashboard frontend/API client, package và DevOps vẫn để các prompt sau xử lý theo phase riêng. Historical reports có thể vẫn giữ chữ Chatwoot để bảo toàn bằng chứng quá khứ.
