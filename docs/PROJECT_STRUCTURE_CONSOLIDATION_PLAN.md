@@ -23,7 +23,7 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 | `src/index.js` (388) | Entry Express + startup seed/telegram/health/daily report | Nhiều concern trong 1 file | Cao (startup timing) | Giữ nguyên |
 | `src/db.js` (16) | Re-export Prisma singleton | OK | — | Giữ nguyên |
 | `src/api/dashboard.js` (**2363 LOC, 96 route**) | Monolith: auth, CRUD, analytics, settings, tenant, staff, handoff | Rất lớn, đa domain, Prisma scattered | Cao | Tách thêm **route read-only/low-risk** từng nhóm nhỏ |
-| `src/presentation/http/**` | Đã tách: `prompts` (GET) + `settings` (handoff/telegram) + `quick-reply-menus` (GET list+detail, 21B) | Đã rút ~7 route/handler | Thấp | Tiếp tục pattern controller/routes |
+| `src/presentation/http/**` | Đã tách: `prompts` (GET) + `settings` (handoff/telegram) + `quick-reply-menus` (GET list+detail, 21B) + `channel-configs` (GET list+detail, 21B-2) | Đã rút ~9 route/handler | Thấp | Tiếp tục pattern controller/routes |
 | `src/infrastructure/repositories/**` | 3 repo: handoffSettings, promptTemplates, telegramDestinations | Ít, đúng hướng | Thấp | Gom thêm repo cho domain đã có guard |
 | `src/infrastructure/persistence/prisma/client.js` | Re-export `db.js` | OK | — | Giữ nguyên |
 | `src/infrastructure/services/` | `config.js`, `credentialCrypto.js` | OK | — | Giữ nguyên |
@@ -111,6 +111,8 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 ---
 
 > **Cập nhật 21B (2026-07-11):** bước đầu đã chạy — tách `GET /quick-reply-menus` list+detail sang presentation + repository, runtime smoke PASS, behavior giữ nguyên. Phase 21 vẫn **Started**, chưa Done. Bước tiếp: 21B-2 (campaigns/channel-configs read) hoặc 21C/21D.
+>
+> **Cập nhật 21B-2 (2026-07-11):** tách tiếp `GET /channel-configs` list+detail (dual-model tenant/global, không secret) sang presentation + repository, runtime smoke PASS. Backend read route debt giảm dần; monolith `dashboard.js` vẫn còn phần lớn route. Không move webhook/RAG/handoff/tenants. Bước tiếp: 21B-3 (campaigns/stats) hoặc 21C/21D.
 
 ## 7. Phase 21B proposal — Backend structure consolidation (no behavior change)
 

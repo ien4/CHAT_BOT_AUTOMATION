@@ -1,5 +1,25 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-2 - Backend route consolidation channel-configs read (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+Đã làm:
+
+- Tách `GET /api/channel-configs` (list) + `GET /api/channel-configs/:id` (detail) khỏi `dashboard.js` sang presentation + repository.
+- Tạo `channelConfigs.repository.js` (dual-model tenant/global, mismatch→404), `channelConfigs.controller.js`, `channelConfigs.routes.js`; `dashboard.js` dùng `router.use('/channel-configs', ...)`; POST/PUT/DELETE giữ nguyên (fall-through).
+- Soi 3 candidate A/B/C, chọn A vì read-only + không secret + không external/mutation/raw SQL.
+- Giữ nguyên public path/method/auth/response shape; không sửa dashboard/schema/migrations/package.
+
+Validation: backend `npm run quality` + `prisma validate` PASS; runtime smoke PASS (401 no-token, 200 list secretFields=NONE, 404 detail id ảo, regression + quick-reply PASS; POST fall-through 400 không mutation). Backend tự start đã dừng sạch.
+
+Next recommended prompt:
+
+- **Prompt 21B-3**: tiếp tục route read-only kế (`campaigns` list/detail platformAdminOnly, hoặc `stats` platform-only không raw SQL).
+- **Prompt 21C**: dashboard `content-packages/page.tsx` với action migrate/external **locked**.
+- **Prompt 21D**: docs index + archive plan + dọn legacy dirs rỗng.
+- Vẫn KHÔNG chọn webhook/RAG/handoff/tenants/appointments/settings-external.
+
 ## Prompt 21B - Backend route consolidation quick-reply-menus read (PASS)
 
 Ngày cập nhật: 2026-07-11

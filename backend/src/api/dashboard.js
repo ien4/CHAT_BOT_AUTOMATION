@@ -13,6 +13,7 @@ const tenantRegistry = require('../tenants/registry');
 const createPromptRoutes = require('../presentation/http/routes/dashboard/prompts.routes');
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
 const createQuickReplyMenuRoutes = require('../presentation/http/routes/dashboard/quickReplyMenus.routes');
+const createChannelConfigRoutes = require('../presentation/http/routes/dashboard/channelConfigs.routes');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -1919,31 +1920,9 @@ router.get('/analytics', authMiddleware, platformAdminOnly, async (req, res) => 
 
 // ==================== CHANNEL CONFIGS ====================
 
-router.get('/channel-configs', authMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantScope(req);
-    const configs = tenantId
-      ? await prisma.tenantChannelConfig.findMany({ where: { tenantId }, orderBy: { channelType: 'asc' } })
-      : await prisma.channelConfig.findMany({ orderBy: { channelType: 'asc' } });
-    res.json(configs);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.get('/channel-configs/:id', authMiddleware, async (req, res) => {
-  try {
-    const tenantId = getTenantScope(req);
-    const config = tenantId
-      ? await prisma.tenantChannelConfig.findUnique({ where: { id: req.params.id } })
-      : await prisma.channelConfig.findUnique({ where: { id: req.params.id } });
-    if (!config) return res.status(404).json({ error: 'Not found' });
-    if (tenantId && config.tenantId !== tenantId) return res.status(404).json({ error: 'Not found' });
-    res.json(config);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// GET /channel-configs (list) + GET /channel-configs/:id (detail) đã tách sang
+// presentation/http/routes/dashboard/channelConfigs.routes.js. POST/PUT/DELETE giữ nguyên bên dưới.
+router.use('/channel-configs', createChannelConfigRoutes({ authMiddleware, getTenantScope, prisma }));
 
 router.post('/channel-configs', authMiddleware, async (req, res) => {
   try {

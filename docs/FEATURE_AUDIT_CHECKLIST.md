@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-2 Update - Backend Route Consolidation channel-configs read (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Route được chọn | Done | `GET /channel-configs` + `/:id` | READ_ONLY_LOW_RISK; soi A/B/C chọn A. |
+| Secret exposure check | None | schema + smoke `secretFields=NONE` | ChannelConfig/TenantChannelConfig không có token/secret. |
+| Controller tách | Created | `presentation/http/controllers/dashboard/channelConfigs.controller.js` | List + detail. |
+| Routes factory | Created | `presentation/http/routes/dashboard/channelConfigs.routes.js` | `router.use('/channel-configs')`. |
+| Repository | Created | `infrastructure/repositories/channelConfigs.repository.js` | Dual-model tenant/global + mismatch→404; không Express/env. |
+| dashboard.js | Modified | mount thay 2 GET; POST/PUT/DELETE giữ nguyên | Fall-through smoke PASS. |
+| API contract | Preserved | path/method/auth/response | `authMiddleware`+`getTenantScope`, JSON không đổi. |
+| Static validation | PASS | `node --check`, `npm run quality`, `prisma validate` | — |
+| Runtime smoke | PASS | backend 3001 + DB local | 401 no-token, 200 list, 404 detail id ảo, regression + 21B PASS. |
+| External/mutation/raw SQL | None | smoke chỉ read GET | Không gọi Facebook/Telegram/LLM thật. |
+| Dashboard/schema/package | Unchanged | git diff | Chỉ backend/src + docs/report. |
+
+Kết luận: consolidation route read-only thứ 2 hoàn tất, behavior giữ nguyên. Bước tiếp: 21B-3 (campaigns/stats read) hoặc 21C/21D.
+
 ## Prompt 21B Update - Backend Route Consolidation quick-reply-menus read (PASS)
 
 Ngày cập nhật: 2026-07-11
