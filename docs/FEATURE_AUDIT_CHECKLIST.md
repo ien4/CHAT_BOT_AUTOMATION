@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 19D Update - Dashboard Appointments Feature Split (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Appointments page split | Done | `appointments/page.tsx` 131->37 dòng | Page chỉ còn orchestrator gọi hook + components. |
+| Data/state hook | Created | `features/appointments/hooks/useAppointments.ts` | Giữ selected tenant reload, list, loading, page, status filter, update status. |
+| Components tách | Created | `features/appointments/components/*` | Header, filters, loading, empty, list, card, status badge, pagination. |
+| Types/formatters | Created | `features/appointments/types.ts`, `lib/appointmentFormatters.ts`, `index.ts` | Appointment type, status filter options, badge map, date format. |
+| UI/text/layout | Preserved | source diff + route smoke | Không redesign, không đổi className/text có chủ đích. |
+| API contract | Unchanged | focused rg scan | Vẫn dùng `appointmentsApi.list/update`; không thêm fetch trực tiếp hoặc external call. |
+| Mutation/notification policy | NOT RUN BY DESIGN | backend route audit | `PUT /appointments/:id` có thể gọi appointment notifications khi đổi status/notes. |
+| Dashboard validation | PASS | `npm run quality`, `npm run typecheck`, `npm run build` | Chạy baseline và sau refactor. |
+| Runtime route smoke | PASS | fresh dev server `3019` | `/dashboard/appointments` và route dashboard trọng yếu không 500/chunk error. |
+| Backend/read smoke | PASS | backend port `3001` | Health/login/prompts/handoff/analytics/webhook/legacy + appointments GET PASS. |
+
+Kết luận: Appointments feature split hoàn tất, nhưng mutation status smoke không chạy để tránh notification/external side effect thật.
+
 ## Prompt 19C Update - Dashboard Staff Feature Split (PASS)
 
 Ngày cập nhật: 2026-07-11

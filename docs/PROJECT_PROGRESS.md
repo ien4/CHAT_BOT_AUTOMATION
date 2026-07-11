@@ -1,5 +1,21 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 19D Dashboard appointments feature split
+
+Ngày cập nhật: 2026-07-11
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Đã tách `dashboard/src/app/dashboard/appointments/page.tsx` thành orchestrator mỏng dùng `dashboard/src/features/appointments/**`: hook `useAppointments`, components header/filter/loading/empty/list/card/status-badge/pagination, formatter/type/barrel. Giữ nguyên route `/dashboard/appointments`, UI text/layout/className, API `appointmentsApi.list/update`, filter status, pagination và hành vi nút xác nhận/hủy.
+
+Validation đã hoàn tất:
+
+- Local DB/backend readiness PASS: `bbotech-pgvector-local` chạy ở port `5433`, backend health 200, `npm run quality` PASS, `prisma migrate deploy` PASS/no pending, **không gặp P1001**.
+- Backend smoke trước refactor PASS 7/7.
+- Dashboard baseline trước refactor PASS: `npm run quality`, `npm run typecheck`, `npm run build`, clean `.next`, fresh route smoke port `3019`.
+- Dashboard sau refactor PASS: `npm run quality`, `npm run typecheck`, `npm run build`, clean `.next`, fresh route smoke `/dashboard/appointments` và các route trọng yếu không 500/chunk error.
+- Appointments read smoke PASS: `GET /api/appointments?page=1&limit=20` trả 200 với token test. Mutation status update **NOT RUN BY DESIGN** vì backend `PUT /appointments/:id` có thể gọi `notifications/appointments` khi đổi `status` hoặc `notes`.
+
+Không thay đổi backend source, package, Prisma schema/migrations, env thật, Docker/script hoặc dashboard page khác. Phase 19 vẫn **Started**; Phase 21 vẫn **Planned** và chưa bắt đầu trong Prompt 19D.
+
 ## Cập nhật mới nhất - Prompt 19C Dashboard staff feature split
 
 Ngày cập nhật: 2026-07-11
@@ -79,7 +95,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 17G — Login auth production readiness | ✅ Done | Prompt 08G fix login (hash admin stale), bỏ credential mẫu UI, thêm production auth guard; runtime login smoke 11/11 PASS |
 | Phase 18 — RAG/raw SQL hardening | ✅ Done | Prompt 09 RAG raw SQL PASS; Prompt 09B analytics raw SQL PASS; Prompt 09C tenant handoff raw SQL PASS; Prompt 10A seed raw SQL cleanup PASS WITH WARNINGS. `backend/src`+`backend/scripts` không còn `$queryRawUnsafe`/`$executeRawUnsafe`; chỉ còn README documentation-only |
 | Phase 18b — Quality gate | ✅ Done | Prompt 10C: `npm run quality` backend (syntax+prisma validate) + dashboard (typecheck+build) PASS; ESLint chưa cài (lint để prompt dependency riêng); production smoke dry-run local 9/9. `docs/QUALITY_GATE.md` |
-| Phase 19 — Dashboard feature split | ✅ Started | Prompt 19A analytics, 19B prompts, 19C staff đã tách sang `features/**`; UI/API giữ nguyên, route smoke thật PASS. Candidate kế: Prompt 19D appointments/content-packages có mutation checklist riêng |
+| Phase 19 — Dashboard feature split | ✅ Started | Prompt 19A analytics, 19B prompts, 19C staff, 19D appointments đã tách sang `features/**`; UI/API giữ nguyên, route smoke thật PASS. Appointments mutation status NOT RUN BY DESIGN do notification risk |
 | Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
 | Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
 

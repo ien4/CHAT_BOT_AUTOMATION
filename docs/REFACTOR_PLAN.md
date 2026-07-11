@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 19D - Dashboard appointments feature split (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-11
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/appointments/page.tsx` thành orchestrator mỏng 37 dòng.
+- Tạo `dashboard/src/features/appointments/`: `hooks/useAppointments.ts`, `components/` (AppointmentsHeader, AppointmentFilters, AppointmentLoadingState, AppointmentEmptyState, AppointmentList, AppointmentCard, AppointmentStatusBadge, AppointmentPagination), `lib/appointmentFormatters.ts`, `types.ts`, `index.ts`.
+- Giữ nguyên route `/dashboard/appointments`, UI text/layout/className, status filters, loading/empty/list/card/pagination behavior và toast.
+- API vẫn đi qua `appointmentsApi.list/update` trong `dashboard/src/lib/api.ts`; không thêm direct fetch hoặc external call.
+- Mutation status smoke không chạy vì backend route có notification side effect khi đổi status/notes; appointments read smoke PASS.
+- Không sửa backend source, package, Prisma schema/migrations, env thật, Docker/script.
+
+Validation:
+
+- Backend: DB readiness PASS, `npm run quality` PASS, `prisma migrate deploy` PASS/no pending, backend/read appointments smoke PASS.
+- Dashboard: baseline và post-refactor `npm run quality`, `npm run typecheck`, `npm run build` PASS.
+- Runtime: clean `.next`, dev server fresh port `3019`, route smoke `/dashboard/appointments` và các route trọng yếu PASS; không tái hiện chunk error.
+
+Next:
+
+- **Prompt 19E**: cân nhắc `content-packages/page.tsx` nếu khóa rõ không chạy action migrate, hoặc dừng Phase 19 sau khi review phạm vi còn lại.
+- **Prompt 21A** chỉ nên là Project Structure Consolidation Audit/plan, không move code hàng loạt trong một prompt.
+
 ## Prompt 19C - Dashboard staff feature split (PASS)
 
 Ngày cập nhật: 2026-07-11

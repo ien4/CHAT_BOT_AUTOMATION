@@ -1,5 +1,37 @@
 # PHASE 19 — DASHBOARD FEATURE SPLIT PLAN
 
+## Prompt 19D - `appointments/page.tsx` done
+
+Ngày cập nhật: 2026-07-11
+
+Kết quả: **PASS WITH WARNINGS**. Candidate #4 `dashboard/src/app/dashboard/appointments/page.tsx` đã được tách sang `dashboard/src/features/appointments/**` theo pattern hook + components + formatter/type/barrel. Page app route chỉ còn orchestrator mỏng, giữ nguyên route/UI/API behavior.
+
+File nguồn chính sau split:
+
+- `dashboard/src/app/dashboard/appointments/page.tsx`
+- `dashboard/src/features/appointments/hooks/useAppointments.ts`
+- `dashboard/src/features/appointments/components/AppointmentsHeader.tsx`
+- `dashboard/src/features/appointments/components/AppointmentFilters.tsx`
+- `dashboard/src/features/appointments/components/AppointmentLoadingState.tsx`
+- `dashboard/src/features/appointments/components/AppointmentEmptyState.tsx`
+- `dashboard/src/features/appointments/components/AppointmentList.tsx`
+- `dashboard/src/features/appointments/components/AppointmentCard.tsx`
+- `dashboard/src/features/appointments/components/AppointmentStatusBadge.tsx`
+- `dashboard/src/features/appointments/components/AppointmentPagination.tsx`
+- `dashboard/src/features/appointments/lib/appointmentFormatters.ts`
+- `dashboard/src/features/appointments/types.ts`
+- `dashboard/src/features/appointments/index.ts`
+
+Rule giữ lại cho các prompt Phase 19 tiếp theo:
+
+1. Luôn kiểm DB/backend readiness trước.
+2. Sau build phải clean `.next` và route smoke thật bằng fresh dev server.
+3. Mutation chỉ smoke với test prefix + cleanup chắc chắn.
+4. Không trigger notification/external side effect thật; nếu route có notification risk, mutation smoke là NOT RUN BY DESIGN.
+5. Không stage `.env`, `.env.local`, `.next`, backup, temp/log.
+
+Ứng viên còn lại nếu tiếp tục Phase 19: `content-packages/page.tsx` chỉ khi khóa rõ không chạy migrate action. Phase 21 chưa bắt đầu; Prompt 21A nếu làm thì chỉ nên audit/plan, không move code hàng loạt.
+
 ## Prompt 19C - `staff/page.tsx` done
 
 Ngày cập nhật: 2026-07-11
