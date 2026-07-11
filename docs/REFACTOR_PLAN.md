@@ -1,5 +1,22 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21A - Project structure consolidation audit/plan (PASS, audit-only)
+
+Ngày cập nhật: 2026-07-11
+
+Đã làm:
+
+- Audit read-only toàn bộ cấu trúc backend/dashboard/docs/report/scripts sau nhiều phase; **không move code**, không rename, không đổi import/behavior.
+- Tạo `docs/PROJECT_STRUCTURE_CONSOLIDATION_PLAN.md` với structure map + active risks + đề xuất Phase 21B/21C/21D.
+- Xác nhận baseline PASS: backend `npm run quality` + `prisma validate`; dashboard `typecheck` + `build` (19 route); diff sạch.
+- Ghi nhận nợ cấu trúc: `api/dashboard.js` 2363 LOC/96 route; `settings/page.tsx` còn direct `fetch()`; dir legacy rỗng; docs stale (`MULTITENANT_PROGRESS.md`, `ROADMAP.md`); `start-all.bat` còn Chatwoot bootstrap.
+
+Next recommended prompt:
+
+- **Prompt 21B** — Backend structure consolidation nhỏ: rút thêm route read-only/low-risk từ `api/dashboard.js` sang `presentation/http/**`, gom repository cho domain có guard rõ. KHÔNG move webhook/RAG/handoff/tenants.
+- Hoặc **Prompt 19E** — Dashboard `content-packages/page.tsx` với action migrate/external **locked**.
+- **KHÔNG** chọn `settings`/`knowledge`/`tenants` nếu chưa có external rollback plan riêng.
+
 ## Prompt 19D - Dashboard appointments feature split (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-11

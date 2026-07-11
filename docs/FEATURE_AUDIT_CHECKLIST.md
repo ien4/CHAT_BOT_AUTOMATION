@@ -1,5 +1,24 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21A Update - Project Structure Consolidation Audit/Plan (PASS)
+
+Ngày cập nhật: 2026-07-11
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Structure audit | Done | `docs/PROJECT_STRUCTURE_CONSOLIDATION_PLAN.md` | Map backend/dashboard/docs/report/scripts. |
+| No source runtime changed | Confirmed | `git diff --name-status` docs/report only | Không move file, không rename, không đổi import. |
+| Baseline validation | PASS | backend quality+prisma validate, dashboard typecheck+build | Read-only, không mutation. |
+| Backend monolith mapped | Done | `api/dashboard.js` 2363 LOC / 96 route | Mới rút ~5 route sang presentation. |
+| Dashboard split status | Done | 4/13 page orchestrator mỏng | analytics/prompts/staff/appointments; còn lại placeholder. |
+| Active risks mapped | Done | Plan mục 5 | start-all.bat Chatwoot, docs stale, settings direct fetch, dashboard.js. |
+| Legacy dirs flagged | Done | `src/chatwoot`, `src/adapters`, `integrations/chatwoot` rỗng | Cleanup đề xuất 21D, không xóa ở 21A. |
+| Raw SQL / destructive scan | Clean | rg scan | 0 `$queryRawUnsafe`, 0 destructive thật. |
+| Next prompt proposal | Done | Plan mục 12 | 21B backend / 19E content-packages locked. |
+| Production readiness | Not ready | Plan mục 11 | Rollout thật chưa chạy; chỉ local/staging improved. |
+
+Kết luận: audit/plan-only hoàn tất, không đổi source runtime. Next: Prompt 21B (backend route consolidation nhỏ) hoặc 19E (content-packages locked).
+
 ## Prompt 19D Update - Dashboard Appointments Feature Split (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-11

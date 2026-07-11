@@ -1,5 +1,21 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21A Project structure consolidation audit/plan
+
+Ngày cập nhật: 2026-07-11
+
+Trạng thái mới nhất: **PASS (audit/plan-only)**. Prompt 21A rà soát toàn bộ cấu trúc dự án sau nhiều phase và lập kế hoạch consolidation, **không move code**, không rename folder, không đổi import, không đổi behavior, không sửa backend/dashboard source runtime, không đụng package/schema/migrations.
+
+Kết quả chính:
+
+- Baseline validation read-only PASS: backend `npm run quality` + `npx prisma validate`; dashboard `npm run typecheck` + `npm run build` (19 route). `git diff --check` sạch, không có source/runtime diff.
+- Backend: `api/dashboard.js` vẫn là monolith **2363 LOC / 96 route**; mới rút ~5 route sang `presentation/http/**` (prompts, settings); `domain`/`application` là shell README rỗng; 3 dir legacy rỗng (`src/chatwoot`, `src/adapters`, `integrations/chatwoot`); raw SQL unsafe = 0; Chatwoot runtime trong `src` = 0.
+- Dashboard: 4/13 page đã thành orchestrator mỏng (`analytics/prompts/staff/appointments`); các feature còn lại là placeholder README; `settings/page.tsx` còn 6 `fetch()` trực tiếp (webhook/facebook) → chưa tách trước khi chuẩn hóa client.
+- Active risks: `start-all.bat` còn bootstrap Chatwoot (local-only); `MULTITENANT_PROGRESS.md`/`ROADMAP.md` mô tả file Chatwoot đã gỡ (stale); settings direct fetch; `api/dashboard.js` nợ cấu trúc.
+- Tạo mới `docs/PROJECT_STRUCTURE_CONSOLIDATION_PLAN.md` (map backend/dashboard/docs + đề xuất Phase 21B/21C/21D).
+
+Phase 21 chuyển từ **Planned** sang **Started — audit/plan-only** (chưa move code, chưa restructure thật, chưa Done). Production rollout thật **CHƯA chạy** — chỉ ghi nhận local/staging readiness improved. Chi tiết: `report/PROMPT_21A_PROJECT_STRUCTURE_CONSOLIDATION_AUDIT_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 19D Dashboard appointments feature split
 
 Ngày cập nhật: 2026-07-11
@@ -97,7 +113,7 @@ Lưu ý bắt buộc: từ Prompt 08A trở đi, Chatwoot không còn là thành
 | Phase 18b — Quality gate | ✅ Done | Prompt 10C: `npm run quality` backend (syntax+prisma validate) + dashboard (typecheck+build) PASS; ESLint chưa cài (lint để prompt dependency riêng); production smoke dry-run local 9/9. `docs/QUALITY_GATE.md` |
 | Phase 19 — Dashboard feature split | ✅ Started | Prompt 19A analytics, 19B prompts, 19C staff, 19D appointments đã tách sang `features/**`; UI/API giữ nguyên, route smoke thật PASS. Appointments mutation status NOT RUN BY DESIGN do notification risk |
 | Phase 20 — DevOps/deploy hardening | ✅ Done | Prompt 10B: bỏ `db push --accept-data-loss` khỏi `start-all.bat`; tách migration khỏi Docker startup; drift `knowledge_base.embedding` fix (migration nullable); deploy docs. Production rollout thật chưa chạy |
-| Phase 21 — Project structure consolidation | ⬜ Planned | Sau security/DevOps |
+| Phase 21 — Project structure consolidation | 🟡 Started — audit/plan-only | Prompt 21A audit cấu trúc + tạo `PROJECT_STRUCTURE_CONSOLIDATION_PLAN`; **chưa move code**, chưa restructure thật, chưa Done |
 
 ## 3. Checklist chi tiết theo Prompt
 
