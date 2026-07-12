@@ -1,5 +1,39 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21S Project goals + Facebook webhook readiness status sync
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Prompt 21S chỉ đồng bộ docs/status và kiểm tra an toàn cục bộ, **không sửa source runtime**, không sửa schema/migration/package, không gọi Facebook/Telegram/Gemini/Jina/LLM thật.
+
+Mục tiêu dự án hiện tại được ghi lại rõ:
+
+- Product goal: chatbot/automation nhận tin nhắn Facebook Messenger qua webhook, backend Express custom xử lý bot/AI/RAG/handoff, dashboard Next.js quản trị nội bộ, PostgreSQL/pgvector lưu dữ liệu và knowledge.
+- Architecture goal: target là **No-Chatwoot**. Meta/Facebook callback thật là `GET/POST /webhook`; `/api/settings/webhook` chỉ là endpoint dashboard đọc trạng thái cấu hình đã mask.
+- Security/runtime goal: auth/login đã harden, nhiều tenant guard đã xử lý, raw SQL unsafe đã đóng, env/secret thật không được commit hoặc log.
+- Deploy goal: local/staging readiness đã cải thiện, nhưng **chưa production rollout thật** vì chưa có backup + `prisma migrate deploy` + smoke production thật.
+- Facebook Developer webhook goal: source route readiness có bằng chứng trong code; Meta Developer verification và Meta POST event thật vẫn **pending** nếu chưa có callback/challenge/test event từ Meta.
+
+Facebook Developer Webhook readiness hiện tại:
+
+| Tầng readiness | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Source route readiness | **DONE** | `backend/src/index.js` mount `GET /webhook`, `POST /webhook`; `backend/src/webhook/handler.js` verify token/challenge và xử lý `body.object === 'page'` | Có thể claim source route đúng endpoint. |
+| Local runtime readiness | **LOCAL_READY, current smoke blocked** | Các report trước smoke `/webhook` sai/thiếu token -> 403 và `/chatwoot-webhook` -> 404; Prompt 21S hiện tại không smoke được do Docker daemon/DB/backend local không chạy | Không fake PASS runtime mới. |
+| Dashboard management readiness | **LOCAL_READY** | `GET /api/settings/webhook` có auth, trả secret mask/null và `webhookUrl`, không phải Meta callback | Có thể dùng để xem cấu hình, không dùng làm callback URL. |
+| Public HTTPS/staging readiness | **STAGING_PENDING** | Docs deploy yêu cầu `https://<domain>/webhook`; chưa có public HTTPS smoke trong Prompt 21S | Chỉ được ghi ready for staging verification khi có URL thật. |
+| Meta Developer verification | **META_PENDING** | Chưa có bằng chứng callback/challenge thật từ Meta Developer trong docs/report hiện tại | Không claim Meta connected/verified. |
+| Meta POST event readiness | **META_PENDING** | Chưa có event thật từ Meta; Prompt 21S không gọi external Facebook | Không claim nhận production event. |
+| Production rollout | **PRODUCTION_PENDING** | `docs/PRODUCTION_ROLLOUT_CHECKLIST.md` yêu cầu backup + migrate deploy + smoke prod; chưa chạy | Không ghi production ready. |
+
+Validation Prompt 21S:
+
+- Preflight git/secret-safety PASS: branch `chore/prompt-05r-docs-local-run`, HEAD `72f8a04 Consolidate another low-risk dashboard route`, `.env`/`.env.local`/`.next` ignored; chỉ `backend/.env.example` là env sample tracked.
+- Baseline docs-only PASS: `backend npm run quality`, `npx prisma validate`, `dashboard npm run typecheck`, `git diff --check` trước patch.
+- Local safe smoke **blocked by local runtime**: Docker daemon không phản hồi, port DB `5433` không listen, backend port `3001` không listen, `/health` không kết nối. Không chạy `docker compose up`, không chạy `start-all.bat`, không gọi external.
+
+Phase 21 vẫn **Started**, chưa Done. Next prompt phù hợp: **21B-3** nếu tiếp tục giảm nợ backend route read-only (`campaigns`/`stats`), hoặc **21D** nếu muốn dọn docs/legacy trước, hoặc **21C** nếu quay lại dashboard `content-packages` với action migrate/external bị khóa rõ.
+
 ## Cập nhật mới nhất - Prompt 21B-2 Backend route consolidation (channel-configs read)
 
 Ngày cập nhật: 2026-07-11

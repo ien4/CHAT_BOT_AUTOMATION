@@ -6,6 +6,33 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21S - Product goal và Facebook webhook readiness
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 21S không move code và không refactor runtime. Mục tiêu là đồng bộ lại mục tiêu sản phẩm/kiến trúc trước khi tiếp tục Phase 21:
+
+- Product goal hiện tại: nhận tin nhắn Facebook Messenger qua Meta Developer Webhook, xử lý trong backend Express custom bằng bot/AI/RAG/handoff, quản trị qua Dashboard Next.js nội bộ, lưu dữ liệu trong PostgreSQL/pgvector.
+- Architecture goal hiện tại: **No-Chatwoot target**. Callback Meta thật là `GET/POST /webhook`; `/api/settings/webhook` chỉ là endpoint dashboard config/read có auth.
+- Structure goal hiện tại: Clean Architecture tiếp tục đi từng bước nhỏ; Phase 21 vẫn **Started**, chưa Done.
+- Production goal hiện tại: local/staging readiness improved, nhưng production rollout thật vẫn **PRODUCTION_PENDING** cho tới khi có backup + `prisma migrate deploy` + smoke production thật.
+
+Facebook Developer Webhook readiness:
+
+| Tầng | Trạng thái | Bằng chứng | Next action |
+|---|---|---|---|
+| Source route readiness | DONE | `backend/src/index.js` mount `GET/POST /webhook`; `backend/src/webhook/handler.js` verify `hub.challenge` và xử lý POST page event | Giữ nguyên endpoint khi refactor. |
+| Local runtime readiness | LOCAL_READY with current warning | Reports trước smoke 403/404 PASS; Prompt 21S không smoke lại được do Docker/DB/backend local không chạy | Bật lại Docker/local DB rồi smoke lại nếu cần runtime proof mới. |
+| Dashboard config readiness | LOCAL_READY | `GET /api/settings/webhook` trả mask/null + `webhookUrl`, có auth | Không dùng route này làm Meta callback. |
+| Public HTTPS readiness | STAGING_PENDING | Chưa có public URL trong Prompt 21S | Trỏ domain staging tới `/webhook`, smoke HTTPS. |
+| Meta verify challenge | META_PENDING | Chưa có callback/challenge thật từ Meta Developer | Verify token thật qua Meta Developer app. |
+| Meta POST event | META_PENDING | Chưa có event thật từ Meta | Test event thật từ Meta sau khi staging URL sẵn sàng. |
+| Production rollout | PRODUCTION_PENDING | Checklist production yêu cầu backup/migrate/smoke prod chưa chạy | Chạy theo `docs/PRODUCTION_ROLLOUT_CHECKLIST.md`. |
+
+Không đánh dấu Phase 21 Done sau Prompt 21S. Prompt kế tiếp nên là 21B-3 nếu tiếp tục giảm nợ backend route read-only, hoặc 21D nếu muốn dọn stale docs/legacy trước, hoặc 21C nếu quay lại dashboard split có guard rõ.
+
+---
+
 ## 1. Current status
 
 - Phase 17 (No-Chatwoot), Phase 18 (RAG/raw SQL), Phase 20 (DevOps/deploy) đã **Done**.

@@ -1,5 +1,27 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21S Update - Project goals + Facebook webhook readiness status sync (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Goal status captured | Done | `docs/PROJECT_GOALS_AND_FACEBOOK_WEBHOOK_STATUS.md` | Ghi rõ product/architecture/security/runtime/structure/devops/webhook goals. |
+| No-Chatwoot target | Confirmed | Phase 17 docs + `docs/DEPLOYMENT_POLICY.md` | Target là direct Facebook -> backend Express, không dùng Chatwoot. |
+| Real Meta callback endpoint | Confirmed | `backend/src/index.js`, `backend/src/webhook/handler.js` | Callback thật là `GET/POST /webhook`, không phải `/api/settings/webhook`. |
+| Dashboard webhook config endpoint | Confirmed | `settings.routes.js`, `settings.controller.js` | `GET /api/settings/webhook` có auth, trả secret mask/null + `webhookUrl`; chỉ là config/read endpoint. |
+| Source route readiness | DONE | Code route + handler read | Có thể claim source route readiness. |
+| Local smoke status | PASS WITH WARNINGS | Docker daemon unavailable, DB 5433/backend 3001 không listen | Không fake local runtime smoke mới trong 21S. |
+| Prior local smoke evidence | Available | Reports 21B/21B-2/10C | `/webhook` sai/thiếu verify token -> 403; `/chatwoot-webhook` -> 404. |
+| Public HTTPS/staging | STAGING_PENDING | Deploy docs yêu cầu `https://<domain>/webhook` | Chưa có public URL smoke trong 21S. |
+| Meta Developer verification | META_PENDING | Không có callback/challenge thật trong docs/report | Không claim Meta connected/verified. |
+| Production rollout | PRODUCTION_PENDING | Rollout checklist yêu cầu backup + migrate deploy + smoke prod | Không claim production ready. |
+| No external call | Confirmed | Lệnh chạy chỉ local validation/git/port check | Không gọi Facebook/Telegram/Gemini/Jina/LLM thật. |
+| No source changed | Confirmed | Final source diff guard | Chỉ docs/report. |
+| Schema/migration/package | Unchanged | Git diff guard | Không sửa Prisma/package/Docker/script. |
+
+Kết luận: trạng thái mục tiêu và readiness đã được đồng bộ. Có thể nói source/local-route readiness có bằng chứng, nhưng Meta Developer verification và production rollout vẫn pending.
+
 ## Prompt 21B-2 Update - Backend Route Consolidation channel-configs read (PASS)
 
 Ngày cập nhật: 2026-07-11

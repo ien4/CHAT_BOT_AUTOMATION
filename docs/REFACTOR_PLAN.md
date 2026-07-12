@@ -1,5 +1,36 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21S - Project goals + Facebook webhook readiness status sync (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+Đã làm:
+
+- Ghi lại mục tiêu dự án hiện tại trước khi đi tiếp roadmap: Facebook Messenger API / Meta Developer Webhook -> backend Express custom -> Dashboard Next.js nội bộ -> PostgreSQL/pgvector.
+- Xác nhận target architecture là **No-Chatwoot**. Endpoint Meta/Facebook thật là `GET/POST /webhook`; `/api/settings/webhook` chỉ là endpoint dashboard đọc cấu hình đã mask.
+- Tạo `docs/PROJECT_GOALS_AND_FACEBOOK_WEBHOOK_STATUS.md` để theo dõi goal map, readiness theo tầng, checklist trước Meta thật và checklist trước production rollout.
+- Tạo report Prompt 21S, ghi rõ current smoke local bị giới hạn do Docker/DB/backend local không chạy, không fake production/Meta status.
+- Không sửa backend/dashboard source runtime, không sửa schema/migration/package/Docker/script, không gọi external provider.
+
+Validation:
+
+- Preflight git/secret safety PASS: branch không phải main/master, HEAD `72f8a04 Consolidate another low-risk dashboard route`, env thật và `.next` chỉ ở ignored.
+- Backend `npm run quality` PASS; `npx prisma validate` PASS; dashboard `npm run typecheck` PASS.
+- Local safe smoke trong Prompt 21S: **PASS WITH WARNINGS** vì Docker daemon không phản hồi, DB local `5433` không listen, backend `3001` không listen. Không chạy `docker compose up`/`start-all.bat`, không start backend khi DB local chưa sẵn sàng.
+
+Readiness cần giữ đúng trong roadmap:
+
+- **Có thể claim:** source route readiness cho `GET/POST /webhook`; prior local smoke đã chứng minh `/webhook` sai/thiếu verify token trả 403 và `/chatwoot-webhook` trả 404; dashboard config endpoint `/api/settings/webhook` trả config mask khi có auth.
+- **Không được claim:** Meta Developer connected/verified, Meta POST event production, production ready/rollout done.
+
+Next recommended prompt:
+
+1. **Prompt 21B-3**: tiếp tục route read-only backend (`campaigns` list/detail hoặc `stats`) nếu mục tiêu là giảm nợ `dashboard.js`.
+2. **Prompt 21D**: docs index + gắn nhãn/archive stale docs/legacy nếu muốn dọn thông tin cũ trước.
+3. **Prompt 21C**: dashboard `content-packages/page.tsx` chỉ khi action migrate/external bị khóa rõ.
+
+Vẫn không chọn webhook/RAG/handoff/tenants/settings-external cho bước consolidation thường nếu chưa có prompt riêng.
+
 ## Prompt 21B-2 - Backend route consolidation channel-configs read (PASS)
 
 Ngày cập nhật: 2026-07-11
