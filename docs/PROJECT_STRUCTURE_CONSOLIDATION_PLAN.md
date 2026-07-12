@@ -6,6 +6,22 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 22A - Meta webhook staging readiness
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 22A không move code và không refactor runtime. Phạm vi là audit readiness cho public HTTPS staging của direct Meta webhook:
+
+- Tạo `docs/META_WEBHOOK_STAGING_READINESS.md`.
+- Xác nhận source route `GET/POST /webhook` sẵn sàng cho callback `https://<domain>/webhook`.
+- Xác nhận `/api/settings/webhook` chỉ là dashboard config/read endpoint có auth, không phải callback Meta.
+- Local smoke an toàn PASS trên backend hiện có; public HTTPS smoke chưa chạy vì không có `STAGING_BASE_URL`.
+- Public HTTPS readiness vẫn **STAGING_URL_MISSING**; Meta verify challenge và Meta POST event thật vẫn **PENDING**.
+
+Không đánh dấu Phase 21 Done. Prompt này không giảm thêm route debt trong `dashboard.js` và không sửa structure source.
+
+---
+
 ## Cập nhật 21D - Docs/legacy cleanup completed
 
 Ngày cập nhật: 2026-07-12

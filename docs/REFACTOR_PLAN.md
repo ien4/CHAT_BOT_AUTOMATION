@@ -1,5 +1,32 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 22A - Public HTTPS / Meta webhook staging readiness (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+Đây là staging readiness audit + checklist, không phải runtime refactor.
+
+Đã làm:
+
+- Tạo `docs/META_WEBHOOK_STAGING_READINESS.md`.
+- Xác nhận callback đúng cho Meta Developer là `https://<domain>/webhook`, trỏ vào backend `GET/POST /webhook`.
+- Xác nhận `/api/settings/webhook` chỉ là dashboard config/read endpoint có auth và `/chatwoot-webhook*` không phải target mới.
+- Chạy baseline validation và local smoke an toàn PASS trên backend hiện có.
+- Không sửa source runtime, dashboard source, schema/migrations, package, Docker/start scripts hoặc env thật.
+
+Warnings:
+
+- Chưa có `STAGING_BASE_URL`, nên public HTTPS smoke không chạy và trạng thái là `STAGING_URL_MISSING`.
+- Docker Desktop API trả 500/time-out, dù DB/backend ports vẫn listen.
+- Cần xử lý log policy/redaction trước Meta POST event thật vì handler còn log sender/message text.
+
+Next:
+
+1. Chuẩn bị public HTTPS domain/tunnel ổn định và cung cấp `STAGING_BASE_URL`.
+2. Chạy public smoke an toàn trước khi vào Meta Developer.
+3. Verify challenge trong Meta Developer bằng secret thật do người vận hành nhập.
+4. Chỉ sau Meta verify + POST event thật mới mở production rollout prompt.
+
 ## Prompt 21D - Docs index + stale docs / legacy cleanup plan (PASS)
 
 Ngày cập nhật: 2026-07-12

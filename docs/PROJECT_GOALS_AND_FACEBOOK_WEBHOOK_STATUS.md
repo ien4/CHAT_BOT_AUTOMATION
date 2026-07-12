@@ -3,6 +3,21 @@
 Ngày cập nhật: 2026-07-12
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 22A - Public HTTPS / Meta webhook staging readiness
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 22A đã tạo `docs/META_WEBHOOK_STAGING_READINESS.md` và report staging readiness. Kết quả là **PASS WITH WARNINGS**:
+
+- Source callback readiness: **DONE** cho `GET /webhook` và `POST /webhook`.
+- Local runtime readiness: **PASS** theo smoke Prompt 22A trên backend 3001 hiện có.
+- Public HTTPS readiness: **STAGING_URL_MISSING** vì chưa có `STAGING_BASE_URL` hoặc public URL thật.
+- Meta Developer verification: **PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**.
+
+Callback URL đúng cần nhập trong Meta Developer vẫn là `https://<domain>/webhook`. Không dùng `/api/settings/webhook`, `/chatwoot-webhook*` hoặc `webhook-urls-current.txt` làm callback. Trước khi nhận POST event thật cần kiểm soát log staging vì source hiện còn log sender id và message text khi xử lý message.
+
 ## Cập nhật 21D - Docs index
 
 Ngày cập nhật: 2026-07-12

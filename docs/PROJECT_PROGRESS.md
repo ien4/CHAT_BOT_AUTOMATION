@@ -1,5 +1,27 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 22A Public HTTPS / Meta webhook staging readiness
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Prompt 22A đã audit readiness cho public HTTPS staging của Meta Developer Webhook direct vào backend Express, không refactor runtime và không gọi Meta/Facebook API thật.
+
+Đã làm:
+
+- Tạo `docs/META_WEBHOOK_STAGING_READINESS.md` với kiến trúc đúng `https://<domain>/webhook`, checklist staging, public smoke plan và bước verify Meta thủ công.
+- Xác nhận source callback thật là `GET /webhook` và `POST /webhook`; `/api/settings/webhook` chỉ là dashboard config/read endpoint có auth; `/chatwoot-webhook*` không phải target mới.
+- Baseline validation PASS: backend `npm run quality`, backend `npx prisma validate`, dashboard `npm run typecheck`, root diff sạch trước patch.
+- Local smoke PASS trên backend 3001 hiện có: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm 200 + token exists, settings webhook secret mask/null, prompts/channel-configs/quick-reply-menus/campaigns/analytics 200, cleanup admin tạm deleted 1.
+- Public HTTPS smoke **NOT RUN** vì không có biến shell `STAGING_BASE_URL`; docs hiện chỉ có placeholder `https://your-domain.com`, nên status là `STAGING_URL_MISSING`.
+
+Cảnh báo còn lại:
+
+- Docker API trả 500/time-out cho `docker version` và `docker ps`, dù port `5433` và `3001` đang listen và smoke local PASS.
+- POST handler hiện còn log sender id/message text; trước Meta POST event thật cần policy/redaction log staging phù hợp.
+- Chưa được claim Meta connected/verified, Meta POST event thật, public staging ready hoặc production ready.
+
+Chi tiết: `report/PROMPT_22A_META_WEBHOOK_STAGING_READINESS_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21D Docs index + stale docs / legacy cleanup plan
 
 Ngày cập nhật: 2026-07-12

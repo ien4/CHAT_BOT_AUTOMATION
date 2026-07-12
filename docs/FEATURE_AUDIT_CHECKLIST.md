@@ -1,5 +1,29 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 22A Update - Public HTTPS / Meta Webhook Staging Readiness (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Staging readiness doc | Created | `docs/META_WEBHOOK_STAGING_READINESS.md` | Ghi đúng callback `https://<domain>/webhook` và checklist staging. |
+| Source callback endpoint | PASS | `backend/src/index.js` | `GET /webhook` và `POST /webhook` được mount trực tiếp. |
+| Verify challenge handler | PASS | `backend/src/webhook/handler.js` | Dùng `hub.mode`, `hub.verify_token`, `hub.challenge`; sai/thiếu token trả 403. |
+| Dashboard config endpoint | PASS | `settings.routes.js`, `settings.controller.js` | `GET /api/settings/webhook` có auth, secret mask/null; không phải callback Meta. |
+| Legacy Chatwoot callback | PASS | local smoke | `POST /chatwoot-webhook` trả 404. |
+| Env example | PASS | `backend/.env.example` | Có `APP_BASE_URL`, `FB_VERIFY_TOKEN`, `FB_PAGE_ACCESS_TOKEN`, `FB_APP_SECRET`, `FB_PAGE_ID`. |
+| Baseline validation | PASS | backend quality, Prisma validate, dashboard typecheck | Không sửa source để làm đẹp readiness. |
+| Local runtime smoke | PASS | backend 3001 hiện có | Health/webhook/settings/prompts/channel/quick-reply/campaigns/analytics PASS; admin tạm cleanup. |
+| Docker API | WARNING | `docker version`, `docker ps` | Docker Desktop API trả 500/time-out; port DB/backend vẫn listen. |
+| Public HTTPS smoke | NOT RUN | `STAGING_BASE_URL_NOT_SET` | Không tự đoán URL, không dùng docs stale. |
+| Public staging URL | MISSING | scan docs/example | Chỉ có placeholder `https://your-domain.com`; chưa claim staging ready. |
+| Meta verify challenge | PENDING | chưa gọi Meta Developer | Chỉ người vận hành có secret thật mới verify. |
+| Meta POST event thật | PENDING | prompt không gọi Meta/Facebook external | Chưa claim nhận event thật. |
+| Log PII policy | NEEDS REVIEW | `handler.js` log sender/message text | Cần redaction/policy trước POST event thật. |
+| Source/schema/package/dashboard | Unchanged | diff guard | Không sửa `backend/src/**`, `dashboard/src/**`, Prisma/package/Docker/script. |
+
+Kết luận: đủ checklist và local baseline để chuẩn bị staging, nhưng chưa có public HTTPS URL thật nên verdict là PASS WITH WARNINGS, không phải Meta verified hoặc production ready.
+
 ## Prompt 21D Update - Docs Index + Stale Docs / Legacy Cleanup Plan (PASS)
 
 Ngày cập nhật: 2026-07-12
