@@ -1,5 +1,27 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 22A-1 Update - Webhook Log Redaction + Staging Runbook Hardening (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Webhook log audit | Done | scan `backend/src/webhook`, `index.js`, `facebook`, `bot`, `tenants`, `telegram` | Phân loại log trong report. |
+| Message text log | Removed from webhook logs | `handler.js` | Message text vẫn được dùng để xử lý/lưu DB theo behavior cũ, nhưng không console log. |
+| Sender/recipient id log | Masked | `maskId()` + log metadata | Không log full id trong `handler.js`. |
+| Postback payload log | Removed from webhook logs | `postback_event_processing` metadata | Payload vẫn dùng cho bot/handoff như cũ. |
+| Raw body/event log | Absent | log safety scan | Không log `req.body`, raw event hoặc JSON stringify payload. |
+| Token/secret log | Absent | log safety scan | Env token vẫn đọc để verify/send API, không log giá trị. |
+| Error detail | Hardened | `safeError()` | Không log `error.response.data`; chỉ name/status/code. |
+| Behavior preservation | PASS | diff review | Không đổi export, route path, status code, bot/handoff calls. |
+| Static validation | PASS | `node --check`, backend quality, Prisma validate, dashboard typecheck | Không sửa package/schema/dashboard. |
+| Runtime smoke safe | BLOCKED | port `3001` và `5433` không listen | Không chạy Docker Compose/start-all; không fake PASS. |
+| Staging runbook | Created | `docs/META_WEBHOOK_STAGING_RUNBOOK.md` | Public smoke/verify/rollback hướng dẫn rõ. |
+| Public URL | Still missing | no `STAGING_BASE_URL` | Public HTTPS smoke vẫn pending. |
+| External call | No | command audit | Không gọi Meta/Facebook/Telegram/Gemini/Jina/LLM thật. |
+
+Kết luận: webhook log source đã harden, còn cần public URL và runtime staging event thật để xác nhận log thực tế.
+
 ## Prompt 22A Update - Public HTTPS / Meta Webhook Staging Readiness (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12

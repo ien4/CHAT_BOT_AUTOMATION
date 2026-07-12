@@ -3,6 +3,26 @@
 Ngày cập nhật: 2026-07-12
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 22A-1 - Webhook log redaction + staging runbook
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 22A-1 đã harden log trong direct webhook source:
+
+- `backend/src/webhook/handler.js` không còn log message text, full sender id, full recipient id, postback payload hoặc outbound message preview.
+- Log mới chỉ ghi metadata đã redact: masked id, count, boolean, length, event label và error status/code generic.
+- `GET /webhook` verify behavior giữ nguyên; `POST /webhook` flow giữ nguyên; call vào bot/RAG/handoff giữ nguyên.
+- Tạo `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
+- Static validation PASS. Runtime smoke an toàn bị block vì local DB/backend hiện không listen.
+
+Trạng thái sau 22A-1:
+
+- Source log redaction: **SOURCE_HARDENED_PENDING_REAL_EVENT**.
+- Public HTTPS readiness: **STAGING_URL_MISSING**.
+- Meta Developer verification: **PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**.
+
 ## Cập nhật 22A - Public HTTPS / Meta webhook staging readiness
 
 Ngày cập nhật: 2026-07-12
@@ -16,7 +36,7 @@ Prompt 22A đã tạo `docs/META_WEBHOOK_STAGING_READINESS.md` và report stagin
 - Meta POST event thật: **PENDING**.
 - Production rollout: **PENDING**.
 
-Callback URL đúng cần nhập trong Meta Developer vẫn là `https://<domain>/webhook`. Không dùng `/api/settings/webhook`, `/chatwoot-webhook*` hoặc `webhook-urls-current.txt` làm callback. Trước khi nhận POST event thật cần kiểm soát log staging vì source hiện còn log sender id và message text khi xử lý message.
+Callback URL đúng cần nhập trong Meta Developer vẫn là `https://<domain>/webhook`. Không dùng `/api/settings/webhook`, `/chatwoot-webhook*` hoặc `webhook-urls-current.txt` làm callback. Sau Prompt 22A-1, source webhook log đã được redact; vẫn cần quan sát log staging khi test event thật.
 
 ## Cập nhật 21D - Docs index
 

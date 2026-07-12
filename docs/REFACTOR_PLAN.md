@@ -1,5 +1,28 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 22A-1 - Webhook log redaction + staging runbook hardening (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-12
+
+Đây là security/log hardening, không phải refactor route.
+
+Đã làm:
+
+- Harden log trong `backend/src/webhook/handler.js`.
+- Không còn console log message text, full sender id, full recipient id, postback payload hoặc outbound text preview trong direct webhook handler.
+- Error log chỉ ghi metadata generic qua `safeError()`.
+- Tạo `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
+- Không đổi webhook behavior, route/status/export hoặc call vào bot/RAG/handoff.
+
+Validation: static/backend/dashboard PASS. Runtime smoke bị block vì local DB/backend không listen; không chạy Docker Compose/start-all.
+
+Next:
+
+1. Public smoke prompt khi có `STAGING_BASE_URL`.
+2. 22B Meta verification execution khi public smoke PASS và secrets sẵn.
+3. 21B-4 nếu quay lại backend consolidation.
+4. Production rollout chỉ sau Meta verify + POST event thật.
+
 ## Prompt 22A - Public HTTPS / Meta webhook staging readiness (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12
@@ -18,7 +41,7 @@ Warnings:
 
 - Chưa có `STAGING_BASE_URL`, nên public HTTPS smoke không chạy và trạng thái là `STAGING_URL_MISSING`.
 - Docker Desktop API trả 500/time-out, dù DB/backend ports vẫn listen.
-- Cần xử lý log policy/redaction trước Meta POST event thật vì handler còn log sender/message text.
+- Log policy/redaction đã được xử lý ở Prompt 22A-1; trước Meta POST event thật vẫn cần quan sát log staging thực tế.
 
 Next:
 

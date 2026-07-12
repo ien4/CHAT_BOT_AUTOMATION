@@ -19,6 +19,54 @@ const RATE_LIMIT_BURST_MAX = Number(process.env.MESSAGE_BURST_MAX || 5);
 const RATE_LIMIT_BLOCK_MS = Number(process.env.MESSAGE_RATE_BLOCK_MS || 120_000);
 const RATE_LIMIT_WARNING_COOLDOWN_MS = Number(process.env.MESSAGE_RATE_WARNING_COOLDOWN_MS || 60_000);
 
+function maskId(value) {
+  if (!value) return null;
+  const raw = String(value);
+  if (raw.length <= 4) return '***';
+  return `***${raw.slice(-4)}`;
+}
+
+function safeError(error) {
+  return {
+    name: error?.name || 'Error',
+    status: error?.response?.status || null,
+    code: error?.code || null,
+  };
+}
+
+function summarizeMessagingEvent(event) {
+  const text = event?.message?.text;
+  const attachments = event?.message?.attachments;
+  const postbackPayload = event?.postback?.payload;
+  const quickReplyPayload = event?.message?.quick_reply?.payload;
+
+  return {
+    senderId: maskId(event?.sender?.id),
+    recipientId: maskId(event?.recipient?.id),
+    pageId: maskId(event?._pageContext?.pageId),
+    hasText: typeof text === 'string',
+    textLength: typeof text === 'string' ? text.length : 0,
+    hasAttachments: Array.isArray(attachments) && attachments.length > 0,
+    attachmentCount: Array.isArray(attachments) ? attachments.length : 0,
+    hasPostback: Boolean(postbackPayload),
+    hasQuickReply: Boolean(quickReplyPayload),
+    payloadLength: postbackPayload ? String(postbackPayload).length : quickReplyPayload ? String(quickReplyPayload).length : 0,
+    isEcho: Boolean(event?.message?.is_echo),
+  };
+}
+
+function logWebhookInfo(label, meta = {}) {
+  console.log(`[Webhook] ${label}`, meta);
+}
+
+function logWebhookWarn(label, meta = {}) {
+  console.warn(`[Webhook] ${label}`, meta);
+}
+
+function logWebhookError(label, error, meta = {}) {
+  console.error(`[Webhook] ${label}`, { ...meta, error: safeError(error) });
+}
+
 setInterval(() => {
   const now = Date.now();
   for (const [senderId, state] of rateLimitState.entries()) {
@@ -51,11 +99,11 @@ async function verifyWebhook(req, res) {
   const challenge = req.query['hub.challenge'];
 
   if (mode === 'subscribe' && token === process.env.FB_VERIFY_TOKEN) {
-    console.log('✅ Webhook verified successfully');
+    logWebhookInfo('verify_success');
     return res.status(200).send(challenge);
   }
 
-  console.warn('❌ Webhook verification failed');
+  logWebhookWarn('verify_failed', { hasMode: Boolean(mode), hasToken: Boolean(token), hasChallenge: Boolean(challenge) });
   return res.sendStatus(403);
 }
 
@@ -74,16 +122,19 @@ async function handleMessage(req, res) {
 
   // Process each entry asynchronously — multi-page aware
   const entries = body.entry || [];
+  logWebhookInfo('page_event_received', { entryCount: entries.length });
   for (const entry of entries) {
     const pageEntryId = entry.id; // Facebook Page ID
     const fbPage = await lookupPage(pageEntryId);
 
     const messaging = entry.messaging || [];
+    logWebhookInfo('entry_processing', { pageId: maskId(pageEntryId), messagingCount: messaging.length });
     for (const event of messaging) {
       // Gắn page context vào event để sendMessage dùng đúng token
       event._pageContext = fbPage
         ? { pageId: fbPage.pageId, accessToken: fbPage.accessToken, botPersona: fbPage.botPersona, knowledgeFilter: fbPage.knowledgeFilter }
         : { pageId: pageEntryId, accessToken: process.env.FB_PAGE_ACCESS_TOKEN };
+      logWebhookInfo('messaging_event_received', summarizeMessagingEvent(event));
       await processEvent(event);
     }
   }
@@ -115,7 +166,7 @@ async function processEvent(event) {
       await handleAttachment(event);
     }
   } catch (error) {
-    console.error('Error processing event:', error.message);
+    logWebhookError('event_processing_failed', error, summarizeMessagingEvent(event));
   }
 }
 
@@ -126,11 +177,11 @@ async function handleTextMessage(event) {
   const senderId = event.sender.id;
   const messageText = event.message.text;
 
-  console.log(`📩 Message from ${senderId}: "${messageText}"`);
+  logWebhookInfo('text_event_processing', summarizeMessagingEvent(event));
 
   const rateLimit = checkSenderRateLimit(senderId);
   if (!rateLimit.allowed) {
-    console.warn(`[RateLimit] Blocked sender ${senderId}: ${rateLimit.reason}`);
+    logWebhookWarn('rate_limited', { senderId: maskId(senderId), reason: rateLimit.reason });
     if (rateLimit.shouldWarn) {
       await sendMessage(
         senderId,
@@ -150,14 +201,14 @@ async function handleTextMessage(event) {
 
   // --- HUMAN_ACTIVE: relay sang staff Telegram, không gọi bot ---
   if (conversation.handoffStatus === 'human_active') {
-    console.log(`🔀 [Handoff] Relay FB→Telegram for ${senderId}`);
+    logWebhookInfo('handoff_relay_to_staff', { senderId: maskId(senderId), conversationId: maskId(conversation.id) });
     await handoff.relayFBMessageToStaff(conversation, messageText);
     return;
   }
 
   // --- PENDING_HUMAN: đang chờ staff nhận, thêm context, không gọi bot ---
   if (conversation.handoffStatus === 'pending_human') {
-    console.log(`⏳ [Handoff] Pending for ${senderId}, appending message`);
+    logWebhookInfo('handoff_pending_append', { senderId: maskId(senderId), conversationId: maskId(conversation.id) });
     await handoff.appendPendingMessage(conversation, messageText);
     return;
   }
@@ -166,13 +217,17 @@ async function handleTextMessage(event) {
   // Bỏ qua handoff khi đang trong dialog flow (đặt lịch, ...) để không làm gián đoạn
   const hasActiveDialog = !!(conversation.context?.dialogState);
   if (hasActiveDialog) {
-    console.log(`🤖 [Handoff] Skipped — active dialog flow (${conversation.context.dialogState}) for ${senderId}`);
+    logWebhookInfo('handoff_skipped_active_dialog', {
+      senderId: maskId(senderId),
+      conversationId: maskId(conversation.id),
+      dialogState: conversation.context.dialogState,
+    });
   }
   if (!hasActiveDialog) {
     const handoffInitiated = await handoff.initiateHandoff(conversation, messageText);
 
     if (handoffInitiated) {
-      console.log(`🔔 [Handoff] Initiated for ${senderId} — waiting for staff`);
+      logWebhookInfo('handoff_initiated', { senderId: maskId(senderId), conversationId: maskId(conversation.id) });
       return;
     }
   }
@@ -257,19 +312,19 @@ async function handlePostback(event) {
   const senderId = event.sender.id;
   const payload = event.postback.payload;
 
-  console.log(`🔘 Postback from ${senderId}: ${payload}`);
+  logWebhookInfo('postback_event_processing', summarizeMessagingEvent(event));
 
   const conversation = await botEngine.getOrCreateConversation(senderId);
   await botEngine.saveMessage(conversation.id, 'inbound', `[postback:${payload}]`);
 
   if (conversation.handoffStatus === 'human_active') {
-    console.log(`🔀 [Handoff] Relay postback FB→Telegram for ${senderId}`);
+    logWebhookInfo('handoff_relay_postback_to_staff', { senderId: maskId(senderId), conversationId: maskId(conversation.id) });
     await handoff.relayFBMessageToStaff(conversation, `[Button: ${payload}]`);
     return;
   }
 
   if (conversation.handoffStatus === 'pending_human') {
-    console.log(`⏳ [Handoff] Pending — appending postback for ${senderId}`);
+    logWebhookInfo('handoff_pending_append_postback', { senderId: maskId(senderId), conversationId: maskId(conversation.id) });
     await handoff.appendPendingMessage(conversation, `[Button: ${payload}]`);
     return;
   }
@@ -286,6 +341,8 @@ async function handlePostback(event) {
 async function handleAttachment(event) {
   const senderId = event.sender.id;
   const attachments = event.message.attachments;
+
+  logWebhookInfo('attachment_event_processing', summarizeMessagingEvent(event));
 
     for (const attachment of attachments) {
     if (attachment.type === 'image') {
@@ -332,10 +389,19 @@ async function sendMessage(recipientId, message, pageContext) {
       { params: { access_token: accessToken } }
     );
 
-    console.log(`📤 Message sent to ${recipientId}:`, messageData.text?.substring(0, 50) || '[rich message]');
+    logWebhookInfo('outbound_send_success', {
+      recipientId: maskId(recipientId),
+      pageId: maskId(pageContext?.pageId),
+      hasText: typeof messageData.text === 'string',
+      textLength: typeof messageData.text === 'string' ? messageData.text.length : 0,
+      hasQuickReplies: Array.isArray(messageData.quick_replies) && messageData.quick_replies.length > 0,
+    });
     return response.data;
   } catch (error) {
-    console.error('Error sending message:', error.response?.data || error.message);
+    logWebhookError('outbound_send_failed', error, {
+      recipientId: maskId(recipientId),
+      pageId: maskId(pageContext?.pageId),
+    });
     return null;
   }
 }
@@ -369,7 +435,7 @@ async function getUserProfile(psid) {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching user profile:', error.message);
+    logWebhookError('user_profile_fetch_failed', error, { psid: maskId(psid) });
     return null;
   }
 }

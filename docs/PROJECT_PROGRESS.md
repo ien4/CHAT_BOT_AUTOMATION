@@ -1,5 +1,30 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 22A-1 Webhook log redaction + staging runbook hardening
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Prompt 22A-1 đã harden log trong direct Facebook/Meta webhook path và tạo staging runbook. Đây là security/log hardening nhỏ, không phải route refactor.
+
+Đã làm:
+
+- Patch nhỏ `backend/src/webhook/handler.js`: thay log message text, full sender id, full recipient id, postback payload, outbound text preview và raw Graph error detail bằng metadata đã redact.
+- Thêm helper trong cùng file: mask id, summarize event metadata, log info/warn/error an toàn.
+- Giữ nguyên behavior: `GET /webhook` verify status/flow không đổi, `POST /webhook` status/flow không đổi, call bot/RAG/handoff/sendMessage không đổi.
+- Tạo `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
+- Cập nhật readiness/status docs và tạo report Prompt 22A-1.
+
+Validation:
+
+- Baseline trước patch PASS: backend `npm run quality`, `npx prisma validate`, dashboard `npm run typecheck`, root diff sạch.
+- Sau patch PASS: `node --check src/webhook/handler.js`, `node --check src/index.js`, backend `npm run quality`, `npx prisma validate`, dashboard `npm run typecheck`.
+- Log safety scan sau patch: các match `message.text`, `sender.id`, token env còn lại là đọc field để xử lý/gửi API; không còn console log trực tiếp message text, full sender/recipient id hoặc raw body.
+- Runtime smoke an toàn **BLOCKED** vì port `3001` và DB `5433` không listen; không chạy Docker Compose/start-all, không start backend khi DB không sẵn.
+
+Không gọi Meta/Facebook API thật, không gửi POST event thật, không sửa schema/package/dashboard/Docker/start scripts/env thật, không claim Meta verified hoặc production ready.
+
+Chi tiết: `report/PROMPT_22A_1_WEBHOOK_LOG_REDACTION_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 22A Public HTTPS / Meta webhook staging readiness
 
 Ngày cập nhật: 2026-07-12

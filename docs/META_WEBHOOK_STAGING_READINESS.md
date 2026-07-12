@@ -5,6 +5,8 @@ Trạng thái: **PASS WITH WARNINGS - STAGING_URL_MISSING**
 
 Tài liệu này chuẩn bị checklist public HTTPS staging cho Meta Developer Webhook direct vào backend Express. Đây không phải bằng chứng Meta đã verified, không phải bằng chứng đã nhận POST event thật và không phải production rollout.
 
+Runbook vận hành staging: `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
+
 ## 1. Mục tiêu
 
 Chuẩn bị public HTTPS staging cho Meta Developer Webhook direct vào backend Express, giữ đúng kiến trúc No-Chatwoot và không gọi Meta/Facebook API thật trong bước audit này.
@@ -55,7 +57,7 @@ Không dùng các endpoint sau làm callback Meta:
 | Public wrong-token/missing-token `/webhook` trả 403 | NOT_RUN | Không có `STAGING_BASE_URL` | Chạy smoke public không dùng token thật. |
 | Correct-token challenge trả đúng challenge | MANUAL_ONLY | Cần secret thật nên không tự chạy trong Codex | Verify qua Meta Developer hoặc người vận hành có secret. |
 | Meta POST test event thật | PENDING | Prompt này không gửi event thật | Chạy sau khi verify challenge PASS. |
-| Log không in secret/token/PII quá mức | NEEDS_REVIEW | Source không log token/secret trong verify; POST handler đang log sender/message text | Trước POST event thật, cần policy/redaction log hoặc cấu hình log staging phù hợp. |
+| Log không in secret/token/PII quá mức | SOURCE_HARDENED_PENDING_REAL_EVENT | Prompt 22A-1 đã redact log trong `backend/src/webhook/handler.js`; scan chỉ còn read fields để xử lý | Cần quan sát log khi test event thật sau Meta verify. |
 | Rollback/staging recovery plan | PARTIAL | Có production rollback docs; chưa có staging-specific runbook | Ghi rõ cách rollback proxy/env/app cho staging. |
 
 ## 5. Smoke local đã chạy trong Prompt 22A
@@ -107,12 +109,12 @@ Chỉ người vận hành có secret thật mới thực hiện:
 
 - Cần cung cấp public HTTPS URL thật và chạy public smoke an toàn.
 - Cần xác nhận reverse proxy chuyển nguyên query string `hub.*` tới backend.
-- Cần kiểm soát log POST event: hiện handler có log sender id và message text, phù hợp để debug local nhưng cần redaction/policy trước event thật nếu log staging có người xem rộng.
-- Cần staging runbook riêng cho rollback proxy/env/app.
+- Log POST event trong `handler.js` đã được harden ở Prompt 22A-1: không log message text, full sender id, full recipient id, postback payload hoặc raw body. Cần quan sát lại trên staging khi chạy event thật.
+- Staging runbook đã được tạo tại `docs/META_WEBHOOK_STAGING_RUNBOOK.md`; cần dùng runbook này khi rollback proxy/env/app.
 
 ## 9. Gợi ý tiếp theo
 
 1. Chuẩn bị domain/tunnel HTTPS ổn định và cung cấp `STAGING_BASE_URL` cho prompt public smoke tiếp theo.
-2. Chạy public smoke không dùng secret: `/health`, `/webhook` thiếu params 403, `/chatwoot-webhook` 404.
+2. Làm theo `docs/META_WEBHOOK_STAGING_RUNBOOK.md` để chạy public smoke không dùng secret: `/health`, `/webhook` thiếu params 403, `/chatwoot-webhook` 404.
 3. Sau đó mới vào Meta Developer để verify challenge thủ công bằng secret thật.
 4. Chỉ sau Meta verify + POST event thật mới xem xét prompt production rollout.
