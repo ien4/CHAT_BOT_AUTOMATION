@@ -1,5 +1,22 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21R Restore local runtime readiness + webhook smoke
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS**. Prompt 21R đã khôi phục và xác nhận local runtime readiness sau warning của 21S, chỉ bằng kiểm tra Docker/DB/backend và smoke endpoint an toàn. Không sửa source runtime, không sửa schema/migration/package, không gọi Facebook/Telegram/Gemini/Jina/LLM thật, không seed thật, không push remote.
+
+Kết quả runtime:
+
+- Docker daemon: **PASS** (`docker version` trả client/server).
+- DB local: **PASS**. Container `bbotech-pgvector-local` tồn tại, đang Up, map `5433 -> 5432`; `Test-NetConnection localhost:5433` PASS.
+- Prisma migration readiness: **PASS**. `npx prisma migrate status` báo schema up to date; `npx prisma migrate deploy` không có pending migration.
+- Backend local: **PASS**. Port `3001` đã có process chạy sẵn, `GET /health` trả 200; prompt không start/kill backend.
+- Runtime smoke: **PASS 9/9** gồm `/health` 200, `/webhook` thiếu verify params 403, `POST /chatwoot-webhook` 404, login admin tạm 200 + token exists, `/api/settings/webhook` 200 với secret mask/null, `/api/prompts` 200, `/api/channel-configs` 200, `/api/quick-reply-menus` 200, optional `/api/analytics?days=7` 200.
+- Auth smoke dùng admin tạm trong DB local và cleanup xong, leftover = 0; không in username/password/token/secret.
+
+Vẫn **không claim Meta Developer connected/verified** và **không claim production ready**. Phase 21 vẫn **Started**, chưa Done. Runtime local đã đủ điều kiện để chạy Prompt 21B-3 theo phạm vi read-only/low-risk (`campaigns` hoặc `stats`) nếu không đụng webhook/RAG/handoff/tenants/settings-external.
+
 ## Cập nhật mới nhất - Prompt 21S Project goals + Facebook webhook readiness status sync
 
 Ngày cập nhật: 2026-07-12

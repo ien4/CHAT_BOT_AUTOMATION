@@ -1,5 +1,29 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21R Update - Local Runtime Readiness + Webhook Smoke (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Docker readiness | PASS | `docker version` client/server OK | Không chạy `docker compose up`. |
+| DB container | PASS | `bbotech-pgvector-local` Up, `5433->5432` | Không tạo container mới. |
+| DB port 5433 | PASS | `Test-NetConnection localhost:5433` true | Local DB ready. |
+| Prisma migrate status/deploy | PASS | schema up to date, no pending migrations | Chỉ dùng `migrate status/deploy`, không `db push`. |
+| Backend health | PASS | existing process port `3001`, `/health` 200 | Prompt không start/kill backend. |
+| Webhook wrong-token/empty verify | PASS | `GET /webhook` -> 403 | Không thử token thật. |
+| Legacy Chatwoot webhook | PASS | `POST /chatwoot-webhook` -> 404 | No-Chatwoot target giữ đúng. |
+| Login local admin smoke | PASS | temp admin login 200, token exists | Không in credential/token, cleanup leftover 0. |
+| Settings webhook config | PASS | `GET /api/settings/webhook` -> 200 | Secret fields chỉ kiểm trạng thái mask/null, không in giá trị. |
+| Prompts regression | PASS | `GET /api/prompts` -> 200 array | Read-only smoke. |
+| Channel configs regression | PASS | `GET /api/channel-configs` -> 200 array | Route 21B-2 vẫn OK. |
+| Quick reply menus regression | PASS | `GET /api/quick-reply-menus` -> 200 array | Route 21B vẫn OK. |
+| Analytics optional | PASS | `GET /api/analytics?days=7` -> 200 shape OK | Read-only. |
+| No source changed | Confirmed | final source diff guard | Chỉ docs/report. |
+| No external call | Confirmed | không POST `/webhook`, không provider/menu/Telegram test | Không claim Meta connected. |
+
+Kết luận: local runtime/webhook smoke đã PASS, đủ an toàn để tiếp tục Prompt 21B-3 nếu chỉ chọn route read-only/low-risk.
+
 ## Prompt 21S Update - Project goals + Facebook webhook readiness status sync (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12

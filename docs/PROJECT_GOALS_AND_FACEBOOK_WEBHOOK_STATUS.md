@@ -3,6 +3,20 @@
 Ngày cập nhật: 2026-07-12
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 21R - Local runtime readiness restored
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 21R đã chạy lại kiểm tra local runtime và smoke webhook an toàn:
+
+- Docker daemon hoạt động, container `bbotech-pgvector-local` đang Up, port `5433` listen.
+- Prisma migration status/deploy PASS, không có pending migration.
+- Backend port `3001` có process sẵn và `/health` trả 200; prompt không start/kill backend.
+- Smoke local PASS 9/9: `/health`, `/webhook` 403 khi thiếu verify params, `/chatwoot-webhook` 404, login admin tạm, `/api/settings/webhook`, `/api/prompts`, `/api/channel-configs`, `/api/quick-reply-menus`, optional analytics.
+- Không gọi Facebook/Meta/Telegram/Gemini/Jina/LLM thật; không claim Meta connected/verified; không claim production ready.
+
+Trạng thái cập nhật: **Local runtime readiness = PASS cho phạm vi local smoke an toàn**. Public HTTPS/staging, Meta Developer verification, Meta POST event thật và production rollout vẫn pending.
+
 ## 1. Mục tiêu sản phẩm
 
 Hệ thống cần phục vụ mục tiêu chính: xây chatbot/automation để tiếp nhận tin nhắn Facebook Messenger qua Meta Developer Webhook, xử lý trong backend Express custom, và cho đội vận hành quản trị qua dashboard nội bộ.
@@ -48,8 +62,8 @@ Các điểm bắt buộc:
 | Tầng readiness | Trạng thái | Bằng chứng | Được phép ghi gì | Không được ghi gì | Next action |
 |---|---|---|---|---|---|
 | Source route readiness | DONE | `backend/src/index.js` mount `GET /webhook`, `POST /webhook`; `backend/src/webhook/handler.js` có `verifyWebhook`, `handleMessage` | Source endpoint đúng là `/webhook`; source route sẵn sàng để local/staging verify | Không ghi đã Meta connected | Giữ endpoint này khi refactor. |
-| Local runtime readiness | LOCAL_READY with warning | Reports trước: `/webhook` sai/thiếu token -> 403, `/chatwoot-webhook` -> 404; Prompt 21S hiện tại không smoke được do Docker/DB/backend local không chạy | Có prior local proof; current smoke cần chạy lại khi Docker/DB sẵn sàng | Không ghi runtime mới PASS trong 21S | Bật Docker/local DB rồi smoke lại nếu cần proof mới. |
-| Local DB/env readiness | LOCAL_READY historically, current blocked | `backend npm run quality` và `npx prisma validate` PASS; Docker daemon/port 5433 không sẵn trong 21S | Static/prisma validation PASS | Không claim DB runtime đang chạy hôm nay | Start Docker Desktop/local DB ngoài prompt hoặc prompt riêng. |
+| Local runtime readiness | LOCAL_READY | Prompt 21R smoke PASS 9/9: health, webhook 403, Chatwoot 404, auth/config/read routes | Có thể ghi local runtime smoke an toàn PASS | Không ghi Meta connected/production ready | Dùng làm baseline trước 21B-3. |
+| Local DB/env readiness | LOCAL_READY | Prompt 21R: Docker daemon OK, `bbotech-pgvector-local` Up, port 5433 listen, migrate deploy no pending | Có thể ghi DB local ready | Không suy ra production DB ready | Giữ Docker/local DB sẵn trước refactor. |
 | Public HTTPS URL readiness | STAGING_PENDING | Deploy docs yêu cầu `https://<domain>/webhook`; chưa có URL thật trong 21S | Cần public HTTPS staging URL trỏ `/webhook` | Không ghi staging connected | Cấu hình domain/reverse proxy/tunnel được kiểm soát. |
 | Meta Developer verify challenge readiness | META_PENDING | Chưa có bằng chứng Meta callback/challenge thật | Source có handler verify challenge | Không ghi Meta verified | Verify trong Meta Developer bằng token thật. |
 | Meta POST event readiness | META_PENDING | Chưa có test event thật từ Meta | Source có `handleMessage` cho `object === 'page'` | Không ghi đã nhận event production | Gửi event test thật sau staging HTTPS. |
@@ -61,7 +75,7 @@ Các điểm bắt buộc:
 | Môi trường | Trạng thái | Bằng chứng | Ghi chú |
 |---|---|---|---|
 | Source/local static | PASS | `backend npm run quality`, `npx prisma validate`, `dashboard npm run typecheck` trong Prompt 21S | Không sửa source. |
-| Local runtime 21S | PASS WITH WARNINGS | Docker daemon không phản hồi, DB 5433 không listen, backend 3001 không listen | Không start `docker compose`, không start `start-all`. |
+| Local runtime 21R | PASS | Docker daemon OK, DB 5433 listen, backend 3001 health 200, smoke 9/9 PASS | Không start `docker compose`, không start `start-all`, không gọi external. |
 | Staging/public HTTPS | STAGING_PENDING | Chưa có public URL smoke trong Prompt 21S | Cần trỏ `https://<domain>/webhook`. |
 | Meta Developer | META_PENDING | Chưa có challenge/event thật | Không claim connected. |
 | Production | PRODUCTION_PENDING | Chưa backup + migrate deploy + smoke prod thật | Không claim production ready. |

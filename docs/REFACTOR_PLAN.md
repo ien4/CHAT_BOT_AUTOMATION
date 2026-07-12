@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21R - Restore local runtime readiness + webhook smoke (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+Đã làm:
+
+- Khôi phục trạng thái runtime local sau warning của Prompt 21S bằng kiểm tra Docker daemon, container DB local, Prisma migration status/deploy và backend health.
+- Xác nhận `bbotech-pgvector-local` đang Up, port `5433` listen, DB schema up to date và không có pending migration.
+- Dùng backend process sẵn ở port `3001`; không start thêm và không kill process không do prompt tạo.
+- Smoke an toàn 9/9 PASS: health, webhook 403 khi thiếu verify params, Chatwoot legacy 404, login admin tạm, settings webhook config, prompts, channel-configs, quick-reply-menus, analytics optional.
+- Không sửa source runtime, không sửa schema/migration/package/Docker/script, không gọi external provider, không seed thật.
+
+Readiness sau 21R:
+
+- Local runtime readiness chuyển từ "current smoke blocked" sang **PASS** cho phạm vi smoke local an toàn.
+- Source route readiness của `GET/POST /webhook` vẫn DONE.
+- Meta Developer verification vẫn **META_PENDING**; production rollout vẫn **PRODUCTION_PENDING**.
+
+Next recommended prompt:
+
+1. **Prompt 21B-3**: tiếp tục route read-only backend (`campaigns` list/detail platformAdminOnly hoặc `stats`) để giảm nợ `dashboard.js`.
+2. Nếu Docker/DB/backend lại mất readiness, chạy lại prompt local-runtime trước khi refactor.
+3. Vẫn không chọn webhook/RAG/handoff/tenants/settings-external trong 21B-3.
+
 ## Prompt 21S - Project goals + Facebook webhook readiness status sync (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12
