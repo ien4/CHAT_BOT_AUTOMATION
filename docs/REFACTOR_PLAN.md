@@ -1,5 +1,25 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-3 - Backend route consolidation campaigns read (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+Đã làm:
+
+- Audit 2 candidate `campaigns` và `stats` theo Small Safe Refactor Mode.
+- Chọn `campaigns` vì `GET /campaigns` và `GET /campaigns/:id` là read-only Prisma, `platformAdminOnly`, không external/upload/migrate/mutation/raw SQL/secret. `stats` không chọn vì ưu tiên thấp hơn khi `campaigns` đủ an toàn.
+- Tách read logic sang `campaigns.repository.js`, `campaigns.controller.js`, `campaigns.routes.js`.
+- `dashboard.js` chỉ mount `router.use('/campaigns', ...)` sau `POST /campaigns/upload`; các write route cùng domain giữ nguyên và fall-through vẫn được smoke bằng no-token guard.
+- Giữ nguyên public path/method/auth/status/response shape; không sửa dashboard source, schema/migrations/package/Docker/script/env.
+
+Validation: backend `npm run quality` PASS, `npx prisma validate` PASS, `node --check` PASS cho các file liên quan. Runtime smoke PASS trên source mới bằng app tạm mount `dashboardApi`; process 3001 hiện có PASS `/health`, `/webhook` 403 và `/chatwoot-webhook` 404. Không gọi external provider thật, không claim Meta connected/production ready.
+
+Next recommended prompt:
+
+1. **Prompt 21B-4**: chỉ tiếp tục backend read-only route nếu audit tìm được candidate nhỏ, không external/mutation/raw SQL/secret.
+2. **Prompt 21D**: docs index + stale docs/legacy cleanup plan.
+3. **Prompt 21C**: dashboard `content-packages/page.tsx` chỉ khi khóa rõ action migrate/external.
+
 ## Prompt 21R - Restore local runtime readiness + webhook smoke (PASS)
 
 Ngày cập nhật: 2026-07-12

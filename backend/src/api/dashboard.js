@@ -14,6 +14,7 @@ const createPromptRoutes = require('../presentation/http/routes/dashboard/prompt
 const createSettingsRoutes = require('../presentation/http/routes/dashboard/settings.routes');
 const createQuickReplyMenuRoutes = require('../presentation/http/routes/dashboard/quickReplyMenus.routes');
 const createChannelConfigRoutes = require('../presentation/http/routes/dashboard/channelConfigs.routes');
+const createCampaignRoutes = require('../presentation/http/routes/dashboard/campaigns.routes');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -931,26 +932,7 @@ router.post('/campaigns/upload', authMiddleware, platformAdminOnly, upload.singl
   }
 });
 
-router.get('/campaigns', authMiddleware, platformAdminOnly, async (req, res) => {
-  try {
-    const campaigns = await prisma.campaign.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(campaigns);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.get('/campaigns/:id', authMiddleware, platformAdminOnly, async (req, res) => {
-  try {
-    const campaign = await prisma.campaign.findUnique({ where: { id: req.params.id } });
-    if (!campaign) return res.status(404).json({ error: 'Not found' });
-    res.json(campaign);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.use('/campaigns', createCampaignRoutes({ authMiddleware, platformAdminOnly, prisma }));
 
 router.post('/campaigns', authMiddleware, platformAdminOnly, async (req, res) => {
   try {

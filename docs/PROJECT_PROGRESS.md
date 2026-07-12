@@ -1,5 +1,27 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21B-3 Backend route consolidation campaigns read
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS**. Prompt 21B-3 đã tách `GET /api/campaigns` và `GET /api/campaigns/:id` khỏi `backend/src/api/dashboard.js` sang `presentation/http/**` + repository theo pattern 21B/21B-2. Chỉ chọn sau audit thật: `campaigns` GET là read-only Prisma, `platformAdminOnly`, không external, không upload/migrate, không mutation, không raw SQL và không có field secret/token trong schema `Campaign`. `stats` cũng là candidate read-only nhưng không chọn vì prompt ưu tiên `campaigns` nếu đủ an toàn.
+
+Thay đổi source:
+
+- Tạo `backend/src/infrastructure/repositories/campaigns.repository.js`.
+- Tạo `backend/src/presentation/http/controllers/dashboard/campaigns.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/campaigns.routes.js`.
+- `dashboard.js` chỉ thêm require + `router.use('/campaigns', ...)`; `POST /campaigns/upload`, `POST /campaigns`, `PUT /campaigns/:id`, `DELETE /campaigns/:id` giữ nguyên trong monolith.
+
+Validation/smoke:
+
+- Backend `npm run quality` PASS; `npx prisma validate` PASS.
+- Static `node --check` PASS cho `dashboard.js`, `index.js`, `db.js`, toàn bộ dashboard controllers/routes/repositories.
+- Runtime smoke PASS bằng app tạm mount source mới cho API route: login admin tạm, `/api/prompts`, `/api/settings/handoff`, `/api/settings/webhook`, `/api/channel-configs`, `/api/quick-reply-menus`, `/api/analytics?days=7`, `GET /api/campaigns` no-token 401, tenant-token 403, platform token 200 array, fake detail 404, POST/upload no-token guarded 401; cleanup admin tạm leftover = 0.
+- Process backend 3001 hiện có vẫn PASS regression `/health` 200, `/webhook` thiếu verify 403, `POST /chatwoot-webhook` 404.
+
+Không sửa dashboard source, Prisma schema/migrations, package/lock, Docker/script, env thật hoặc `.next`. Không gọi Facebook/Meta/Telegram/Gemini/Jina/LLM thật. Không claim Meta connected/verified hoặc production ready. Phase 21 vẫn **Started**, chưa Done. Chi tiết: `report/PROMPT_21B_3_BACKEND_ROUTE_CONSOLIDATION_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21R Restore local runtime readiness + webhook smoke
 
 Ngày cập nhật: 2026-07-12

@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-3 Update - Backend Route Consolidation campaigns read (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Candidate selection | Done | Audit `campaigns` và `stats` | Chọn `campaigns` vì prompt ưu tiên nếu GET list/detail đủ an toàn; `stats` để lại. |
+| Route đã tách | Done | `GET /api/campaigns`, `GET /api/campaigns/:id` | Platform-only, read-only. |
+| Repository | Created | `backend/src/infrastructure/repositories/campaigns.repository.js` | `findMany` order `createdAt desc`, `findById`; không Express/env. |
+| Controller | Created | `backend/src/presentation/http/controllers/dashboard/campaigns.controller.js` | Giữ 200/404/500 và JSON shape cũ. |
+| Routes factory | Created | `backend/src/presentation/http/routes/dashboard/campaigns.routes.js` | Inject `authMiddleware`, `platformAdminOnly`, `prisma`. |
+| `dashboard.js` | Modified | require + `router.use('/campaigns', ...)` | POST/upload/PUT/DELETE giữ nguyên; không duplicate GET. |
+| API contract | Preserved | path/method/auth/status/response | `platformAdminOnly` giữ nguyên; list trả array; detail trả object hoặc 404 `Not found`. |
+| Secret/external/mutation/raw SQL | None for selected GET | Schema `Campaign` + source audit + smoke | `assets` là JSON domain data, không token/credential field theo schema; không external. |
+| Runtime smoke | PASS | app tạm mount source mới + process 3001 regression | 401/403/200/404 campaigns; regression prompts/settings/channel/quick-reply/analytics/webhook/chatwoot. |
+| Cleanup | PASS | admin tạm leftover = 0 | Không in token/credential/secret. |
+| Dashboard/schema/package | Unchanged | diff guard | Không sửa `dashboard/src`, Prisma schema/migrations hoặc package. |
+
+Kết luận: consolidation route read-only thứ 3 hoàn tất, behavior giữ nguyên. Bước tiếp theo: 21B-4 cho route backend read-only nhỏ khác nếu còn candidate an toàn, hoặc 21D docs/legacy, hoặc 21C dashboard content-packages với action migrate bị khóa.
+
 ## Prompt 21R Update - Local Runtime Readiness + Webhook Smoke (PASS)
 
 Ngày cập nhật: 2026-07-12

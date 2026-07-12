@@ -6,6 +6,18 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21B-3 - Backend campaigns read consolidation
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 21B-3 đã chạy và PASS: tách `GET /api/campaigns` list/detail sang `backend/src/presentation/http/**` + `backend/src/infrastructure/repositories/campaigns.repository.js`. Chỉ route GET read-only được tách; `POST /campaigns/upload`, `POST /campaigns`, `PUT /campaigns/:id`, `DELETE /campaigns/:id` vẫn ở `dashboard.js`. Public API contract giữ nguyên, `platformAdminOnly` giữ nguyên, không external/mutation/raw SQL/secret cho candidate đã chọn.
+
+Validation/smoke PASS: backend quality, Prisma validate, node syntax checks, runtime smoke source mới cho campaigns 401/403/200/404 và regression route trọng yếu. Không sửa dashboard source, Prisma schema/migrations, package, Docker/script hoặc env thật. Phase 21 vẫn **Started**, chưa Done; monolith `dashboard.js` còn route debt nhưng đã giảm thêm 2 GET handler.
+
+Next: 21B-4 nếu còn route read-only thật sự an toàn, hoặc 21D docs/legacy cleanup, hoặc 21C dashboard content-packages với guard migrate/external.
+
+---
+
 ## Cập nhật 21S - Product goal và Facebook webhook readiness
 
 Ngày cập nhật: 2026-07-12
