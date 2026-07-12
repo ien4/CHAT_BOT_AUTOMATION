@@ -1,5 +1,23 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21D Docs index + stale docs / legacy cleanup plan
+
+Ngày cập nhật: 2026-07-12
+
+Trạng thái mới nhất: **PASS**. Prompt 21D đã tạo docs index hiện tại và historical docs index để người đọc mới phân biệt source of truth hiện tại với tài liệu lịch sử/stale.
+
+Đã làm:
+
+- Tạo `docs/CURRENT_STATUS_INDEX.md` làm điểm vào hiện tại cho trạng thái dự án, No-Chatwoot target, webhook, deployment, quality và next prompt.
+- Tạo `docs/HISTORICAL_DOCS_INDEX.md` để phân loại report lịch sử, root docs stale và cách đọc tài liệu cũ.
+- Gắn header stale cho `MULTITENANT_PROGRESS.md` và `ROADMAP.md`; không rewrite toàn file và không xóa lịch sử.
+- Audit `start-all.bat`, `start_all.bat`, `stop-all.bat`, `webhook-urls-current.txt` và các docs có Chatwoot cũ; các script legacy vẫn là backlog, không sửa trong 21D.
+- Xóa 3 thư mục legacy rỗng được phép: `backend/src/chatwoot`, `backend/src/adapters`, `backend/src/infrastructure/integrations/chatwoot`.
+
+Validation: backend `npm run quality` PASS, `npx prisma validate` PASS, dashboard `npm run typecheck` PASS. Không sửa runtime source, dashboard source, schema/migration/package, Docker/start scripts hoặc env thật. Không gọi external service thật. Không claim Meta connected/verified hoặc production ready. Phase 21 vẫn **Started**, chưa Done.
+
+Chi tiết: `report/PROMPT_21D_DOCS_LEGACY_CLEANUP_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21B-3 Backend route consolidation campaigns read
 
 Ngày cập nhật: 2026-07-12

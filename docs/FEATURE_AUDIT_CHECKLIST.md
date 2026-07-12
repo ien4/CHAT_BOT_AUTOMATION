@@ -1,5 +1,23 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21D Update - Docs Index + Stale Docs / Legacy Cleanup Plan (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Current docs index | Created | `docs/CURRENT_STATUS_INDEX.md` | Nguồn vào hiện tại cho status/architecture/webhook/deploy/quality. |
+| Historical docs index | Created | `docs/HISTORICAL_DOCS_INDEX.md` | Phân loại reports/root stale docs và cách đọc tài liệu cũ. |
+| Stale root docs header | Done | `MULTITENANT_PROGRESS.md`, `ROADMAP.md` | Chỉ thêm header, không rewrite nội dung lịch sử. |
+| Legacy empty dirs audit | Done | `backend/src/chatwoot`, `backend/src/adapters`, `backend/src/infrastructure/integrations/chatwoot` | Cả 3 rỗng và đã xóa; không có Git diff vì thư mục rỗng không tracked. |
+| Script legacy audit | Done | `start-all.bat`, `start_all.bat`, `stop-all.bat` | Còn Chatwoot local legacy; không sửa vì ngoài scope 21D. |
+| False Meta/production claims | None in current docs | Safety scan | Current docs đều ghi pending/không claim; historical docs giữ nguyên. |
+| Runtime source changed | No | diff guard | Không sửa `backend/src/**/*.js` hoặc `dashboard/src/**`. |
+| Schema/package changed | No | diff guard | Không sửa Prisma schema/migrations/package. |
+| External call | No | command audit | Không gọi Meta/Facebook/Telegram/Gemini/Jina/LLM thật. |
+
+Kết luận: docs clarity được cải thiện, stale root docs đã gắn nhãn, legacy empty dirs đã cleanup an toàn. Phase 21 vẫn Started.
+
 ## Prompt 21B-3 Update - Backend Route Consolidation campaigns read (PASS)
 
 Ngày cập nhật: 2026-07-12

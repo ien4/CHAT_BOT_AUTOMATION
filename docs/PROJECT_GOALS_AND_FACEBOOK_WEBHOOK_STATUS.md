@@ -3,6 +3,20 @@
 Ngày cập nhật: 2026-07-12
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 21D - Docs index
+
+Ngày cập nhật: 2026-07-12
+
+Đọc thêm `docs/CURRENT_STATUS_INDEX.md` trước khi đọc tài liệu cũ. File index này phân biệt source of truth hiện tại với historical reports/root docs stale.
+
+Status vẫn giữ nguyên:
+
+- Source/local readiness: **PASS** theo Prompt 21R và các smoke local an toàn.
+- Public HTTPS/staging readiness: **PENDING**.
+- Meta Developer verification: **PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**, chưa backup + `prisma migrate deploy` + smoke production thật.
+
 ## Cập nhật 21R - Local runtime readiness restored
 
 Ngày cập nhật: 2026-07-12

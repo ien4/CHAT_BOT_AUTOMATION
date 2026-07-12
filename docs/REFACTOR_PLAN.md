@@ -1,5 +1,28 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21D - Docs index + stale docs / legacy cleanup plan (PASS)
+
+Ngày cập nhật: 2026-07-12
+
+Đây là docs/legacy cleanup, không phải code refactor runtime.
+
+Đã làm:
+
+- Tạo `docs/CURRENT_STATUS_INDEX.md` và `docs/HISTORICAL_DOCS_INDEX.md`.
+- Gắn stale notice cho `MULTITENANT_PROGRESS.md` và `ROADMAP.md`.
+- Audit Chatwoot/stale text trong docs/report/root scripts và phân loại: current source of truth, historical OK, stale header added, script backlog.
+- Xóa 3 thư mục legacy rỗng được phép: `backend/src/chatwoot`, `backend/src/adapters`, `backend/src/infrastructure/integrations/chatwoot`.
+- Không sửa runtime JS, dashboard source, schema/migrations, package, Docker/start scripts hoặc env.
+
+Validation: backend `npm run quality` PASS, `npx prisma validate` PASS, dashboard `npm run typecheck` PASS.
+
+Next:
+
+1. **21B-4** nếu tiếp tục backend route read-only consolidation.
+2. **21C** nếu dashboard `content-packages` split với action migrate/external bị khóa.
+3. **22A** nếu muốn chuẩn bị public HTTPS/Meta Developer verification.
+4. Production rollout prompt chỉ sau staging/Meta verification và có backup + `prisma migrate deploy` + smoke production thật.
+
 ## Prompt 21B-3 - Backend route consolidation campaigns read (PASS)
 
 Ngày cập nhật: 2026-07-12

@@ -6,6 +6,30 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21D - Docs/legacy cleanup completed
+
+Ngày cập nhật: 2026-07-12
+
+Prompt 21D đã PASS ở phạm vi docs/legacy:
+
+- Tạo `docs/CURRENT_STATUS_INDEX.md` và `docs/HISTORICAL_DOCS_INDEX.md`.
+- Gắn stale notice cho root docs `MULTITENANT_PROGRESS.md` và `ROADMAP.md`.
+- Xóa 3 thư mục legacy rỗng được phép: `backend/src/chatwoot`, `backend/src/adapters`, `backend/src/infrastructure/integrations/chatwoot`.
+- Giữ nguyên historical reports; không archive/move report trong prompt này.
+- Không sửa runtime source, dashboard source, schema/migrations/package hoặc start scripts.
+
+Remaining risks sau 21D:
+
+- `backend/src/api/dashboard.js` vẫn còn route debt, dù 21B/21B-2/21B-3 đã rút dần read routes.
+- `settings`, `knowledge`, `tenants`, `handoff` vẫn là khu vực rủi ro cao, không tách nếu chưa có prompt riêng.
+- `start-all.bat`, `start_all.bat`, `stop-all.bat` còn Chatwoot local legacy; đã phân loại backlog, chưa sửa.
+- `docs/ARCHITECTURE.md` và `docs/FEATURE_INVENTORY.md` còn đoạn lịch sử Chatwoot; đọc kèm `docs/CURRENT_STATUS_INDEX.md`.
+- Meta verification/public HTTPS/production rollout vẫn pending.
+
+Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21B-3 - Backend campaigns read consolidation
 
 Ngày cập nhật: 2026-07-12

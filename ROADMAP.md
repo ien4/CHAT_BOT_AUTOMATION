@@ -1,3 +1,7 @@
+> ⚠️ Historical / Stale Notice
+>
+> Tài liệu này được giữ làm lịch sử triển khai cũ. Kiến trúc đích hiện tại là No-Chatwoot: Facebook Messenger / Meta Developer Webhook -> Backend Express custom `GET/POST /webhook` -> Dashboard Next.js -> PostgreSQL/pgvector. Không dùng nội dung trong file này làm source of truth hiện tại. Xem `docs/CURRENT_STATUS_INDEX.md` và `docs/PROJECT_GOALS_AND_FACEBOOK_WEBHOOK_STATUS.md`.
+
 # Chat Automation — Roadmap & Tiến trình
 
 > Cập nhật lần cuối: 2026-06-12
