@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-4 Update - Backend Route Consolidation stats read (PASS)
+
+Ngày cập nhật: 2026-07-13
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Candidate selection | Done | Audit route map `dashboard.js` | Chọn `GET /api/stats`; các route conversations/knowledge/providers/handoff/facebook/tenants bị loại do scope risk/external/mutation/secret. |
+| Route đã tách | Done | `GET /api/stats` | Platform-only, read-only. |
+| Repository | Created | `backend/src/infrastructure/repositories/dashboardStats.repository.js` | Nhận `prisma` qua factory, không Express/env, không PrismaClient mới. |
+| Controller | Created | `backend/src/presentation/http/controllers/dashboard/stats.controller.js` | Giữ 200/500 và error shape cũ. |
+| Routes factory | Created | `backend/src/presentation/http/routes/dashboard/stats.routes.js` | Inject `authMiddleware`, `platformAdminOnly`, `prisma`. |
+| `dashboard.js` | Modified | require + `router.use('/stats', ...)` | Không còn duplicate `router.get('/stats')`. |
+| API contract | Preserved | path/method/auth/status/response smoke | Giữ totals, `messagesByDay`, `intentDistribution`; tenant token vẫn 403. |
+| Secret/external/mutation/raw SQL | None | source audit + smoke | Chỉ `count`, `findMany` selected `createdAt`, `groupBy`; không token/secret. |
+| Runtime smoke | PASS | app tạm mount source mới + process 3001 regression | stats 401/403/200; regression prompts/settings/channel/quick-reply/campaigns/analytics/webhook/chatwoot. |
+| Cleanup | PASS | admin tạm deleted 1 | Không in token/credential/secret. |
+| Forbidden areas | Unchanged | diff guard | Không sửa webhook/RAG/bot/tenants/telegram/facebook/notifications/dashboard/schema/package. |
+
+Kết luận: consolidation route read-only thứ 4 hoàn tất, behavior giữ nguyên. Phase 21 vẫn Started; prompt tiếp theo chỉ nên chọn route read-only nhỏ khác nếu audit chứng minh đủ an toàn.
+
 ## Prompt 22C-SAFE Update - Meta Real Event + Log Redaction Audit (BLOCKED)
 
 Ngày cập nhật: 2026-07-13

@@ -1,5 +1,32 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21B-4 Backend route consolidation stats read
+
+Ngày cập nhật: 2026-07-13
+
+Trạng thái mới nhất: **PASS**. Prompt 21B-4 đã tách `GET /api/stats` khỏi `backend/src/api/dashboard.js` sang repository/controller/routes theo pattern Phase 21B, giữ nguyên behavior và public API contract.
+
+Đã làm:
+
+- Audit route map `dashboard.js`; chọn `GET /api/stats` vì GET-only, `authMiddleware + platformAdminOnly`, chỉ đọc Prisma/count/groupBy và tính toán in-memory, không external, không mutation, không raw SQL, không secret/token field.
+- Tạo `backend/src/infrastructure/repositories/dashboardStats.repository.js`.
+- Tạo `backend/src/presentation/http/controllers/dashboard/stats.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/stats.routes.js`.
+- `backend/src/api/dashboard.js` chỉ thêm require + `router.use('/stats', ...)`; không duplicate handler cũ.
+- Giữ nguyên response shape: totals, `messagesByDay`, `intentDistribution`; giữ error `500 { error: 'Lỗi máy chủ nội bộ' }`.
+
+Validation/smoke:
+
+- Backend `npm run quality` PASS; `npx prisma validate` PASS.
+- Dashboard `npm run typecheck` PASS.
+- Runtime smoke PASS bằng app tạm mount source mới: `/api/stats` no-token 401, tenant token 403, platform token 200 đúng shape; regression `/api/prompts`, `/api/settings/webhook`, `/api/channel-configs`, `/api/quick-reply-menus`, `/api/campaigns`, `/api/analytics?days=7` đều 200.
+- Process backend 3001 hiện có vẫn PASS `/health` 200, `/webhook` thiếu params 403, `POST /chatwoot-webhook` 404.
+- Safety scans không thêm raw unsafe, không thêm Chatwoot runtime, không thêm destructive command, không tạo PrismaClient mới.
+
+Không sửa webhook/RAG/bot/tenants/telegram/facebook/notifications, dashboard source, schema/migrations/package/Docker/start scripts/env thật. Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified hoặc production ready. Phase 21 vẫn **Started**, chưa Done.
+
+Chi tiết: `report/PROMPT_21B_4_BACKEND_ROUTE_CONSOLIDATION_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 22C-SAFE Meta real event + log redaction audit
 
 Ngày cập nhật: 2026-07-13

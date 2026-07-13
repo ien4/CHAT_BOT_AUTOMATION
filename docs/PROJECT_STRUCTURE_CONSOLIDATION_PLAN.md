@@ -6,6 +6,22 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21B-4 - Backend stats read consolidation
+
+Ngày cập nhật: 2026-07-13
+
+Prompt 21B-4 đã PASS: tách `GET /api/stats` sang `backend/src/presentation/http/**` + `backend/src/infrastructure/repositories/dashboardStats.repository.js`.
+
+- Candidate được chọn vì GET-only, `platformAdminOnly`, chỉ đọc Prisma/count/groupBy và tính toán in-memory.
+- Không external provider, không mutation, không upload, không migrate/action, không raw SQL, không secret/token field.
+- `backend/src/api/dashboard.js` chỉ còn require + `router.use('/stats', ...)`; không duplicate handler cũ.
+- Public API contract giữ nguyên: path `/api/stats`, method GET, `authMiddleware`, `platformAdminOnly`, response totals + `messagesByDay` + `intentDistribution`, error 500 `Lỗi máy chủ nội bộ`.
+- Validation/smoke PASS: backend quality, Prisma validate, dashboard typecheck, stats 401/403/200, regression read routes và webhook/legacy 403/404.
+
+Không sửa webhook/RAG/bot/tenants/telegram/facebook/notifications/dashboard/schema/package. Phase 21 vẫn **Started**, chưa Done; monolith `dashboard.js` còn route debt nhưng đã giảm thêm 1 GET handler.
+
+---
+
 ## Cập nhật 22A - Meta webhook staging readiness
 
 Ngày cập nhật: 2026-07-12

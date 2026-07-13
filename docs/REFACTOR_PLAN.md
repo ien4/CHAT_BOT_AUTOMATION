@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-4 - Backend route consolidation stats read (PASS)
+
+Ngày cập nhật: 2026-07-13
+
+Đã làm:
+
+- Chọn `GET /api/stats` sau route-map audit vì đây là route GET-only, `authMiddleware + platformAdminOnly`, không external, không mutation, không raw SQL, không secret.
+- Tách logic stats sang `dashboardStats.repository.js`, `stats.controller.js`, `stats.routes.js`.
+- `dashboard.js` chỉ còn require + `router.use('/stats', ...)`.
+- Giữ nguyên public path/method/auth/status/response shape và error shape.
+- Runtime smoke PASS cho stats 401/403/200 và regression các route read-only trọng yếu.
+
+Không làm:
+
+- Không sửa webhook/RAG/bot/tenants/telegram/facebook/notifications.
+- Không sửa dashboard source, Prisma schema/migrations, package, Docker/start scripts hoặc env thật.
+- Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified/production ready.
+
+Next:
+
+1. Phase 21 vẫn **Started**, chưa Done.
+2. Nếu tiếp tục 21B-5, chỉ chọn route GET read-only nhỏ sau audit thật; không chọn conversations/knowledge/providers/handoff/facebook/tenants/settings external.
+3. Nếu không còn candidate đủ an toàn, dừng với `NO_SAFE_CANDIDATE`.
+
 ## Prompt 22C-SAFE - Meta real event + log redaction audit (BLOCKED)
 
 Ngày cập nhật: 2026-07-13
