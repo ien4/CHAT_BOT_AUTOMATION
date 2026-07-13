@@ -27,6 +27,16 @@ Public smoke không dùng secret đã PASS:
 
 Meta verify challenge vẫn là `META_VERIFY_OPERATOR_CONFIRMATION_PENDING` cho tới khi người vận hành bấm Verify and Save trong Meta Developer và xác nhận PASS. Không dùng `/api/settings/webhook` làm callback.
 
+## Cập nhật phiên 22C-SAFE
+
+Prompt 22C-SAFE bị dừng đúng quy trình với trạng thái **BLOCKED_META_VERIFY_CONFIRMATION_MISSING** vì chưa có xác nhận bắt buộc:
+
+```text
+META_VERIFY_OPERATOR_CONFIRMED=YES
+```
+
+Không gửi hoặc chờ POST event thật trong phiên này. Public smoke 22B vẫn là bằng chứng hiện tại cho HTTPS safe smoke; Meta verify và Meta POST event thật vẫn pending.
+
 ## 1. Mục tiêu
 
 Chạy staging/public HTTPS cho direct Meta webhook an toàn:
@@ -100,12 +110,19 @@ Không gửi verify token thật trong bước smoke này. Không gửi POST obj
 ## 5. Test POST event thật
 
 - Chỉ chạy sau verify PASS.
+- Trước khi test, người vận hành phải xác nhận rõ `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+- Gửi đúng 1 tin nhắn test từ Messenger/Page test sau khi Codex báo `READY_FOR_OPERATOR_TEST_MESSAGE`.
+- Tin nhắn test không chứa thông tin cá nhân, secret, token hoặc dữ liệu khách hàng thật.
 - Theo dõi log redacted:
   - không message text
   - không full sender id
   - không full recipient id
   - không token/secret
   - không raw body
+- Chỉ ghi nhận metadata an toàn: masked id, event/count, boolean, length, label, status/code generic.
+- Không paste raw message text, raw sender id, raw recipient id, token hoặc raw webhook payload vào report.
+- Không dùng Ngrok inspection payload nếu có nguy cơ chứa token hoặc raw webhook payload.
+- Nếu phát hiện leak log, dừng staging event và mở prompt fix; không claim PASS.
 - Nếu lỗi, rollback env/proxy/app theo mục rollback.
 - Không dùng kết quả staging để claim production ready.
 

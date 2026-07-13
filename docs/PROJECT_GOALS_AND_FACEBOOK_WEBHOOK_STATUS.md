@@ -3,6 +3,29 @@
 Ngày cập nhật: 2026-07-13
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 22C-SAFE - Real event audit blocked
+
+Ngày cập nhật: 2026-07-13
+
+Prompt 22C-SAFE đã dừng trước bước real POST event vì thiếu xác nhận bắt buộc từ người vận hành:
+
+- Trạng thái: **BLOCKED_META_VERIFY_CONFIRMATION_MISSING**.
+- Chưa có dòng xác nhận `META_VERIFY_OPERATOR_CONFIRMED=YES` trong phiên này.
+- Không gửi hoặc chờ POST event thật từ Messenger/Page test.
+- Không gọi Meta/Facebook Graph API bằng script.
+- Không dùng Ngrok inspection API.
+- Không gửi POST object `page` giả.
+- Không đọc/in token, secret, raw sender id, raw recipient id, raw message text hoặc raw webhook body.
+
+Trạng thái sau 22C-SAFE:
+
+- Public HTTPS readiness: **PUBLIC_SMOKE_PASS_NO_SECRET** theo Prompt 22B-SAFE.
+- Callback URL: **`https://backspace-scrambler-stuck.ngrok-free.dev/webhook`**.
+- Meta Developer verification: **META_VERIFY_OPERATOR_CONFIRMATION_PENDING**.
+- Meta POST event thật: **PENDING**.
+- Log redaction runtime audit: **SOURCE_HARDENED_PENDING_REAL_EVENT**.
+- Production rollout: **PENDING**.
+
 ## Cập nhật 22B-SAFE - Public Ngrok smoke + Meta verify checkpoint
 
 Ngày cập nhật: 2026-07-13

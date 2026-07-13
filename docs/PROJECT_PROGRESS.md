@@ -1,5 +1,30 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 22C-SAFE Meta real event + log redaction audit
+
+Ngày cập nhật: 2026-07-13
+
+Trạng thái mới nhất: **BLOCKED_META_VERIFY_CONFIRMATION_MISSING**. Prompt 22C-SAFE bị dừng đúng quy trình trước real POST event vì phiên này chưa có xác nhận bắt buộc `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+
+Đã làm:
+
+- Preflight git/secret safety PASS: branch làm việc riêng, commit `908fca9 Record Meta webhook public smoke and challenge status` tồn tại, working tree sạch trước patch, env thật không tracked/staged.
+- Đọc context 22B, staging readiness/runbook/status docs, quality gate, env example và `backend/src/webhook/handler.js`.
+- Baseline static validation PASS: backend `npm run quality`, backend `npx prisma validate`, dashboard `npm run typecheck`, root diff sạch.
+- Xác nhận không có operator confirmation trong phiên này, nên không test real event.
+
+Không làm:
+
+- Không gửi hoặc chờ POST event thật từ Messenger/Page test.
+- Không gọi Meta/Facebook API bằng script.
+- Không dùng Ngrok inspection API.
+- Không gửi POST object `page` giả.
+- Không đọc/in token, secret, raw sender id, raw recipient id, raw message text hoặc raw webhook body.
+
+Trạng thái giữ nguyên: public HTTPS smoke **PUBLIC_SMOKE_PASS_NO_SECRET** theo Prompt 22B-SAFE; Meta verify **META_VERIFY_OPERATOR_CONFIRMATION_PENDING**; Meta POST event thật **PENDING**; production rollout **PENDING**.
+
+Chi tiết: `report/PROMPT_22C_META_REAL_EVENT_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 22B-SAFE Public Ngrok smoke + Meta verify checkpoint
 
 Ngày cập nhật: 2026-07-13

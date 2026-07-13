@@ -1,5 +1,36 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 22C-SAFE - Meta real event + log redaction audit (BLOCKED)
+
+Ngày cập nhật: 2026-07-13
+
+Đây là runtime checkpoint/docs update, không phải refactor source.
+
+Kết quả:
+
+- Prompt 22C-SAFE bị dừng với **BLOCKED_META_VERIFY_CONFIRMATION_MISSING**.
+- Chưa có xác nhận bắt buộc `META_VERIFY_OPERATOR_CONFIRMED=YES` trong phiên.
+- Không gửi hoặc chờ POST event thật từ Messenger/Page test.
+- Không gọi Meta/Facebook API bằng script.
+- Không dùng Ngrok inspection API.
+- Không gửi POST object `page` giả.
+- Không sửa source/schema/package/dashboard/Docker/start scripts/env thật.
+
+Trạng thái giữ nguyên:
+
+- Public HTTPS readiness: `PUBLIC_SMOKE_PASS_NO_SECRET`.
+- Callback URL: `https://backspace-scrambler-stuck.ngrok-free.dev/webhook`.
+- Meta verify: `META_VERIFY_OPERATOR_CONFIRMATION_PENDING`.
+- Meta POST event thật: `PENDING`.
+- Production rollout: `PENDING`.
+
+Next:
+
+1. Người vận hành giữ Ngrok session đang chạy.
+2. Vào Meta Developer và verify callback bằng `FB_VERIFY_TOKEN` thật.
+3. Chỉ khi Meta UI Verify and Save PASS, gửi lại prompt kèm dòng `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+4. Sau đó mới chạy real POST event audit và log redaction observation.
+
 ## Prompt 22B-SAFE - Public Ngrok smoke + Meta verify checkpoint (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-13

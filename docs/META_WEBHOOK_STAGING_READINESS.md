@@ -7,6 +7,21 @@ Tài liệu này chuẩn bị checklist public HTTPS staging cho Meta Developer 
 
 Runbook vận hành staging: `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
 
+## Cập nhật 22C-SAFE - Real event audit blocked by missing operator confirmation
+
+Ngày cập nhật: 2026-07-13
+
+- Kết quả Prompt 22C-SAFE: **BLOCKED_META_VERIFY_CONFIRMATION_MISSING**.
+- Lý do: phiên này chưa có xác nhận bắt buộc `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+- Không test POST event thật từ Messenger/Page test.
+- Không chờ event thật, không gọi Meta/Facebook API bằng script, không dùng Ngrok inspection API, không gửi POST object `page` giả.
+- Public HTTPS readiness giữ nguyên: **PUBLIC_SMOKE_PASS_NO_SECRET** theo Prompt 22B-SAFE.
+- Callback URL hiện tại: **`https://backspace-scrambler-stuck.ngrok-free.dev/webhook`**.
+- Meta verify challenge giữ nguyên: **META_VERIFY_OPERATOR_CONFIRMATION_PENDING**.
+- Meta POST event thật giữ nguyên: **PENDING**.
+- Log redaction source giữ nguyên: **SOURCE_HARDENED_PENDING_REAL_EVENT** vì chưa có event thật để audit runtime log.
+- Production rollout: **PENDING**.
+
 ## Cập nhật 22B-SAFE - Public Ngrok smoke PASS, Meta verify pending
 
 Ngày cập nhật: 2026-07-13
