@@ -1,5 +1,31 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21C-SAFE Dashboard content-packages feature split
+
+Ngày cập nhật: 2026-07-13
+
+Trạng thái mới nhất: **PASS**. Prompt 21C-SAFE đã tách `dashboard/src/app/dashboard/content-packages/page.tsx` thành feature module `dashboard/src/features/content-packages/**`, giữ nguyên route `/dashboard/content-packages`, UI text/className/layout và API behavior hiện hữu.
+
+Đã làm:
+
+- Audit trang `content-packages/page.tsx`: data loading, package CRUD, item CRUD, modal/form state, list/detail render, formatter/type và handler `migrateFromCampaigns`.
+- Rút page từ **671 LOC** xuống **85 LOC**; page chỉ còn client orchestrator import hook/components và render layout cũ.
+- Tạo `useContentPackages` để giữ state/data loading/handlers cũ.
+- Tách components header/error/loading/list/detail/package form/item form; tạo `types.ts`, formatter label và barrel `index.ts`.
+- Giữ nguyên `contentPackagesApi` hiện hữu; không sửa `dashboard/src/lib/api.ts`.
+- Handler migrate từ campaign được preserve nguyên logic cũ nhưng đánh dấu **MIGRATE_ACTION_LOCKED_NOT_EXECUTED**; runtime smoke chỉ GET/list route, không click/gọi migrate/import/action.
+
+Validation/smoke:
+
+- Baseline trước patch PASS: backend `npm run quality`, backend `npx prisma validate`, dashboard `npm run typecheck`, dashboard `npm run build`, root diff sạch.
+- Sau patch PASS: dashboard `npx --no-install tsc --noEmit`, dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`.
+- Runtime route smoke dashboard PASS trên dev server tạm port `3019`: `/login` 200, `/dashboard` 200, `/dashboard/content-packages` 200, route giả 404; đã dừng process tạm sau smoke.
+- Safety scans: không có direct `fetch(` mới trong feature/page/lib API scan; không có `process.env`/`NEXT_PUBLIC`/secret token access trong feature; match migrate chỉ là handler/UI text được preserve; install/destructive command chỉ là docs/script lịch sử cũ, không phải thay đổi mới.
+
+Không sửa backend, schema/migration/package/lock, webhook/RAG/handoff/tenants/notifications, Docker/start scripts, env thật hoặc API client. Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified hoặc production ready. Phase 19 vẫn **Started**, Phase 21 vẫn **Started**. Meta status không đổi: public Ngrok smoke từ 22B PASS, Meta verify pending, Meta POST event pending, production pending.
+
+Chi tiết: `report/PROMPT_21C_DASHBOARD_CONTENT_PACKAGES_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21B-4 Backend route consolidation stats read
 
 Ngày cập nhật: 2026-07-13

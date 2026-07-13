@@ -6,6 +6,24 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21C-SAFE - Dashboard content-packages feature split
+
+Ngày cập nhật: 2026-07-13
+
+Prompt 21C-SAFE đã PASS: tách `dashboard/src/app/dashboard/content-packages/page.tsx` sang `dashboard/src/features/content-packages/**`.
+
+- Page trước refactor: 671 LOC; sau refactor: 85 LOC.
+- Feature mới gồm hook `useContentPackages`, components header/error/loading/list/detail/form modal, `types.ts`, formatter label và barrel `index.ts`.
+- Route `/dashboard/content-packages`, UI text/className/layout và `contentPackagesApi` contract giữ nguyên.
+- Package CRUD, item CRUD và handler migrate được di chuyển nguyên behavior sang hook.
+- Migrate action từ campaign được đánh dấu **MIGRATE_ACTION_LOCKED_NOT_EXECUTED**: không chạy/click/gọi trong smoke.
+- Validation PASS: dashboard typecheck/build, backend quality, Prisma validate.
+- Runtime route smoke GET-only PASS trên dashboard dev server tạm port `3019`.
+
+Không sửa backend/schema/migration/package/API client/auth/config/webhook/RAG/handoff/tenants/Docker/env thật. Phase 19 vẫn **Started**, chưa Done; Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21B-4 - Backend stats read consolidation
 
 Ngày cập nhật: 2026-07-13

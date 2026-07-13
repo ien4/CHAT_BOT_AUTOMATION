@@ -1,5 +1,37 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21C-SAFE - Dashboard content-packages feature split (PASS)
+
+Ngày cập nhật: 2026-07-13
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/content-packages/page.tsx` sang feature module `dashboard/src/features/content-packages/**`.
+- Page giảm từ 671 LOC xuống 85 LOC, giữ vai trò client orchestrator mỏng theo pattern analytics/prompts/staff/appointments.
+- Tạo `hooks/useContentPackages.ts` cho state/data loading/package CRUD/item CRUD/migrate handler cũ.
+- Tạo components cho header, error/loading state, list package, detail/items, package form modal và item form modal.
+- Tạo `types.ts`, `lib/contentPackageFormatters.ts`, barrel `index.ts` và cập nhật README feature.
+- Giữ nguyên `contentPackagesApi`, UI text/className/layout, confirm/alert/error text và form payload.
+- Action migrate từ campaign được preserve nhưng khóa trong kiểm thử: **MIGRATE_ACTION_LOCKED_NOT_EXECUTED**.
+
+Validation:
+
+- Baseline trước patch PASS: backend quality, Prisma validate, dashboard typecheck/build, root diff sạch.
+- Sau patch PASS: dashboard `npx --no-install tsc --noEmit`, typecheck, build; backend quality; Prisma validate.
+- Runtime route smoke dashboard PASS bằng GET-only trên port tạm `3019`; không click/gọi migrate/import/action.
+
+Không làm:
+
+- Không sửa backend, schema/migration/package/lock, dashboard API client/auth/config, webhook/RAG/handoff/tenants/notifications.
+- Không thêm dependency, không chạy `npm install`, không gọi external provider, không claim Meta verified/production ready.
+
+Next:
+
+1. Phase 19 vẫn **Started**, chưa Done; candidate dashboard còn lại cần prompt riêng và audit risk riêng.
+2. `quick-replies` hoặc `campaigns` có thể là candidate dashboard split tương lai nếu smoke chỉ read/list và mutation bị khóa rõ.
+3. `knowledge`, `handoff`, `settings`, `tenants` vẫn là khu vực rủi ro cao, không tách nếu chưa có prompt riêng.
+4. Phase 21 backend route consolidation vẫn **Started**, chỉ tiếp tục với route read-only nhỏ nếu audit chứng minh an toàn.
+
 ## Prompt 21B-4 - Backend route consolidation stats read (PASS)
 
 Ngày cập nhật: 2026-07-13
