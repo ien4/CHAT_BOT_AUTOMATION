@@ -1,7 +1,32 @@
 # PROJECT GOALS AND FACEBOOK WEBHOOK STATUS
 
-Ngày cập nhật: 2026-07-12
+Ngày cập nhật: 2026-07-13
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
+
+## Cập nhật 22B-SAFE - Public Ngrok smoke + Meta verify checkpoint
+
+Ngày cập nhật: 2026-07-13
+
+Prompt 22B-SAFE đã chạy public HTTPS smoke qua Ngrok, không dùng secret:
+
+- Public base URL: **`https://backspace-scrambler-stuck.ngrok-free.dev`**.
+- Callback URL đúng cho Meta Developer: **`https://backspace-scrambler-stuck.ngrok-free.dev/webhook`**.
+- Local DB/backend runtime: **PASS**. Docker phản hồi, `bbotech-pgvector-local` đang Up, DB `5433` listen, backend `3001` listen.
+- `npx prisma migrate deploy`: **PASS**, không có pending migration.
+- Local smoke an toàn: **PASS** cho `/health`, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm, `/api/settings/webhook`, `/api/prompts`; admin tạm đã cleanup.
+- Public HTTPS smoke: **PUBLIC_SMOKE_PASS_NO_SECRET**.
+  - `GET /health`: PASS 200.
+  - `GET /webhook` thiếu params: PASS 403.
+  - `POST /chatwoot-webhook` body `{}`: PASS 404.
+- Không dùng verify token thật trong command, không gửi `hub.challenge`, không gửi POST `/webhook` object `page`, không gọi Meta/Facebook API thật.
+
+Trạng thái sau 22B-SAFE:
+
+- Local runtime readiness: **PASS**.
+- Public HTTPS readiness: **PUBLIC_SMOKE_PASS_NO_SECRET**.
+- Meta Developer verification: **META_VERIFY_OPERATOR_CONFIRMATION_PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**.
 
 ## Cập nhật 22A-2 - Ngrok local runtime restore + public smoke
 
@@ -92,7 +117,7 @@ Hệ thống cần phục vụ mục tiêu chính: xây chatbot/automation để
 
 | Nhóm mục tiêu | Mục tiêu trước đó | Trạng thái hiện tại | Bằng chứng | Còn thiếu |
 |---|---|---|---|---|
-| Product goal | Chatbot/automation nhận và xử lý hội thoại khách hàng | Giữ nguyên, làm rõ theo kiến trúc direct Facebook | `backend/src/webhook/handler.js`, dashboard pages, Phase 17-21 reports | Meta event thật, staging/public URL thật |
+| Product goal | Chatbot/automation nhận và xử lý hội thoại khách hàng | Giữ nguyên, làm rõ theo kiến trúc direct Facebook | `backend/src/webhook/handler.js`, dashboard pages, Phase 17-22 reports | Meta verify challenge và Meta POST event thật |
 | Backend goal | Express backend xử lý message, bot/AI/RAG/handoff | Đang hoạt động theo mixed-module, giảm nợ dần qua Phase 21 | `backend/src/index.js`, `backend/src/api/dashboard.js`, `backend/src/bot`, `backend/src/rag` | Tiếp tục consolidation, không big-bang |
 | Dashboard goal | Next.js dashboard quản trị cấu hình/nội dung/prompt/nhân sự/lịch hẹn/handoff | Phase 19 đã split analytics/prompts/staff/appointments; các page nặng còn lại vẫn planned | `dashboard/src/features/**`, report 19A-19D | Content-packages/settings/knowledge/tenants/handoff còn cần prompt riêng |
 | Data goal | PostgreSQL/pgvector lưu data và knowledge | Local/staging readiness improved; raw SQL unsafe đã đóng | Phase 18/20 docs, Prisma validate PASS | Production backup/migrate/smoke thật |
@@ -131,10 +156,10 @@ Các điểm bắt buộc:
 | Tầng readiness | Trạng thái | Bằng chứng | Được phép ghi gì | Không được ghi gì | Next action |
 |---|---|---|---|---|---|
 | Source route readiness | DONE | `backend/src/index.js` mount `GET /webhook`, `POST /webhook`; `backend/src/webhook/handler.js` có `verifyWebhook`, `handleMessage` | Source endpoint đúng là `/webhook`; source route sẵn sàng để local/staging verify | Không ghi đã Meta connected | Giữ endpoint này khi refactor. |
-| Local runtime readiness | LOCAL_READY | Prompt 21R smoke PASS 9/9: health, webhook 403, Chatwoot 404, auth/config/read routes | Có thể ghi local runtime smoke an toàn PASS | Không ghi Meta connected/production ready | Dùng làm baseline trước 21B-3. |
-| Local DB/env readiness | LOCAL_READY | Prompt 21R: Docker daemon OK, `bbotech-pgvector-local` Up, port 5433 listen, migrate deploy no pending | Có thể ghi DB local ready | Không suy ra production DB ready | Giữ Docker/local DB sẵn trước refactor. |
-| Public HTTPS URL readiness | STAGING_PENDING | Deploy docs yêu cầu `https://<domain>/webhook`; chưa có URL thật trong 21S | Cần public HTTPS staging URL trỏ `/webhook` | Không ghi staging connected | Cấu hình domain/reverse proxy/tunnel được kiểm soát. |
-| Meta Developer verify challenge readiness | META_PENDING | Chưa có bằng chứng Meta callback/challenge thật | Source có handler verify challenge | Không ghi Meta verified | Verify trong Meta Developer bằng token thật. |
+| Local runtime readiness | LOCAL_READY | Prompt 22B-SAFE smoke PASS: health, webhook 403, Chatwoot 404, auth/config/read routes | Có thể ghi local runtime smoke an toàn PASS | Không ghi Meta connected/production ready | Giữ làm baseline trước bước event thật. |
+| Local DB/env readiness | LOCAL_READY | Prompt 22B-SAFE: Docker daemon OK, `bbotech-pgvector-local` Up, port 5433 listen, migrate deploy no pending | Có thể ghi DB local ready | Không suy ra production DB ready | Giữ Docker/local DB sẵn trước test tiếp. |
+| Public HTTPS URL readiness | PUBLIC_SMOKE_PASS_NO_SECRET | Ngrok `https://backspace-scrambler-stuck.ngrok-free.dev`: health 200, `/webhook` thiếu params 403, legacy Chatwoot 404 | Có thể ghi public safe smoke PASS | Không ghi Meta verified hoặc event ready | Giữ tunnel chạy khi người vận hành verify. |
+| Meta Developer verify challenge readiness | META_VERIFY_OPERATOR_CONFIRMATION_PENDING | Chưa có xác nhận Meta UI Verify and Save PASS từ người vận hành | Source có handler verify challenge và callback URL đã xác định | Không ghi Meta verified | Người vận hành verify bằng token thật, không đưa token cho Codex. |
 | Meta POST event readiness | META_PENDING | Chưa có test event thật từ Meta | Source có `handleMessage` cho `object === 'page'` | Không ghi đã nhận event production | Gửi event test thật sau staging HTTPS. |
 | Dashboard management readiness | LOCAL_READY | `GET /api/settings/webhook` có auth và trả mask/null + `webhookUrl` | Dashboard có endpoint xem cấu hình webhook | Không dùng `/api/settings/webhook` làm callback Meta | Giữ warning trong docs/dashboard nếu cần. |
 | Production rollout readiness | PRODUCTION_PENDING | `docs/PRODUCTION_ROLLOUT_CHECKLIST.md` yêu cầu backup + migrate deploy + smoke prod; chưa chạy | Có checklist rollout | Không ghi production ready | Chạy rollout thật theo checklist. |
@@ -145,8 +170,8 @@ Các điểm bắt buộc:
 |---|---|---|---|
 | Source/local static | PASS | `backend npm run quality`, `npx prisma validate`, `dashboard npm run typecheck` trong Prompt 21S | Không sửa source. |
 | Local runtime 21R | PASS | Docker daemon OK, DB 5433 listen, backend 3001 health 200, smoke 9/9 PASS | Không start `docker compose`, không start `start-all`, không gọi external. |
-| Staging/public HTTPS | STAGING_PENDING | Chưa có public URL smoke trong Prompt 21S | Cần trỏ `https://<domain>/webhook`. |
-| Meta Developer | META_PENDING | Chưa có challenge/event thật | Không claim connected. |
+| Staging/public HTTPS | PUBLIC_SMOKE_PASS_NO_SECRET | Prompt 22B-SAFE public Ngrok smoke PASS trên `https://backspace-scrambler-stuck.ngrok-free.dev` | Chưa phải Meta verified. |
+| Meta Developer | META_VERIFY_OPERATOR_CONFIRMATION_PENDING | Chưa có operator confirmation từ Meta UI | Không claim connected. |
 | Production | PRODUCTION_PENDING | Chưa backup + migrate deploy + smoke prod thật | Không claim production ready. |
 
 ## 6. Những gì đã đủ bằng chứng
@@ -157,6 +182,7 @@ Các điểm bắt buộc:
 - `/api/settings/webhook` là dashboard config endpoint có auth, trả secret ở dạng mask/null.
 - `/chatwoot-webhook` không còn active runtime trong `backend/src`.
 - Các report trước đã có local smoke: `/webhook` thiếu/sai verify token trả 403, `/chatwoot-webhook` trả 404.
+- Prompt 22B-SAFE đã có public smoke không dùng secret qua Ngrok: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404.
 - Deployment policy/rollout checklist đã nói callback production phải là `https://<domain>/webhook`.
 
 ## 7. Những gì chưa được claim
@@ -171,11 +197,11 @@ Các điểm bắt buộc:
 
 ## 8. Checklist trước khi kết nối Meta thật
 
-- [ ] Có public HTTPS URL ổn định trỏ tới backend.
-- [ ] Callback URL trong Meta Developer là `https://<domain>/webhook`.
+- [x] Có public HTTPS URL Ngrok trỏ tới backend cho smoke 22B-SAFE.
+- [x] Callback URL trong Meta Developer là `https://backspace-scrambler-stuck.ngrok-free.dev/webhook` cho phiên 22B-SAFE.
 - [ ] `FB_VERIFY_TOKEN` đã set trên server, không log giá trị thật.
 - [ ] `FB_PAGE_ACCESS_TOKEN`, `FB_APP_SECRET`, `FB_PAGE_ID` được set qua secret manager/env an toàn.
-- [ ] `GET /webhook` thiếu/sai token trả 403 trên môi trường staging/public.
+- [x] `GET /webhook` thiếu/sai token trả 403 trên môi trường staging/public.
 - [ ] `GET /webhook?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...` trả đúng challenge khi token đúng.
 - [ ] `POST /webhook` nhận event test thật từ Meta và không gọi nhầm Chatwoot.
 - [ ] Log không in page token, verify token, app secret hoặc nội dung PII quá mức.

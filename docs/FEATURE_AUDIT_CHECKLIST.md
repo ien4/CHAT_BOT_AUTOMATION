@@ -1,5 +1,29 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 22B-SAFE Update - Public Ngrok Smoke + Meta Verify Checkpoint (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-13
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Preflight git | PASS | branch `chore/prompt-05r-docs-local-run`, commit `dede1fb` tồn tại | Working tree sạch trước patch, chỉ ignored env/node_modules/.next/backups/tmp-runtime. |
+| Env secret safety | PASS | exact sensitive env tracked scan rỗng | Không mở/in `.env` thật hoặc `.env.local`. Regex prompt có false-positive `backend/.env.example` là sample tracked hợp lệ. |
+| Static validation | PASS | backend quality, Prisma validate, dashboard typecheck | Trước patch docs/report. |
+| DB container | PASS | `bbotech-pgvector-local` Up | Không chạy Docker Compose, không tạo container mới. |
+| DB port 5433 | PASS | `Test-NetConnection localhost:5433` | Local DB listen. |
+| Backend port 3001 | PASS | `Test-NetConnection localhost:3001` | Dùng process hiện có, không kill/start backend mới. |
+| Prisma migrate deploy | PASS | no pending migrations | Không dùng `db push`. |
+| Local smoke | PASS | health/webhook/chatwoot/login/settings/prompts | Admin tạm cleanup deleted 1; không in token. |
+| STAGING_BASE_URL | VALID | `https://backspace-scrambler-stuck.ngrok-free.dev` | HTTPS, không localhost, không placeholder, không trailing `/webhook`. |
+| Callback URL | READY_FOR_OPERATOR | `https://backspace-scrambler-stuck.ngrok-free.dev/webhook` | Dùng trong Meta Developer, không dùng `/api/settings/webhook`. |
+| Public Ngrok smoke | PASS | `/health` 200, `/webhook` 403, `/chatwoot-webhook` 404 | Không dùng verify token thật, không gửi challenge, không POST object `page`. |
+| Meta Verify Challenge | PENDING | `META_VERIFY_OPERATOR_CONFIRMATION_PENDING` | Chưa có xác nhận Meta UI Verify and Save PASS từ người vận hành. |
+| Meta POST event thật | PENDING | command audit | Không gửi trong prompt này. |
+| External Meta/Facebook API | No | command audit | Không gọi Graph API. |
+| Source/schema/package/dashboard | Unchanged | diff guard | Docs/report only. |
+
+Kết luận: public HTTPS safe smoke đã PASS; bước tiếp theo là người vận hành verify thủ công trong Meta Developer bằng token thật, không đưa token cho Codex.
+
 ## Prompt 22A-2 Update - Ngrok Local Runtime Restore + Public HTTPS Smoke (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-13

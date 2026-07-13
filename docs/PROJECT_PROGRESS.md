@@ -1,5 +1,27 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 22B-SAFE Public Ngrok smoke + Meta verify checkpoint
+
+Ngày cập nhật: 2026-07-13
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Prompt 22B-SAFE đã chạy public HTTPS smoke qua Ngrok thành công, nhưng Meta Verify Challenge vẫn pending vì chưa có xác nhận từ Meta UI của người vận hành.
+
+Đã làm:
+
+- Preflight git/secret safety PASS: branch làm việc riêng, commit `dede1fb Verify ngrok public smoke readiness` tồn tại, working tree sạch trước patch, env thật không tracked/staged.
+- Baseline static validation PASS: backend `npm run quality`, backend `npx prisma validate`, dashboard `npm run typecheck`, root diff sạch.
+- Local runtime recheck PASS: Docker phản hồi, `bbotech-pgvector-local` đang Up, DB `5433` listen, backend `3001` listen.
+- `npx prisma migrate deploy` PASS, không có pending migration.
+- Local smoke an toàn PASS: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm 200 + token exists, `/api/settings/webhook` 200 secret mask/null, `/api/prompts` 200; cleanup admin tạm deleted 1.
+- Public base URL: `https://backspace-scrambler-stuck.ngrok-free.dev`.
+- Callback URL đúng cho Meta Developer: `https://backspace-scrambler-stuck.ngrok-free.dev/webhook`.
+- Public Ngrok smoke không dùng secret PASS: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404.
+- Meta Verify Challenge: `META_VERIFY_OPERATOR_CONFIRMATION_PENDING`.
+
+Không sửa source/schema/package/dashboard/Docker/start scripts/env thật. Không dùng verify token thật, không gửi `hub.challenge`, không gửi POST object `page`, không gọi Meta/Facebook API thật, không claim Meta verified hoặc production ready.
+
+Chi tiết: `report/PROMPT_22B_META_VERIFY_CHALLENGE_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 22A-2 Ngrok local runtime restore + public smoke
 
 Ngày cập nhật: 2026-07-13

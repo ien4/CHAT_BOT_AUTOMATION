@@ -1,5 +1,29 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 22B-SAFE - Public Ngrok smoke + Meta verify checkpoint (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-13
+
+Đây là runtime smoke/docs update, không phải refactor source.
+
+Đã làm:
+
+- Xác nhận local DB/backend runtime vẫn PASS: Docker, DB container, DB port `5433`, backend port `3001`.
+- Chạy `npx prisma migrate deploy`, không có pending migration.
+- Local smoke an toàn PASS cho health, webhook 403 thiếu params, Chatwoot legacy 404, login admin tạm, settings webhook và prompts.
+- Validate `STAGING_BASE_URL="https://backspace-scrambler-stuck.ngrok-free.dev"`.
+- Public Ngrok smoke không dùng secret PASS: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404.
+- Callback URL chính thức cho phiên này: `https://backspace-scrambler-stuck.ngrok-free.dev/webhook`.
+- Không dùng verify token thật trong command, không gửi `hub.challenge`, không gửi POST object `page`, không gọi Meta/Facebook API thật.
+
+Next:
+
+1. Người vận hành giữ Ngrok session đang chạy và vào Meta Developer.
+2. Callback URL: `https://backspace-scrambler-stuck.ngrok-free.dev/webhook`.
+3. Verify Token: dùng giá trị `FB_VERIFY_TOKEN` trong env thật, không in ra terminal/report.
+4. Nếu Meta UI Verify and Save PASS, ghi `META_VERIFY_CHALLENGE_OPERATOR_CONFIRMED_PASS`.
+5. Sau đó mới mở prompt test POST event thật; production rollout chỉ sau verify + event thật + checklist production.
+
 ## Prompt 22A-2 - Ngrok local runtime restore + public HTTPS smoke (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-13

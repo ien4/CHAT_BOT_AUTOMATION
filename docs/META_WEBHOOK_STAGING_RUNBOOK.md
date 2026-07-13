@@ -1,9 +1,31 @@
 # META WEBHOOK STAGING RUNBOOK
 
 Ngày cập nhật: 2026-07-13
-Trạng thái: **READY FOR PUBLIC SMOKE WHEN STAGING_BASE_URL EXISTS**
+Trạng thái: **PUBLIC_SMOKE_PASS_NO_SECRET - META_VERIFY_OPERATOR_CONFIRMATION_PENDING**
 
 Runbook này hướng dẫn chạy staging/public HTTPS cho direct Meta webhook an toàn. Không dùng tài liệu này để claim production ready.
+
+## Cập nhật phiên 22B-SAFE
+
+Public Ngrok URL đã dùng trong phiên 22B-SAFE:
+
+```powershell
+$env:STAGING_BASE_URL="https://backspace-scrambler-stuck.ngrok-free.dev"
+```
+
+Callback URL chính thức cần nhập trong Meta Developer:
+
+```text
+https://backspace-scrambler-stuck.ngrok-free.dev/webhook
+```
+
+Public smoke không dùng secret đã PASS:
+
+- `GET /health` -> 200.
+- `GET /webhook` thiếu params -> 403.
+- `POST /chatwoot-webhook` body `{}` -> 404.
+
+Meta verify challenge vẫn là `META_VERIFY_OPERATOR_CONFIRMATION_PENDING` cho tới khi người vận hành bấm Verify and Save trong Meta Developer và xác nhận PASS. Không dùng `/api/settings/webhook` làm callback.
 
 ## 1. Mục tiêu
 
@@ -38,12 +60,19 @@ ngrok http 3001
 $env:STAGING_BASE_URL="https://xxxx.ngrok-free.app"
 ```
 
+Trong phiên 22B-SAFE, URL đã smoke là:
+
+```powershell
+$env:STAGING_BASE_URL="https://backspace-scrambler-stuck.ngrok-free.dev"
+```
+
 Quy tắc:
 
 - `STAGING_BASE_URL` là base URL, không có trailing `/webhook`.
 - Callback Meta sẽ là `$env:STAGING_BASE_URL/webhook`.
 - Ngrok session phải còn chạy khi public smoke, Meta verify hoặc test event thật.
 - Không đưa `NGROK_AUTHTOKEN` hoặc token Facebook vào prompt/report.
+- Không dùng `/api/settings/webhook` làm callback; endpoint đó chỉ dành cho dashboard config/read có auth.
 
 Set biến shell rõ ràng, không có trailing `/webhook`:
 
@@ -62,8 +91,8 @@ Không gửi verify token thật trong bước smoke này. Không gửi POST obj
 ## 4. Verify Meta thủ công
 
 - Người vận hành mở Meta Developer.
-- Callback URL: `https://<domain>/webhook`.
-- Verify token khớp `FB_VERIFY_TOKEN` staging.
+- Callback URL hiện tại: `https://backspace-scrambler-stuck.ngrok-free.dev/webhook`.
+- Verify token khớp `FB_VERIFY_TOKEN` local/staging; tự lấy từ env thật, không đưa cho Codex và không in ra terminal/report.
 - Chỉ sau challenge PASS mới ghi Meta verified.
 - Không in token vào log/report.
 - Không lưu screenshot hoặc log có token thật vào repo.
