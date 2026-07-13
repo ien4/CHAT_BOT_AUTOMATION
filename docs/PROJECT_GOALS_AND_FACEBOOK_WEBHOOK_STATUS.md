@@ -3,6 +3,26 @@
 Ngày cập nhật: 2026-07-12
 Nguồn: Prompt 21S docs/status-sync, audit code local, docs/report hiện có, validation an toàn cục bộ. Tài liệu này không phải bằng chứng production rollout và không phải bằng chứng Meta Developer đã kết nối thật.
 
+## Cập nhật 22A-2 - Ngrok local runtime restore + public smoke
+
+Ngày cập nhật: 2026-07-13
+
+Prompt 22A-2 đã khôi phục/kiểm tra local runtime an toàn:
+
+- Local DB/backend restore: **PASS**. Docker phản hồi, `bbotech-pgvector-local` đang Up, DB `5433` listen, backend `3001` listen.
+- `npx prisma migrate deploy`: **PASS**, không có pending migration.
+- Local smoke an toàn: **PASS** cho `/health`, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm, `/api/settings/webhook`, `/api/prompts`, channel configs, quick reply menus và campaigns.
+- Public HTTPS smoke qua Ngrok: **BLOCKED_STAGING_BASE_URL_MISSING** vì shell không có `STAGING_BASE_URL`.
+- Không dùng verify token thật, không gửi POST `/webhook` object `page`, không gọi Meta/Facebook API thật.
+
+Trạng thái sau 22A-2:
+
+- Local runtime readiness: **PASS**.
+- Public HTTPS readiness: **PUBLIC_SMOKE_BLOCKED_STAGING_BASE_URL_MISSING**.
+- Meta Developer verification: **PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**.
+
 ## Cập nhật 22A-1 - Webhook log redaction + staging runbook
 
 Ngày cập nhật: 2026-07-12

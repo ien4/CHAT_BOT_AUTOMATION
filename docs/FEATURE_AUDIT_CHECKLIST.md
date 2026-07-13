@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 22A-2 Update - Ngrok Local Runtime Restore + Public HTTPS Smoke (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-13
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Docker readiness | PASS | `docker version` | Docker client/server phản hồi. |
+| DB container | PASS | `bbotech-pgvector-local` Up | Không cần `docker start`; không chạy Docker Compose. |
+| DB port 5433 | PASS | `Test-NetConnection localhost:5433` | Local DB listen. |
+| Backend port 3001 | PASS | `Test-NetConnection localhost:3001` | Dùng process hiện có, không kill. |
+| Prisma migrate deploy | PASS | no pending migrations | Không dùng `db push`. |
+| Local smoke | PASS | health/webhook/chatwoot/login/settings/prompts/options | Không POST `/webhook` object `page`. |
+| Admin temp cleanup | PASS | deleted 1 | Không in credential/token. |
+| STAGING_BASE_URL | MISSING | env shell check | Public smoke blocked. |
+| Public Ngrok smoke | BLOCKED | `BLOCKED_STAGING_BASE_URL_MISSING` | Không fake public readiness. |
+| External call | No | command audit | Không gọi Meta/Facebook API thật. |
+| Source/schema/package/dashboard | Unchanged | diff guard | Docs/report only. |
+
+Kết luận: local runtime restored và local smoke PASS; cần set `STAGING_BASE_URL` để chạy public smoke.
+
 ## Prompt 22A-1 Update - Webhook Log Redaction + Staging Runbook Hardening (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12

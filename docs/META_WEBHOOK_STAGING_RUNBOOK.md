@@ -1,6 +1,6 @@
 # META WEBHOOK STAGING RUNBOOK
 
-Ngày cập nhật: 2026-07-12
+Ngày cập nhật: 2026-07-13
 Trạng thái: **READY FOR PUBLIC SMOKE WHEN STAGING_BASE_URL EXISTS**
 
 Runbook này hướng dẫn chạy staging/public HTTPS cho direct Meta webhook an toàn. Không dùng tài liệu này để claim production ready.
@@ -28,6 +28,22 @@ Meta Developer / Facebook Messenger
 - Không dùng `webhook-urls-current.txt` làm nguồn truth.
 
 ## 3. Public smoke không dùng secret
+
+### Ngrok local testing
+
+Khi dùng Ngrok local:
+
+```powershell
+ngrok http 3001
+$env:STAGING_BASE_URL="https://xxxx.ngrok-free.app"
+```
+
+Quy tắc:
+
+- `STAGING_BASE_URL` là base URL, không có trailing `/webhook`.
+- Callback Meta sẽ là `$env:STAGING_BASE_URL/webhook`.
+- Ngrok session phải còn chạy khi public smoke, Meta verify hoặc test event thật.
+- Không đưa `NGROK_AUTHTOKEN` hoặc token Facebook vào prompt/report.
 
 Set biến shell rõ ràng, không có trailing `/webhook`:
 

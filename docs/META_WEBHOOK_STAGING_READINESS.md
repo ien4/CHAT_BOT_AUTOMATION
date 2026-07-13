@@ -1,11 +1,22 @@
 # META WEBHOOK STAGING READINESS
 
-Ngày cập nhật: 2026-07-12  
-Trạng thái: **PASS WITH WARNINGS - STAGING_URL_MISSING**
+Ngày cập nhật: 2026-07-13
+Trạng thái: **PASS WITH WARNINGS - PUBLIC_SMOKE_BLOCKED_STAGING_BASE_URL_MISSING**
 
 Tài liệu này chuẩn bị checklist public HTTPS staging cho Meta Developer Webhook direct vào backend Express. Đây không phải bằng chứng Meta đã verified, không phải bằng chứng đã nhận POST event thật và không phải production rollout.
 
 Runbook vận hành staging: `docs/META_WEBHOOK_STAGING_RUNBOOK.md`.
+
+## Cập nhật 22A-2 - Local runtime restored, public Ngrok smoke blocked
+
+Ngày cập nhật: 2026-07-13
+
+- Local DB/backend runtime: **PASS**. Docker phản hồi, container `bbotech-pgvector-local` đang Up, DB `5433` listen, backend `3001` listen, `prisma migrate deploy` không có pending migration.
+- Local smoke an toàn: **PASS** cho `/health`, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm, `/api/settings/webhook`, `/api/prompts` và các route optional read-only.
+- Public HTTPS smoke qua Ngrok: **BLOCKED_STAGING_BASE_URL_MISSING** vì shell hiện không có `STAGING_BASE_URL`.
+- Meta verify challenge: **PENDING**.
+- Meta POST event thật: **PENDING**.
+- Production rollout: **PENDING**.
 
 ## 1. Mục tiêu
 
@@ -36,8 +47,8 @@ Không dùng các endpoint sau làm callback Meta:
 | Source route readiness | DONE | `backend/src/index.js` mount `GET /webhook` và `POST /webhook` | Giữ endpoint khi refactor sau này. |
 | Verify challenge handler | DONE | `backend/src/webhook/handler.js` đọc `hub.mode`, `hub.verify_token`, `hub.challenge`; token đúng trả challenge, sai/thiếu trả 403 | Chưa chạy challenge token thật vì không đọc/in secret. |
 | POST page event handler | SOURCE_READY | Handler nhận `body.object === 'page'` và xử lý entry/messaging | Chưa gửi Meta POST event thật. |
-| Local runtime readiness | PASS | Prompt 22A smoke local PASS: health, `/webhook` thiếu params 403, legacy 404, login tạm, settings/prompts/channel/quick-reply/campaigns/analytics | Docker API có warning 500/time-out dù cổng 5433/3001 listen. |
-| Public HTTPS readiness | STAGING_URL_MISSING | Chưa có `STAGING_BASE_URL` shell và chưa có URL public thật trong docs | Cần domain/tunnel HTTPS ổn định trỏ vào backend. |
+| Local runtime readiness | PASS | Prompt 22A-2: Docker/DB/backend ready, migrate deploy no pending, local smoke PASS | Prompt không start/kill backend vì process đã chạy sẵn. |
+| Public HTTPS readiness | PUBLIC_SMOKE_BLOCKED_STAGING_BASE_URL_MISSING | Shell hiện không có `STAGING_BASE_URL` | Cần chạy ngrok và set base URL trước public smoke. |
 | Meta verify challenge | META_PENDING | Chưa có callback/challenge thật từ Meta Developer | Cấu hình callback `https://<domain>/webhook` và verify token khớp `FB_VERIFY_TOKEN`. |
 | Meta POST event | META_PENDING | Prompt này không gọi Facebook/Meta external | Test event thật sau khi HTTPS và verify đã PASS. |
 | Production rollout | PRODUCTION_PENDING | Chưa backup + `prisma migrate deploy` + smoke production thật | Dùng `docs/PRODUCTION_ROLLOUT_CHECKLIST.md` khi rollout. |
@@ -53,8 +64,8 @@ Không dùng các endpoint sau làm callback Meta:
 | `FB_PAGE_ACCESS_TOKEN` set trên staging | ENV_REQUIRED | `backend/.env.example` có tên biến | Set secret thật, không log giá trị. |
 | `FB_APP_SECRET` set trên staging | ENV_REQUIRED | `backend/.env.example` có tên biến | Set secret thật, không log giá trị. |
 | `FB_PAGE_ID` set nếu code cần | ENV_REQUIRED | `backend/.env.example` có tên biến | Set đúng page id cho staging. |
-| Public `GET /health` | NOT_RUN | Không có `STAGING_BASE_URL` | Chạy khi có public URL. |
-| Public wrong-token/missing-token `/webhook` trả 403 | NOT_RUN | Không có `STAGING_BASE_URL` | Chạy smoke public không dùng token thật. |
+| Public `GET /health` | BLOCKED | Không có `STAGING_BASE_URL` | Chạy khi có public URL. |
+| Public wrong-token/missing-token `/webhook` trả 403 | BLOCKED | Không có `STAGING_BASE_URL` | Chạy smoke public không dùng token thật. |
 | Correct-token challenge trả đúng challenge | MANUAL_ONLY | Cần secret thật nên không tự chạy trong Codex | Verify qua Meta Developer hoặc người vận hành có secret. |
 | Meta POST test event thật | PENDING | Prompt này không gửi event thật | Chạy sau khi verify challenge PASS. |
 | Log không in secret/token/PII quá mức | SOURCE_HARDENED_PENDING_REAL_EVENT | Prompt 22A-1 đã redact log trong `backend/src/webhook/handler.js`; scan chỉ còn read fields để xử lý | Cần quan sát log khi test event thật sau Meta verify. |
@@ -78,7 +89,7 @@ Không dùng các endpoint sau làm callback Meta:
 
 ## 6. Public HTTPS smoke
 
-Prompt 22A không chạy public HTTPS smoke vì không có biến shell `STAGING_BASE_URL`.
+Prompt 22A-2 chưa chạy public HTTPS smoke vì không có biến shell `STAGING_BASE_URL`.
 
 Khi có URL public, chỉ chạy các smoke an toàn sau, không gửi verify token thật và không gửi POST event Meta thật:
 

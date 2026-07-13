@@ -1,5 +1,26 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 22A-2 - Ngrok local runtime restore + public HTTPS smoke (PASS WITH WARNINGS)
+
+Ngày cập nhật: 2026-07-13
+
+Đây là runtime smoke/docs update, không phải refactor source.
+
+Đã làm:
+
+- Kiểm tra Docker, local DB container, DB port `5433` và backend port `3001`.
+- Chạy `npx prisma migrate deploy`, không có pending migration.
+- Local smoke an toàn PASS cho health, webhook 403 thiếu params, Chatwoot legacy 404, login admin tạm, settings webhook và prompts.
+- Không start/kill backend vì process 3001 đã chạy.
+- Không chạy public smoke vì thiếu `STAGING_BASE_URL`.
+
+Next:
+
+1. Người vận hành chạy `ngrok http 3001`.
+2. Set `$env:STAGING_BASE_URL="https://xxxx.ngrok-free.app"` không có trailing `/webhook`.
+3. Chạy lại public smoke không dùng secret.
+4. 22B Meta verification execution chỉ sau public smoke PASS và secrets sẵn.
+
 ## Prompt 22A-1 - Webhook log redaction + staging runbook hardening (PASS WITH WARNINGS)
 
 Ngày cập nhật: 2026-07-12

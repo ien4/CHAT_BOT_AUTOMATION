@@ -1,5 +1,24 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 22A-2 Ngrok local runtime restore + public smoke
+
+Ngày cập nhật: 2026-07-13
+
+Trạng thái mới nhất: **PASS WITH WARNINGS**. Prompt 22A-2 đã khôi phục/kiểm tra local runtime an toàn và chạy local smoke PASS; public smoke qua Ngrok bị block vì thiếu `STAGING_BASE_URL`.
+
+Đã làm:
+
+- Docker client/server PASS.
+- Container `bbotech-pgvector-local` tồn tại và đang Up; DB port `5433` listen.
+- Backend port `3001` listen; dùng process hiện có, không start/kill backend.
+- `npx prisma migrate deploy` PASS, không có pending migration.
+- Local smoke PASS: `/health` 200, `/webhook` thiếu params 403, `/chatwoot-webhook` 404, login admin tạm 200 + token exists, `/api/settings/webhook` 200 secret mask/null, `/api/prompts` 200, optional channel-configs/quick-reply-menus/campaigns 200; cleanup admin tạm deleted 1.
+- `STAGING_BASE_URL`: **missing**, nên public Ngrok smoke **NOT RUN**.
+
+Không sửa source/schema/package/dashboard/Docker/start scripts/env thật. Không dùng verify token thật, không gửi POST event thật, không gọi Meta/Facebook API thật, không claim Meta verified hoặc production ready.
+
+Chi tiết: `report/PROMPT_22A_2_NGROK_PUBLIC_SMOKE_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 22A-1 Webhook log redaction + staging runbook hardening
 
 Ngày cập nhật: 2026-07-12
