@@ -1,13 +1,16 @@
 # PROJECT PROGRESS MASTER
 
 Ngày cập nhật: 2026-07-14
-Prompt gần nhất: **21B-5 — Backend route consolidation safe read route**
+Prompt gần nhất: **23A — Hybrid channel architecture decision**
 Trạng thái gần nhất: **PASS**
 
 ## 1. Trạng thái cực ngắn
 
-- Target kiến trúc hiện tại: **No-Chatwoot**.
+- Target Facebook hiện tại: **No-Chatwoot cho Facebook path**.
+- Target Website Chatwoot mới: **optional/planned theo ADR 23A**, chưa có runtime, schema, env thật hoặc dashboard UI.
 - Backend custom Express vẫn là runtime chính cho Facebook/Meta webhook.
+- Prompt 23A đã tạo quyết định kiến trúc hybrid: Facebook Messenger đi direct qua Express `/webhook`; Website live-chat có thể dùng Chatwoot như kênh riêng nếu được duyệt.
+- Không khôi phục legacy `/chatwoot-webhook*`; Website Chatwoot tương lai phải dùng endpoint mới, khuyến nghị `POST /integrations/website-chat/events`.
 - Prompt 21B-5 đã tách `GET /api/admin-users` khỏi `backend/src/api/dashboard.js` theo repository/controller/routes.
 - Dashboard Next.js hiện không có bug runtime mới sau gate 21Y.
 - Docs/report đã được move vật lý vào cấu trúc `docs/{status,index,roadmap,runbooks,policies,architecture,archive}` và `report/{phase-17,phase-18,phase-19,phase-20,phase-21,phase-22,bugs,archive}`.
@@ -20,6 +23,7 @@ Trạng thái gần nhất: **PASS**
 | Nhóm | Trạng thái | Bằng chứng |
 |---|---|---|
 | No-Chatwoot directive | DONE | Reports 08A-08H, docs architecture/status. |
+| Hybrid channel ADR | DONE / PLANNED | `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md`, `docs/roadmap/WEBSITE_CHATWOOT_INTEGRATION_PLAN.md`. |
 | RAG/raw SQL hardening | DONE | Reports 09/09B/09C/10A. |
 | DevOps/deploy policy | DONE WITH PENDING ROLLOUT | `docs/policies/DEPLOYMENT_POLICY.md`, `docs/runbooks/PRODUCTION_ROLLOUT_CHECKLIST.md`. |
 | Dashboard feature split | STARTED | Analytics/prompts/staff/appointments/content-packages/quick-replies/campaigns đã split. |
@@ -34,12 +38,14 @@ Trạng thái gần nhất: **PASS**
 | Backend route consolidation Phase 21 | Đã tách thêm `GET /api/admin-users`; còn nợ trong `backend/src/api/dashboard.js`; chỉ tiếp tục nếu có route GET/read-only nhỏ, không external/mutation/raw SQL/secret. |
 | Dashboard feature split Phase 19 | Còn page nặng/rủi ro; mọi prompt mới phải clean `.next`, fresh server, full route smoke, static asset smoke, dev log scan. |
 | Meta webhook staging Phase 22 | Public HTTPS smoke đã có, nhưng verify Meta UI và POST event thật còn pending. |
+| Website Chatwoot Phase 23 | ADR accepted/planned, docs-only; runtime/schema/env/package/dashboard UI chưa bắt đầu. |
 
 ## 4. Đang lên kế hoạch
 
 | Việc | Điều kiện bắt đầu |
 |---|---|
-| `21B-5-SAFE` hoặc `NO_SAFE_CANDIDATE` | Audit tìm được candidate backend read-only nhỏ thật sự an toàn. |
+| `23B` Website Chatwoot schema/env/API plan | Chỉ sau khi ADR 23A được chấp nhận; vẫn không đụng Facebook `/webhook`. |
+| `21B-6-SAFE` hoặc `NO_SAFE_CANDIDATE` | Audit tìm được candidate backend read-only nhỏ thật sự an toàn. |
 | Dashboard split kế tiếp | Đọc bug tracker, áp dụng gate 21X/21Y đầy đủ, không còn runtime bug. |
 | Meta verify checkpoint | Người vận hành xác nhận Meta UI Verify and Save bằng token thật. |
 | Production rollout | Chỉ sau staging/Meta event thật; cần backup DB, migrate deploy, smoke production thật. |
@@ -51,6 +57,8 @@ Trạng thái gần nhất: **PASS**
 - Chưa chạy production rollout thật.
 - Chưa có automated browser CI cho toàn bộ dashboard route/static asset smoke.
 - Chưa hoàn tất toàn bộ backend route consolidation và dashboard feature split.
+- Chưa có code runtime Website Chatwoot mới.
+- Chưa có schema/env/package/dashboard UI cho Website Chatwoot mới.
 
 ## 6. Blocker
 
@@ -59,6 +67,7 @@ Trạng thái gần nhất: **PASS**
 | Thiếu `META_VERIFY_OPERATOR_CONFIRMED=YES` | Không thể claim Meta verified hoặc chạy POST event smoke thật. | Operator verify trên Meta UI và báo kết quả. |
 | Production chưa rollout thật | Không thể claim production ready. | Chạy prompt rollout riêng với backup/migrate/deploy/smoke. |
 | Candidate backend có thể lẫn mutation/external | Không được refactor tùy tiện trong 21B tiếp theo. | Audit route trước; nếu không an toàn thì trả `NO_SAFE_CANDIDATE`. |
+| Website Chatwoot mới chưa có plan chi tiết | Không được code route/env/schema tùy tiện. | Chạy 23B để chốt API contract, env policy và data model option. |
 
 ## 7. Bug hiện tại
 
@@ -71,10 +80,11 @@ Trạng thái gần nhất: **PASS**
 
 ## 8. Next action đề xuất
 
-1. `21B-6-SAFE` nếu audit chứng minh có route backend GET/read-only nhỏ còn lại.
-2. `NO_SAFE_CANDIDATE` nếu không có candidate an toàn.
-3. Meta verify operator checkpoint nếu người vận hành đã verify trong Meta Developer.
-4. Dashboard split mới chỉ khi prompt riêng có smoke gate đầy đủ.
+1. `23B` nếu muốn tiếp tục Website Chatwoot: schema/env/API contract plan, vẫn docs-only hoặc migration create-only nếu được duyệt riêng.
+2. `21B-6-SAFE` nếu audit chứng minh có route backend GET/read-only nhỏ còn lại.
+3. `NO_SAFE_CANDIDATE` nếu không có candidate an toàn.
+4. Meta verify operator checkpoint nếu người vận hành đã verify trong Meta Developer.
+5. Dashboard split mới chỉ khi prompt riêng có smoke gate đầy đủ.
 
 ## 9. Tiêu chí bắt buộc cho prompt sau
 

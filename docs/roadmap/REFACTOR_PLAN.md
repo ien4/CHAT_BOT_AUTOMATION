@@ -1,5 +1,32 @@
 ﻿# REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 23A - Hybrid channel architecture decision (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+Đây là prompt **docs-only / ADR-only**, không phải source refactor.
+
+Kết quả:
+
+- Tạo ADR hybrid channel: `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md`.
+- Tạo plan Website Chatwoot: `docs/roadmap/WEBSITE_CHATWOOT_INTEGRATION_PLAN.md`.
+- Cập nhật source-of-truth để diễn đạt chính xác: Facebook target vẫn No-Chatwoot; Website Chatwoot là optional/planned channel riêng.
+- Chọn endpoint khuyến nghị cho tương lai: `POST /integrations/website-chat/events`.
+
+Không làm:
+
+- Không sửa backend/dashboard runtime source.
+- Không tạo route mới.
+- Không khôi phục `/chatwoot-webhook*`.
+- Không sửa Prisma schema/migration/package/env thật.
+- Không gọi external provider hoặc gửi POST `/webhook`.
+
+Next:
+
+1. `23B` nếu muốn tiếp tục Website Chatwoot: chốt schema/env/API contract và feature flag plan.
+2. `21B-6-SAFE` hoặc `NO_SAFE_CANDIDATE` nếu quay lại backend route consolidation.
+3. Meta verify operator checkpoint nếu người vận hành đã xác nhận `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+
 ## Prompt 21B-5 - Backend admin-users read route consolidation (PASS)
 
 Ngày cập nhật: 2026-07-14

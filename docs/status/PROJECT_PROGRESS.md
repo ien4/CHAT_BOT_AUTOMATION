@@ -1,5 +1,37 @@
 ﻿# PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 23A Hybrid channel architecture decision
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 23A đã tạo Architecture Decision Record cho mô hình hybrid: Facebook Messenger tiếp tục đi direct qua Express `GET/POST /webhook`; Website live-chat có thể dùng Chatwoot như một kênh riêng nếu được duyệt ở các prompt sau.
+
+Đã làm:
+
+- Tạo `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md`.
+- Tạo `docs/roadmap/WEBSITE_CHATWOOT_INTEGRATION_PLAN.md`.
+- Tạo `report/phase-23/README.md`.
+- Cập nhật status/index/roadmap/architecture/env policy để chuyển cách hiểu từ "No-Chatwoot tuyệt đối" sang "No-Chatwoot cho Facebook path; Website Chatwoot optional/planned".
+- Ghi rõ Website Chatwoot chưa có runtime, schema, env thật, package hoặc dashboard UI.
+
+Quyết định kiến trúc:
+
+- Không dùng Chatwoot cho Facebook.
+- Không khôi phục `/chatwoot-webhook*`.
+- Không dùng `/api/settings/webhook` làm callback Meta.
+- Website Chatwoot tương lai phải dùng endpoint mới, khuyến nghị `POST /integrations/website-chat/events`.
+- Token/secret Website Chatwoot tương lai phải server-only, không log, không commit.
+
+Không làm:
+
+- Không sửa backend source, dashboard source, Prisma schema/migration, package/lock hoặc env thật.
+- Không tạo runtime route mới.
+- Không gọi external Chatwoot/Meta/Facebook/Telegram/LLM.
+- Không gửi POST `/webhook`.
+- Không claim Meta verified hoặc production ready.
+
+Chi tiết: `report/phase-23/PROMPT_23A_HYBRID_CHANNEL_ARCHITECTURE_DECISION_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21B-5 Backend route consolidation safe read route
 
 Ngày cập nhật: 2026-07-14

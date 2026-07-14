@@ -27,7 +27,36 @@ File mẫu: `backend/.env.example`.
 | LLM | `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `CLAUDE_API_KEY` | Secret. Chỉ cấu hình provider thật ở môi trường chạy. |
 | Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_MANAGER_CHAT_ID`, `TELEGRAM_STATUS_GROUP_ID` | Token/chat id không đưa vào dashboard public env. |
 
-Biến `CHATWOOT_*` là legacy/deprecated sau Prompt 08A-08C và không còn thuộc target architecture. Không thêm mới hoặc khôi phục `CHATWOOT_BASE_URL`, `CHATWOOT_API_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `CHATWOOT_INBOX_ID`, `CHATWOOT_TEAM_ID`, `CHATWOOT_WEBHOOK_SECRET` trong env example/policy mới. Nếu môi trường thật còn các biến này để rollback lịch sử, không commit và không dùng làm target triển khai mới.
+Biến `CHATWOOT_*` là legacy/deprecated cho kiến trúc Facebook-through-Chatwoot sau Prompt 08A-08C và không còn thuộc target Facebook architecture. Không khôi phục `CHATWOOT_BASE_URL`, `CHATWOOT_API_TOKEN`, `CHATWOOT_ACCOUNT_ID`, `CHATWOOT_INBOX_ID`, `CHATWOOT_TEAM_ID`, `CHATWOOT_WEBHOOK_SECRET` để đưa Facebook qua Chatwoot hoặc để bật lại `/chatwoot-webhook*`. Nếu môi trường thật còn các biến này để rollback lịch sử, không commit và không dùng làm target Facebook mới.
+
+## 2A. Website Chatwoot future env policy
+
+Prompt 23A chấp nhận ADR ở mức kiến trúc cho **Website Chatwoot optional/planned channel**, nhưng chưa thêm env thật hoặc env example mới.
+
+Nếu triển khai Website Chatwoot ở 23B+ thì phải phân biệt rõ:
+
+| Nhóm | Chính sách |
+|---|---|
+| Facebook env | Vẫn dùng cho direct Meta webhook `GET/POST /webhook`; không đưa qua Chatwoot. |
+| Website chat env | Chỉ phục vụ Website live-chat channel, endpoint mới và scope website-only. |
+| Deprecated legacy Chatwoot env | Không dùng lại nguyên xi nếu gây nhầm với kiến trúc Facebook-through-Chatwoot cũ. |
+
+Tên biến dự kiến nếu được duyệt ở prompt sau:
+
+- `WEBSITE_CHAT_PROVIDER`
+- `WEBSITE_CHAT_WEBHOOK_SECRET`
+- `WEBSITE_CHAT_BASE_URL`
+- `WEBSITE_CHAT_ACCOUNT_ID`
+- `WEBSITE_CHAT_INBOX_ID`
+- `WEBSITE_CHAT_API_TOKEN`
+
+Quy tắc bắt buộc:
+
+- Không commit giá trị thật.
+- Không in token/secret/base URL nhạy cảm vào logs/report.
+- Không đưa token/secret vào `NEXT_PUBLIC_*`.
+- Không dùng biến Website Chatwoot để thay thế `FB_VERIFY_TOKEN`, `FB_PAGE_ACCESS_TOKEN` hoặc `FB_APP_SECRET`.
+- Nếu thêm env example sau này, phải ghi chú rõ đây là **Website chat only**, không phải Facebook callback.
 
 ## 3. Dashboard env
 

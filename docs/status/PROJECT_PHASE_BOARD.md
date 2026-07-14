@@ -10,6 +10,7 @@ Ngày cập nhật: 2026-07-14
 | 20 | DevOps/deploy hardening | DONE WITH PENDING ROLLOUT | `report/phase-20/` | Production rollout thật chưa chạy. |
 | 21 | Project/backend/docs structure | STARTED | `report/phase-21/` | `GET /api/admin-users` đã tách trong 21B-5; backend route consolidation còn nợ; docs/report physical move đã DONE trong 21Y. |
 | 22 | Public HTTPS / Meta webhook readiness | BLOCKED | `report/phase-22/` | Chờ Meta UI verify confirmation và POST event thật. |
+| 23 | Website Chatwoot Hybrid Channel | PLANNED / ADR_ACCEPTED | `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md`, `report/phase-23/` | Còn schema/env plan, inbound skeleton, mock smoke, dashboard UI và staging real event; không dùng Chatwoot cho Facebook. |
 
 ## Quy tắc đọc
 

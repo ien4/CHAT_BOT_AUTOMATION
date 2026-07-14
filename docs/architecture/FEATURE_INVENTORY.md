@@ -4,6 +4,21 @@ Ngày lập: 2026-07-08
 Nguồn: scan read-only source + docs hiện có (Prompt 05R).
 Lưu ý: file này chỉ liệt kê chức năng theo code thật đang tồn tại. **Runtime chưa được verify** trừ khi có smoke test thực tế. Không đánh dấu runtime PASS nếu chưa chạy thật.
 
+## Cập nhật Prompt 23A
+
+Đọc các dòng Chatwoot lịch sử trong file này như audit trail của hệ thống cũ. Source-of-truth hiện tại sau Prompt 23A là:
+
+- Facebook Messenger: **direct Express `GET/POST /webhook`**, không đi qua Chatwoot.
+- `/chatwoot-webhook*`: legacy route không được khôi phục.
+- Website Chatwoot integration: **PLANNED / NOT_STARTED**, có thể triển khai sau bằng endpoint mới nếu được duyệt.
+- Website Chatwoot chưa có runtime source, schema/env/package/dashboard UI hoặc staging smoke.
+
+Feature planned mới:
+
+| Tính năng | File/plan liên quan | Trạng thái | Rủi ro | Cách test an toàn |
+|---|---|---|---|---|
+| Website Chatwoot integration | `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md`, `docs/roadmap/WEBSITE_CHATWOOT_INTEGRATION_PLAN.md` | PLANNED / NOT_STARTED | Dễ nhầm với legacy Facebook-through-Chatwoot nếu dùng lại route/env cũ | Chỉ mở 23B+ với endpoint mới, env server-only, mock webhook, redacted logs và không đụng Facebook `/webhook` |
+
 ## 1. Tổng quan sản phẩm
 
 BBOTECH Bot Automation là hệ thống **chatbot automation multi-channel, multi-tenant**, gồm:

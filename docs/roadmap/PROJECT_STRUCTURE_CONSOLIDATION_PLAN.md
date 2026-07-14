@@ -6,6 +6,27 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 23A - Hybrid Website Chatwoot architecture decision
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 23A đã PASS ở phạm vi docs-only/ADR-only:
+
+- Facebook Messenger vẫn đi direct qua Express `GET/POST /webhook`.
+- Website live-chat có thể dùng Chatwoot như integration riêng nếu được duyệt ở 23B+.
+- Chatwoot không được dùng làm trung gian cho Facebook.
+- Legacy `/chatwoot-webhook*` không được khôi phục.
+- Endpoint khuyến nghị cho Website Chatwoot tương lai là `POST /integrations/website-chat/events`.
+
+Tác động lên Phase 21 structure:
+
+- Không ảnh hưởng trực tiếp tới backend route consolidation hiện tại.
+- Không move webhook/RAG/handoff/tenants trong refactor thường.
+- Không sửa `backend/src/api/dashboard.js`, dashboard source, Prisma schema/migration, package hoặc env thật trong 23A.
+- Nếu Website Chatwoot được triển khai sau này, phải đi qua prompt riêng với Clean Architecture target: route mỏng, use case normalize event, domain channel message, infrastructure adapter/verifier/client.
+
+---
+
 ## Cập nhật 21B-5 - Backend admin-users read consolidation
 
 Ngày cập nhật: 2026-07-14

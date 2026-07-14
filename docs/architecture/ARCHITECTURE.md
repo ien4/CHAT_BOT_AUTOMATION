@@ -1,5 +1,21 @@
 ﻿# ARCHITECTURE - BBOTECH BOT AUTOMATION
 
+## Prompt 23A bổ sung
+
+Prompt 23A cập nhật quyết định kiến trúc kênh nhắn tin ở mức docs-only:
+
+- Facebook Messenger vẫn đi direct qua Express `GET /webhook` và `POST /webhook`.
+- Chatwoot không được làm trung gian cho Facebook.
+- Legacy `/chatwoot-webhook*` không được khôi phục.
+- Website live-chat có thể dùng Chatwoot như một kênh riêng trong tương lai, nhưng hiện là **planned optional channel**, chưa có runtime.
+- Website Chatwoot tương lai phải dùng endpoint mới, khuyến nghị `POST /integrations/website-chat/events`, không dùng `/webhook`, `/chatwoot-webhook` hoặc `/api/settings/webhook`.
+
+Tác động kiến trúc:
+
+- "No-Chatwoot" trong tài liệu hiện tại phải hiểu là **No-Chatwoot cho Facebook path**.
+- Website Chatwoot nếu triển khai sẽ đi theo pipeline riêng: Website widget -> Chatwoot Website Inbox -> endpoint website-chat mới -> Express backend -> Bot/RAG/Handoff -> Chatwoot API reply.
+- Prompt 23A không sửa backend source, dashboard source, schema, env hoặc package.
+
 ## Prompt 07A bổ sung
 
 Prompt 07A thêm guard P0 cho dashboard tenant routes mà không đổi kiến trúc module lớn:

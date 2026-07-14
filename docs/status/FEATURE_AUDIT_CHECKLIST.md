@@ -1,5 +1,23 @@
 ﻿# FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 23A Update - Hybrid Channel Architecture Decision (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Mode | PASS | Docs-only / ADR-only | Không sửa runtime source. |
+| Architecture decision | ADR_ACCEPTED | `docs/architecture/HYBRID_CHANNEL_ARCHITECTURE_ADR.md` | Facebook direct; Website Chatwoot optional/planned riêng. |
+| Facebook path | Preserved | `GET/POST /webhook` | Không đổi callback Meta. |
+| Legacy route | Preserved disabled | `/chatwoot-webhook*` | Không khôi phục route cũ. |
+| Website Chatwoot runtime | NOT_STARTED | roadmap 23B-23F | Chưa có code/schema/env/dashboard UI. |
+| Endpoint naming | Recommended | `POST /integrations/website-chat/events` | Chỉ là đề xuất, chưa code. |
+| Env policy | Updated | `docs/policies/ENV_POLICY.md` | Phân biệt Facebook env, Website chat env và legacy Chatwoot env. |
+| Validation | PASS | backend quality, Prisma validate, dashboard typecheck/build | Baseline docs-only sạch. |
+| External calls | NONE | command scope | Không gọi Chatwoot/Meta/Facebook/Telegram/LLM. |
+
+Kết luận: Prompt 23A cập nhật đúng hướng kiến trúc hybrid mà không làm thay đổi runtime. Phase 23 bắt đầu ở trạng thái PLANNED / ADR_ACCEPTED.
+
 ## Prompt 21B-5 Update - Backend Admin Users Read Route Consolidation (PASS)
 
 Ngày cập nhật: 2026-07-14
