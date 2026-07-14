@@ -1,7 +1,7 @@
 # PROJECT STATUS MASTER — BBOTECH BOT AUTOMATION
 
 Ngày cập nhật: 2026-07-14
-Prompt gần nhất: **21Y**
+Prompt gần nhất: **21B-5**
 
 ## 1. Tóm tắt hiện tại
 
@@ -11,14 +11,15 @@ Prompt gần nhất: **21Y**
 - Meta callback đúng là `GET /webhook` và `POST /webhook`.
 - `/api/settings/webhook` là dashboard config/read endpoint có auth, **không** phải callback Meta.
 - Production chưa ready: Meta verify challenge, Meta POST event thật và production rollout thật vẫn pending.
-- Runtime dashboard hiện tại sau Prompt 21Y: **PASS** với clean `.next`, fresh dev server, full route smoke, static asset smoke và dev log scan.
+- Runtime dashboard hiện tại sau Prompt 21B-5: **PASS** với clean `.next`, fresh dev server, full route smoke, static asset smoke và dev log scan.
+- Backend route consolidation sau Prompt 21B-5 đã tách thêm `GET /api/admin-users` an toàn.
 - Docs/report organization sau Prompt 21Y: **DONE**. Root `docs/` và root `report/` chỉ giữ `README.md`; tài liệu/report thật đã nằm trong các thư mục con theo nhóm.
 
 ## 2. Bảng trạng thái theo nhóm
 
 | Nhóm | Trạng thái | Đã xử lý | Đang xử lý | Đang lên kế hoạch | Chưa xử lý | Blocker | Bước tiếp theo |
 |---|---|---|---|---|---|---|---|
-| Backend API / dashboard.js monolith | STARTED | Prompts/settings/quick-reply-menus/channel-configs/campaigns/stats read routes đã tách từng bước | Route debt còn trong `backend/src/api/dashboard.js` | 21B-5 nếu có candidate read-only nhỏ | Mutation/external routes chưa tách | Không chọn route có external/mutation/raw SQL/secret nếu chưa có prompt riêng | Audit route map và chỉ chọn GET read-only an toàn. |
+| Backend API / dashboard.js monolith | STARTED | Prompts/settings/quick-reply-menus/channel-configs/campaigns/stats/admin-users read routes đã tách từng bước | Route debt còn trong `backend/src/api/dashboard.js` | 21B-6 nếu có candidate read-only nhỏ | Mutation/external routes chưa tách | Không chọn route có external/mutation/raw SQL/secret nếu chưa có prompt riêng | Audit route map và chỉ chọn GET read-only an toàn; nếu không có thì `NO_SAFE_CANDIDATE`. |
 | Dashboard feature split | STARTED | Analytics/prompts/staff/appointments/content-packages/quick-replies/campaigns đã split | Runtime stability rule 21X/21Y đang active | Page nhỏ còn lại nếu guard đủ | Settings/knowledge/handoff/tenants rủi ro cao | Mọi dashboard refactor phải full route + static asset smoke | Chỉ mở split mới sau khi bug tracker sạch. |
 | Meta webhook staging | BLOCKED | Public Ngrok smoke không dùng secret đã PASS ở 22B | Chờ operator verify Meta UI | Meta POST event thật sau verify | Chưa có event thật | Thiếu `META_VERIFY_OPERATOR_CONFIRMED=YES` | Người vận hành verify callback `/webhook` bằng token thật. |
 | Production rollout | NOT_STARTED | Policy/checklist đã có | Không có rollout đang chạy | Backup + `prisma migrate deploy` + smoke prod thật | Production deploy/smoke thật | Chưa xong staging + Meta event | Chạy prompt rollout riêng sau staging verified. |
@@ -36,14 +37,14 @@ Prompt gần nhất: **21Y**
 | Phase 18 | RAG/raw SQL hardening | DONE | `report/phase-18/` | Không thêm raw unsafe mới. |
 | Phase 19 | Dashboard feature split | STARTED | `report/phase-19/`, `report/bugs/` | Sau 21X/21Y phải full route + asset smoke. |
 | Phase 20 | DevOps/deploy hardening | DONE WITH PENDING ROLLOUT | `report/phase-20/` | Production rollout thật chưa chạy. |
-| Phase 21 | Project structure/backend/docs | STARTED | `report/phase-21/` | Docs/report move DONE; backend monolith debt còn. |
+| Phase 21 | Project structure/backend/docs | STARTED | `report/phase-21/` | Docs/report move DONE; `GET /api/admin-users` đã tách; backend monolith debt còn. |
 | Phase 22 | Public HTTPS / Meta webhook readiness | BLOCKED | `report/phase-22/` | Chờ operator Meta verify confirmation. |
 
 ## 4. Dashboard route health hiện tại
 
 Xem `docs/status/DASHBOARD_ROUTE_SMOKE_MATRIX.md`.
 
-Trạng thái sau 21Y: full route smoke PASS, static asset smoke PASS, dev log scan sạch. Không phát hiện bug source/dashboard mới từ việc move docs/report.
+Trạng thái sau 21B-5: full route smoke PASS, static asset smoke PASS, dev log scan sạch. Không phát hiện bug source/dashboard mới sau backend route consolidation.
 
 ## 5. Bug tracker hiện tại
 
@@ -55,7 +56,7 @@ Trạng thái ngắn: không có bug dashboard mới sau 21Y. Các bug stale chu
 
 | Prompt | Mục tiêu | Vì sao chọn | Điều kiện bắt đầu | Điều kiện PASS |
 |---|---|---|---|---|
-| `21B-5-SAFE` hoặc `NO_SAFE_CANDIDATE` | Tiếp tục backend route consolidation read-only nhỏ hoặc dừng rõ nếu không có candidate | Phase 21 còn monolith debt | Audit chứng minh route GET-only, không external/mutation/raw SQL/secret | Backend quality, Prisma validate, regression smoke route pass |
+| `21B-6-SAFE` hoặc `NO_SAFE_CANDIDATE` | Tiếp tục backend route consolidation read-only nhỏ hoặc dừng rõ nếu không có candidate | Phase 21 còn monolith debt | Audit chứng minh route GET-only, không external/mutation/raw SQL/secret | Backend quality, Prisma validate, regression smoke route pass |
 | Dashboard split kế tiếp | Tách page nhỏ còn lại | Phase 19 còn nợ | Đọc bug tracker, clean `.next`, fresh server, smoke rule 21Y | Full route smoke, static asset smoke, dev log scan sạch |
 | `META_VERIFY_OPERATOR_CHECKPOINT` | Ghi nhận Meta UI Verify and Save và chuẩn bị POST event thật | Phase 22 đang blocked | Người vận hành xác nhận `META_VERIFY_OPERATOR_CONFIRMED=YES` | Không in secret, callback `/webhook` verified, docs status cập nhật |
 

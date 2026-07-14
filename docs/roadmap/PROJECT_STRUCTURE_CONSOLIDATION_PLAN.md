@@ -6,6 +6,22 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21B-5 - Backend admin-users read consolidation
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 21B-5 đã PASS: tách `GET /api/admin-users` sang `backend/src/presentation/http/**` + `backend/src/infrastructure/repositories/adminUsers.repository.js`.
+
+- Candidate được chọn vì GET-only, `platformAdminOnly`, chỉ đọc Prisma `findMany` với `select` không chứa `passwordHash`.
+- Không external provider, không mutation, không raw SQL, không secret/token field.
+- `backend/src/api/dashboard.js` chỉ mount `router.use('/admin-users', ...)`; `POST` và `DELETE` cùng domain vẫn giữ nguyên trong monolith.
+- Public API contract giữ nguyên: path `/api/admin-users`, method GET, `authMiddleware`, `platformAdminOnly`, 401/403/200, response array cũ, error 500 `Internal server error`.
+- Validation/smoke PASS: backend quality, Prisma validate, dashboard typecheck/build, backend smoke candidate + regression read routes, dashboard full route/static/dev-log gate.
+
+Phase 21 vẫn **STARTED**, chưa Done; các route còn lại cần audit nghiêm, không tách nếu rơi vào external/mutation/PII/tenant core/RAG/handoff/analytics raw SQL risk.
+
+---
+
 ## Cập nhật 21Y - Docs/report physical reorganization
 
 Ngày cập nhật: 2026-07-14

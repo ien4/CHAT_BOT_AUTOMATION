@@ -1,5 +1,31 @@
 ﻿# PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21B-5 Backend route consolidation safe read route
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 21B-5 đã audit `backend/src/api/dashboard.js`, chọn đúng một candidate nhỏ là `GET /api/admin-users`, và tách route này sang repository/controller/routes theo pattern Phase 21B.
+
+Đã làm:
+
+- Tạo `backend/src/infrastructure/repositories/adminUsers.repository.js`.
+- Tạo `backend/src/presentation/http/controllers/dashboard/adminUsers.controller.js`.
+- Tạo `backend/src/presentation/http/routes/dashboard/adminUsers.routes.js`.
+- Cập nhật `backend/src/api/dashboard.js` để mount `router.use('/admin-users', ...)`.
+- Xóa handler inline `router.get('/admin-users', ...)` cũ.
+- Giữ nguyên `POST /api/admin-users` và `DELETE /api/admin-users/:id` trong monolith; không tách mutation.
+
+Vì sao an toàn:
+
+- GET-only, `authMiddleware` + `platformAdminOnly`.
+- Chỉ dùng Prisma `findMany`.
+- `select` chỉ trả `id`, `username`, `role`, `tenantId`, `createdAt`; không trả `passwordHash`, token hoặc secret.
+- Không external provider, không raw SQL, không mutation.
+
+Validation/smoke PASS: backend syntax/quality, Prisma validate, dashboard typecheck/build, backend runtime smoke 401/403/200 + regression reads, dashboard full route smoke, 125 static assets 200, dev log scan sạch.
+
+Chi tiết: `report/phase-21/PROMPT_21B_5_BACKEND_ROUTE_CONSOLIDATION_OR_NO_SAFE_CANDIDATE_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21Y Docs/report physical reorganization + regression gate
 
 Ngày cập nhật: 2026-07-14

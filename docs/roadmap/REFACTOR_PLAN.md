@@ -1,5 +1,29 @@
 ﻿# REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-5 - Backend admin-users read route consolidation (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+Đã làm:
+
+- Tách `GET /api/admin-users` khỏi `backend/src/api/dashboard.js`.
+- Tạo repository/controller/routes cho admin users read route.
+- Giữ `POST /api/admin-users` và `DELETE /api/admin-users/:id` trong monolith vì đó là mutation.
+- Giữ nguyên path/method/auth/role guard/status/response/error shape.
+
+Validation:
+
+- Backend syntax checks, `npm run quality`, `npx prisma validate` PASS.
+- Dashboard `npm run typecheck`, `npm run build` PASS.
+- Backend runtime smoke PASS: `/health` 200, `GET /webhook` thiếu params 403, `POST /chatwoot-webhook` 404, candidate 401/403/200, regression read routes 200.
+- Dashboard regression gate PASS: clean `.next`, fresh dev server 3019, full route smoke, 125 static assets 200, dev log scan sạch.
+
+Next:
+
+1. `21B-6-SAFE` chỉ nếu còn candidate GET/read-only nhỏ thật sự an toàn.
+2. `NO_SAFE_CANDIDATE` nếu phần còn lại là conversations/knowledge/providers/handoff/Facebook/tenants/analytics hoặc domain có mutation/action/PII rủi ro.
+3. Dashboard split hoặc Meta checkpoint có thể ưu tiên nếu backend route còn lại đều rủi ro cao.
+
 ## Prompt 21Y - Docs/report physical reorganization + regression gate (PASS)
 
 Ngày cập nhật: 2026-07-14

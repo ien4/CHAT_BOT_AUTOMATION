@@ -16,6 +16,7 @@ const createQuickReplyMenuRoutes = require('../presentation/http/routes/dashboar
 const createChannelConfigRoutes = require('../presentation/http/routes/dashboard/channelConfigs.routes');
 const createCampaignRoutes = require('../presentation/http/routes/dashboard/campaigns.routes');
 const createStatsRoutes = require('../presentation/http/routes/dashboard/stats.routes');
+const createAdminUsersRoutes = require('../presentation/http/routes/dashboard/adminUsers.routes');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -146,17 +147,7 @@ router.get('/auth/me', authMiddleware, async (req, res) => {
 
 // ==================== ADMIN USERS ====================
 
-router.get('/admin-users', authMiddleware, platformAdminOnly, async (req, res) => {
-  try {
-    const users = await prisma.adminUser.findMany({
-      select: { id: true, username: true, role: true, tenantId: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.use('/admin-users', createAdminUsersRoutes({ authMiddleware, platformAdminOnly, prisma }));
 
 router.post('/admin-users', authMiddleware, platformAdminOnly, async (req, res) => {
   try {

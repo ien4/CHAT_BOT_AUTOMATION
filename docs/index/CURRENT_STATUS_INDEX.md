@@ -34,10 +34,11 @@ Tài liệu này là điểm vào hiện tại trước khi đọc docs hoặc r
 - Target hiện tại là **No-Chatwoot**.
 - Meta/Facebook callback thật là `GET /webhook` để verify và `POST /webhook` để nhận event.
 - `/api/settings/webhook` chỉ là dashboard config/read endpoint có auth, không phải Meta callback URL.
-- Backend route consolidation Phase 21 đang **Started**, chưa Done. Đã tách thêm prompts/settings/quick-reply-menus/channel-configs/campaigns/stats read routes theo từng bước nhỏ.
+- Backend route consolidation Phase 21 đang **Started**, chưa Done. Đã tách thêm prompts/settings/quick-reply-menus/channel-configs/campaigns/stats/admin-users read routes theo từng bước nhỏ.
 - Dashboard feature split Phase 19 đang **Started**, chưa Done. Analytics/prompts/staff/appointments/content-packages/quick-replies/campaigns đã split; các page nặng còn lại cần prompt riêng.
 - Prompt 21X đã PASS: bug `Bug_21C-3.md` được phân loại **MIXED_DEV_SERVER_OR_PORT + STALE_NEXT_DEV_CACHE**, xử lý bằng dừng server cũ, clean `.next`, rebuild, full smoke.
 - Prompt 21Y đã PASS: docs/report được move vật lý sang cấu trúc theo nhóm, root `docs/` và root `report/` chỉ giữ `README.md`, link current docs/report đã được cập nhật và dashboard regression gate không phát hiện bug mới.
+- Prompt 21B-5 đã PASS: `GET /api/admin-users` được tách khỏi `dashboard.js` sang repository/controller/routes; no-token 401, tenant token 403, platform token 200, dashboard regression gate PASS.
 - Public HTTPS staging sau 22B-SAFE từng PASS không dùng secret, nhưng Meta verify operator confirmation vẫn pending.
 - Prompt 22C-SAFE đã dừng với **BLOCKED_META_VERIFY_CONFIRMATION_MISSING** vì phiên chưa có `META_VERIFY_OPERATOR_CONFIRMED=YES`; chưa gửi/chờ POST event thật.
 - Production rollout thật **chưa chạy**. Cần backup DB, `prisma migrate deploy` release step và smoke production thật trước khi claim production ready.
@@ -59,7 +60,7 @@ Tài liệu này là điểm vào hiện tại trước khi đọc docs hoặc r
 
 | Prompt | Mục tiêu |
 |---|---|
-| 21B-5 hoặc NO_SAFE_CANDIDATE | Chỉ tiếp tục backend read-only route consolidation nếu audit tìm được candidate nhỏ, không external/mutation/raw SQL/secret; nếu không thì dừng rõ. |
+| 21B-6 hoặc NO_SAFE_CANDIDATE | Chỉ tiếp tục backend read-only route consolidation nếu audit tìm được candidate nhỏ, không external/mutation/raw SQL/secret; nếu không thì dừng rõ. |
 | Dashboard split kế tiếp | Chỉ sau khi đọc `docs/status/BUG_TRACKER.md` và áp dụng rule 21Y: full route smoke + static asset smoke + dev log scan. |
 | Meta verify operator checkpoint | Người vận hành giữ Ngrok session, nhập callback `/webhook`, dùng `FB_VERIFY_TOKEN` thật trong Meta Developer và xác nhận kết quả. |
 | Meta POST event smoke prompt | Chỉ chạy sau khi người vận hành xác nhận `META_VERIFY_OPERATOR_CONFIRMED=YES`; mục tiêu là gửi/nhận 1 event thật và quan sát log đã redact. |

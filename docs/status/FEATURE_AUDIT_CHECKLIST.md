@@ -1,5 +1,25 @@
 ﻿# FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21B-5 Update - Backend Admin Users Read Route Consolidation (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Candidate selection | PASS | `GET /api/admin-users` | Route nhỏ, platform-only, GET-only. |
+| Candidate rejected list | Done | route map audit | Conversations/knowledge/providers/content-packages/appointments/staff/handoff/Facebook/analytics/tenants bị loại do PII, external, mutation, raw SQL tagged, tenant core hoặc action risk. |
+| Repository | Created | `adminUsers.repository.js` | Inject `prisma`, không Express/env, chỉ `findMany` với `select` an toàn. |
+| Controller | Created | `adminUsers.controller.js` | Giữ 200/500 và error shape `Internal server error`. |
+| Routes factory | Created | `adminUsers.routes.js` | Giữ `authMiddleware` + `platformAdminOnly`, path mount `/admin-users`. |
+| Monolith change | PASS | `dashboard.js` | Chỉ mount route GET mới; `POST`/`DELETE` admin-users vẫn ở monolith. |
+| API contract | Preserved | backend smoke | No-token 401, tenant token 403, platform token 200, response array không có `passwordHash`. |
+| Backend validation | PASS | syntax/quality/prisma | Không schema/package/env change. |
+| Backend smoke | PASS | temp Express app source mới | `/health`, `/webhook`, `/chatwoot-webhook`, candidate và regression read routes PASS. |
+| Dashboard regression | PASS | clean `.next`, fresh 3019 | 16 routes PASS, 125 static assets 200, dev log sạch. |
+| Safety scans | PASS WITH HISTORICAL MATCHES | `rg` scans | Raw unsafe chỉ README lịch sử; Chatwoot chỉ README layer; destructive matches docs/report/script warning cũ. |
+
+Kết luận: `GET /api/admin-users` đã tách an toàn, giữ nguyên contract. Phase 21 vẫn STARTED vì `dashboard.js` còn route debt.
+
 ## Prompt 21Y Update - Docs/report Physical Reorganization + Regression Gate (PASS)
 
 Ngày cập nhật: 2026-07-14
