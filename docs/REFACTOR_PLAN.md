@@ -1,5 +1,39 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21C-FIX - Dashboard runtime chunk error root-cause fix (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+Đây là bugfix/runtime proof, không phải feature split mới.
+
+Kết quả:
+
+- Root cause: **STALE_NEXT_DEV_CACHE_RESOLVED**.
+- Lỗi trong `Bug_21C_SAFE.md` xuất phát từ `.next/server/webpack-runtime.js` và webpack dev cache: missing chunk `./20.js`/`./682.js`, static chunk 404, ENOENT vendor chunk và `Cannot read properties of undefined (reading 'call')`.
+- Source audit không tìm thấy import/export mismatch, circular barrel rõ, dynamic import/lazy hoặc client/server boundary sai trong `content-packages`.
+- Dashboard typecheck/build PASS trước clean cache và PASS sau clean cache.
+- Đã dừng dev server dashboard cũ, xóa `.next`, rebuild sạch và smoke fresh dev server port `3019`.
+- Runtime smoke PASS cho `/login`, `/dashboard`, `/dashboard/content-packages`, `/dashboard/settings`, `/dashboard/campaigns`, `/dashboard/conversations`, `/dashboard/knowledge`, `/dashboard/prompts`, `/dashboard/analytics`, route giả 404 hợp lệ.
+- Dev log sau clean không còn missing chunk/runtime call error.
+
+Không làm:
+
+- Không sửa source dashboard/backend.
+- Không sửa schema/migration/package/lock.
+- Không thêm dependency.
+- Không chạy migrate/import/action hoặc external provider.
+
+Quy tắc refactor bổ sung:
+
+1. Nếu phát hiện bug runtime trong phạm vi đang làm, phải dừng feature work và xử lý root cause trước khi mở feature mới.
+2. Không fix bằng cách che lỗi, xóa component/route, đổi behavior hoặc đổi UI để né lỗi.
+3. Nếu root cause là stale `.next`, phải chứng minh bằng clean rebuild + fresh route smoke và ghi report.
+
+Next:
+
+1. Có thể tiếp tục Phase 19/21 chỉ sau khi bug runtime đã đóng bằng report này.
+2. Dashboard split tiếp theo vẫn phải chọn page nhỏ, khóa mutation/action rõ và smoke route sau clean/fresh server nếu có chunk error.
+
 ## Prompt 21C-SAFE - Dashboard content-packages feature split (PASS)
 
 Ngày cập nhật: 2026-07-13

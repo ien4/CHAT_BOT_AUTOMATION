@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21C-FIX Update - Dashboard Runtime Chunk Error (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Bug evidence | Confirmed | `Bug_21C_SAFE.md` | Missing chunk `./20.js`/`./682.js`, `reading 'call'`, static chunks 404, webpack cache ENOENT trong `.next`. |
+| Preflight | PASS WITH CONTEXT WARNING | branch `chore/prompt-05r-docs-local-run`, commit `672792a` tồn tại | Chỉ có `Bug_21C_SAFE.md` untracked làm context bug; không sửa/stage file này. |
+| Baseline static | PASS | dashboard typecheck/build, backend quality, Prisma validate | Source/build sạch trước khi xóa `.next`. |
+| Source import audit | PASS | `rg` content-packages exports/imports | Không thấy named/default mismatch, circular barrel rõ hoặc dynamic import. |
+| Client boundary audit | PASS | `rg` `'use client'`, hook/state/window/localStorage | Page/hook/components dùng state/event đều có `'use client'`; không có client-only global ngoài guard trong feature. |
+| Route dependency audit | PASS | route grep | Các route lỗi không import `content-packages`; chỉ page content-packages dùng barrel mới. |
+| Cache clean proof | PASS | dừng dev server cũ, xóa `.next`, typecheck/build sạch | `.next` là ignored build artifact, không commit. |
+| Runtime smoke sau clean | PASS | dev server tạm port `3019` | 9 route dashboard/login 200, route giả 404; không 500/chunk error. |
+| Bug signature sau clean | NOT REPRODUCED | dev log | Không còn `Cannot find module`, `reading 'call'`, ENOENT vendor chunk hoặc static chunk 404 lỗi. |
+| Source fix | NO_SOURCE_FIX_NEEDED | root cause cache stale | Không sửa source để tránh đổi behavior không cần thiết. |
+| Safety | PASS | final scans | Không thêm env/secret access, direct fetch, dependency hoặc destructive command. |
+
+Kết luận: bug runtime sau 21C là stale/corrupt Next dev cache, đã xử lý bằng clean `.next` + rebuild + fresh route smoke. Không tiếp tục feature split khi bug chưa đóng.
+
 ## Prompt 21C-SAFE Update - Dashboard Content Packages Feature Split (PASS)
 
 Ngày cập nhật: 2026-07-13

@@ -6,6 +6,22 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21C-FIX - Dashboard runtime chunk error
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 21C-FIX đã PASS và không thay đổi source structure.
+
+- Root cause: **STALE_NEXT_DEV_CACHE_RESOLVED**.
+- Bug evidence nằm trong `.next/server/webpack-runtime.js`, static chunks 404 và webpack cache ENOENT, không phải import/source structure mới.
+- Audit `dashboard/src/features/content-packages/**` và các route bị lỗi không tìm thấy source import/client-boundary bug.
+- `.next` ignored đã được xóa sau khi dừng dashboard dev server cũ; typecheck/build sạch.
+- Fresh dev server tạm port `3019` route smoke PASS cho dashboard routes liên quan.
+
+Không sửa backend, dashboard source, schema/migration/package, Docker/start scripts hoặc env thật. Phase 19 và Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21C-SAFE - Dashboard content-packages feature split
 
 Ngày cập nhật: 2026-07-13

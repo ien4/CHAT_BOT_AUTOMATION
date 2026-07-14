@@ -1,5 +1,28 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21C-FIX Dashboard runtime chunk error
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 21C-FIX đã xử lý bug runtime Dashboard sau 21C-SAFE bằng root-cause proof, không sửa source bừa.
+
+Root cause thật: **STALE_NEXT_DEV_CACHE_RESOLVED**.
+
+Bằng chứng:
+
+- `Bug_21C_SAFE.md` ghi lỗi runtime trong `.next/server/webpack-runtime.js`: missing chunk `./20.js`, missing chunk `./682.js`, `Cannot read properties of undefined (reading 'call')`, static chunks 404 và webpack cache ENOENT vendor chunk.
+- Baseline static trước clean cache PASS: dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`.
+- Audit source `content-packages` không thấy default/named export mismatch, circular import rõ, dynamic/lazy import hoặc client/server boundary sai. Các route bị lỗi (`dashboard`, `settings`, `campaigns`, `conversations`, `knowledge`) không import feature `content-packages`.
+- Đã dừng đúng dashboard dev server cũ `next dev -p 3002`, xóa `.next` ignored, chạy lại typecheck/build sạch.
+- Fresh dev server tạm port `3019` smoke PASS: `/login`, `/dashboard`, `/dashboard/content-packages`, `/dashboard/settings`, `/dashboard/campaigns`, `/dashboard/conversations`, `/dashboard/knowledge`, `/dashboard/prompts`, `/dashboard/analytics` đều không 500; route giả trả 404 hợp lệ.
+- Dev log sau clean không còn `Cannot find module`, không còn `Cannot read properties of undefined (reading 'call')`, không còn ENOENT vendor chunk hoặc static chunk 404 lỗi.
+
+Không sửa source dashboard, backend, schema/migration/package/webhook/RAG/handoff/tenants/Docker/env thật. Không chạy migrate/import/action, không gọi external provider, không claim Meta verified hoặc production ready.
+
+Quy tắc bổ sung: nếu phát hiện bug runtime trong phase đang làm, phải dừng feature work và xử lý root cause trước khi mở feature mới; không sửa chắp vá, không che lỗi, không đổi behavior để né lỗi.
+
+Chi tiết: `report/PROMPT_21C_FIX_DASHBOARD_RUNTIME_CHUNK_ERROR_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21C-SAFE Dashboard content-packages feature split
 
 Ngày cập nhật: 2026-07-13
