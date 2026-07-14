@@ -1,5 +1,27 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21C-2-SAFE Update - Dashboard Quick Replies Feature Split (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Candidate selection | Done | `quick-replies/page.tsx` 182 LOC | Page nhỏ/rủi ro thấp hơn settings/knowledge/handoff/tenants. |
+| Page audit | Done | list/read + create/update/delete + modal form | Không external; mutation phải khóa trong smoke. |
+| Feature folder | Created | `dashboard/src/features/quick-replies/**` | Hook + components + types + formatter + barrel; README cập nhật. |
+| Page orchestrator | Done | `page.tsx` còn 52 LOC | Giữ `'use client'`, route cũ và layout cũ. |
+| API contract | Preserved | dùng `quickReplyMenusApi` cũ | Không sửa `dashboard/src/lib/api.ts`; URL/payload/error text giữ nguyên. |
+| Mutation handlers | Preserved | `create/update/delete` trong hook | **LOCKED_NOT_EXECUTED** trong runtime smoke. |
+| Dashboard validation | PASS | `tsc --noEmit`, typecheck, build | Build route `/dashboard/quick-replies` PASS. |
+| Backend validation | PASS | `npm run quality`, `npx prisma validate` | Backend không sửa nhưng vẫn giữ baseline. |
+| Clean `.next` proof | PASS | remove ignored `.next`, rebuild | Bắt buộc vì lịch sử stale cache 21C-FIX. |
+| Runtime smoke | PASS | dev server tạm port `3019` | Login/dashboard/quick-replies/content-packages/prompts/analytics/settings/campaigns 200; route giả 404. |
+| Chunk regression | PASS | dev log sau smoke | Không có missing chunk, `reading 'call'`, vendor ENOENT hoặc static chunk 404 lỗi. |
+| Safety scans | PASS WITH HISTORICAL MATCHES | `rg` theo prompt | Không direct fetch/env/secret trong feature; install/destructive/chunk matches là docs/script/report lịch sử cũ. |
+| Forbidden areas | Unchanged | diff guard | Không sửa backend/schema/package/webhook/RAG/handoff/tenants/Docker/env thật. |
+
+Kết luận: dashboard `quick-replies` đã tách an toàn theo pattern Phase 19. Behavior/API/UI giữ nguyên; mutation chỉ preserve, không executed.
+
 ## Prompt 21C-FIX Update - Dashboard Runtime Chunk Error (PASS)
 
 Ngày cập nhật: 2026-07-14

@@ -1,5 +1,37 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21C-2-SAFE - Dashboard quick-replies feature split (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+Đã làm:
+
+- Tách `dashboard/src/app/dashboard/quick-replies/page.tsx` sang feature module `dashboard/src/features/quick-replies/**`.
+- Page giảm từ 182 LOC xuống 52 LOC, giữ vai trò client orchestrator mỏng theo pattern Phase 19.
+- Tạo `hooks/useQuickReplies.ts` cho state/data loading/create/update/delete handlers.
+- Tạo components cho header, loading state, error banner, empty state, list menu và form modal.
+- Tạo `types.ts`, `lib/quickReplyFormatters.ts`, barrel `index.ts` và cập nhật README feature.
+- Giữ nguyên `quickReplyMenusApi`, UI text/className/layout, confirm/error text và form payload.
+- Mutation create/update/delete được preserve nhưng không chạy trong smoke: **LOCKED_NOT_EXECUTED**.
+
+Validation:
+
+- Baseline trước patch PASS: dashboard typecheck/build, backend quality, Prisma validate, root diff sạch.
+- Sau patch PASS: dashboard `npx --no-install tsc --noEmit`, typecheck, build; backend quality; Prisma validate.
+- Clean `.next` + rebuild PASS.
+- Fresh dashboard route smoke PASS bằng GET-only trên port tạm `3019`; không tái hiện chunk error.
+
+Không làm:
+
+- Không sửa backend, schema/migration/package/lock, dashboard API client/auth/config, webhook/RAG/handoff/tenants/notifications.
+- Không thêm dependency, không chạy mutation/action thật, không gọi external provider, không claim Meta verified/production ready.
+
+Next:
+
+1. Phase 19 vẫn **Started**, chưa Done; candidate dashboard còn lại cần prompt riêng và audit risk riêng.
+2. `campaigns` có thể là candidate dashboard split tương lai nếu upload/write được khóa rõ trong smoke.
+3. `knowledge`, `handoff`, `settings`, `tenants` vẫn là khu vực rủi ro cao, không tách nếu chưa có prompt riêng.
+
 ## Prompt 21C-FIX - Dashboard runtime chunk error root-cause fix (PASS)
 
 Ngày cập nhật: 2026-07-14

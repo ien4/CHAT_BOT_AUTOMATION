@@ -1,5 +1,32 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21C-2-SAFE Dashboard quick-replies feature split
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 21C-2-SAFE đã tách `dashboard/src/app/dashboard/quick-replies/page.tsx` sang feature module `dashboard/src/features/quick-replies/**`, giữ nguyên route `/dashboard/quick-replies`, UI text/className/layout và API behavior hiện hữu.
+
+Đã làm:
+
+- Audit trang `quick-replies/page.tsx`: imports/types, state/form modal, data loading/list, create/update/delete handlers, confirm/error text, intent label formatter, loading/empty/error/list/form render.
+- Rút page từ **182 LOC** xuống **52 LOC**; page chỉ còn client orchestrator import hook/components và render layout cũ.
+- Tạo `useQuickReplies` để giữ state/data loading/handlers cũ.
+- Tách components header/loading/error/empty/list/form modal; tạo `types.ts`, formatter intent label và barrel `index.ts`.
+- Giữ nguyên `quickReplyMenusApi` hiện hữu; không sửa `dashboard/src/lib/api.ts`.
+- Mutation create/update/delete được preserve nhưng runtime smoke không chạy mutation: **LOCKED_NOT_EXECUTED**.
+
+Validation/smoke:
+
+- Baseline trước patch PASS: dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`, root diff sạch.
+- Sau patch PASS: dashboard `npx --no-install tsc --noEmit`, dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`.
+- Clean `.next` bắt buộc PASS: xóa `.next` ignored, chạy lại dashboard typecheck/build PASS.
+- Fresh dashboard smoke PASS trên dev server tạm port `3019`: `/login`, `/dashboard`, `/dashboard/quick-replies`, `/dashboard/content-packages`, `/dashboard/prompts`, `/dashboard/analytics`, `/dashboard/settings`, `/dashboard/campaigns` đều không 500; route giả trả 404 hợp lệ; process tạm đã dừng.
+- Chunk regression: không tái hiện `Cannot find module './*.js'`, `Cannot read properties of undefined (reading 'call')`, vendor chunk ENOENT hoặc static chunk 404 lỗi.
+
+Không sửa backend, schema/migration/package/lock, webhook/RAG/handoff/tenants/notifications, Docker/start scripts, env thật hoặc API client. Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified hoặc production ready. Phase 19 vẫn **Started**, Phase 21 vẫn **Started**.
+
+Chi tiết: `report/PROMPT_21C_2_DASHBOARD_QUICK_REPLIES_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21C-FIX Dashboard runtime chunk error
 
 Ngày cập nhật: 2026-07-14

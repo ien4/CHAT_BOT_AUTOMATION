@@ -6,6 +6,24 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21C-2-SAFE - Dashboard quick-replies feature split
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 21C-2-SAFE đã PASS: tách `dashboard/src/app/dashboard/quick-replies/page.tsx` sang `dashboard/src/features/quick-replies/**`.
+
+- Page trước refactor: 182 LOC; sau refactor: 52 LOC.
+- Feature mới gồm hook `useQuickReplies`, components header/loading/error/empty/list/form modal, `types.ts`, formatter intent label và barrel `index.ts`.
+- Route `/dashboard/quick-replies`, UI text/className/layout và `quickReplyMenusApi` contract giữ nguyên.
+- Create/update/delete handlers được di chuyển nguyên behavior sang hook.
+- Mutation được đánh dấu **LOCKED_NOT_EXECUTED** trong runtime smoke.
+- Validation PASS: dashboard typecheck/build, backend quality, Prisma validate.
+- Clean `.next` + fresh dev route smoke PASS trên port `3019`, không tái hiện chunk error.
+
+Không sửa backend/schema/migration/package/API client/auth/config/webhook/RAG/handoff/tenants/Docker/env thật. Phase 19 vẫn **Started**, chưa Done; Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21C-FIX - Dashboard runtime chunk error
 
 Ngày cập nhật: 2026-07-14
