@@ -1,7 +1,13 @@
 # docs/runbooks
 
-Thư mục đích cho runbook vận hành. Hiện tại giữ root path cho các file đang được tham chiếu:
+Ngày cập nhật: 2026-07-14
 
-- `docs/LOCAL_RUN_GUIDE.md`
-- `docs/META_WEBHOOK_STAGING_RUNBOOK.md`
-- `docs/PRODUCTION_ROLLOUT_CHECKLIST.md`
+Thư mục hướng dẫn vận hành.
+
+| File | Vai trò |
+|---|---|
+| `LOCAL_RUN_GUIDE.md` | Cách chạy local an toàn. |
+| `META_WEBHOOK_STAGING_RUNBOOK.md` | Quy trình staging public HTTPS/Meta webhook. |
+| `PRODUCTION_ROLLOUT_CHECKLIST.md` | Checklist rollout production thật. |
+
+Không dùng runbook để claim production ready nếu chưa có log rollout/smoke thật.

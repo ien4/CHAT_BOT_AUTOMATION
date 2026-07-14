@@ -1,8 +1,13 @@
 # docs/index
 
-Thư mục đích cho index docs. Hiện tại các file vẫn giữ root path:
+Ngày cập nhật: 2026-07-14
 
-- `docs/CURRENT_STATUS_INDEX.md`
-- `docs/HISTORICAL_DOCS_INDEX.md`
+Thư mục index và map tài liệu.
 
-Không move trong Prompt 21X để tránh gãy link lịch sử.
+| File | Vai trò |
+|---|---|
+| `CURRENT_STATUS_INDEX.md` | Entry point hiện tại và nguồn truth ngắn. |
+| `DOCS_REPORT_ORGANIZATION_MAP.md` | Bản đồ cấu trúc docs/report sau Prompt 21Y. |
+| `HISTORICAL_DOCS_INDEX.md` | Index lịch sử, dùng để tra audit trail. |
+
+Nếu tài liệu lịch sử mâu thuẫn với current index, ưu tiên current index.
