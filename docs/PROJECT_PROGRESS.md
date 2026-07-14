@@ -1,5 +1,48 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21X Global dashboard runtime bug fix + status hub
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 21X đã dừng feature split mới, xử lý bug runtime trong `Bug_21C-3.md`, smoke toàn bộ dashboard routes/static assets và tạo status hub/docs organization.
+
+Root cause bug 21C-3: **MIXED_DEV_SERVER_OR_PORT + STALE_NEXT_DEV_CACHE**.
+
+Bằng chứng:
+
+- `Bug_21C-3.md` ghi `/dashboard/tenants` 500, `Cannot find module './20.js'`, nhiều `/_next/static/...` CSS/JS/page chunk 404, `webpack.cache.PackFileCacheStrategy` và `vendor-chunks` ENOENT.
+- Audit process phát hiện dashboard Next dev server cũ thuộc workspace đang chạy trên port `3002` với PID `20916/3524`.
+- Baseline static validation trước clean PASS: dashboard typecheck/build, backend quality, Prisma validate.
+- Đã dừng đúng server cũ, xóa `.next` ignored sau khi xác thực path, chạy lại typecheck/build PASS.
+- Fresh dev server `127.0.0.1:3019` full route smoke PASS: `/dashboard/tenants` trả 200, toàn bộ dashboard routes thật không 500, route giả 404 hợp lệ.
+- Static asset smoke PASS: 125 assets từ HTML các route đều 200; không còn CSS/JS/page chunk 404.
+- Dev log scan sạch: không có `Cannot find module './'`, `MODULE_NOT_FOUND`, `reading 'call'`, `webpack.cache` ENOENT, `vendor-chunks`, `_next/static` 404 hoặc `/dashboard/tenants 500`.
+
+Không sửa dashboard source vì source/build sạch và bug biến mất sau xử lý process/cache. Không sửa backend, schema, package/lock, env, Docker/start scripts, webhook/RAG/handoff/tenants backend hoặc external provider.
+
+Docs/status mới:
+
+- `docs/PROJECT_STATUS_MASTER.md`
+- `docs/BUG_TRACKER.md`
+- `docs/DASHBOARD_ROUTE_SMOKE_MATRIX.md`
+- `docs/DOCS_REPORT_ORGANIZATION_MAP.md`
+- `report/README.md`
+- `report/phase-19/README.md`
+- `report/phase-21/README.md`
+- `report/phase-22/README.md`
+- `report/bugs/README.md`
+
+Rule mới bắt buộc cho mọi prompt dashboard sau:
+
+1. Clean `.next` sau khi dừng server cũ thuộc workspace.
+2. Start fresh dev server.
+3. Full dashboard route smoke.
+4. Static asset smoke từ HTML route.
+5. Dev log scan.
+6. Nếu có bug, root-cause/fix trước khi mở feature tiếp theo; không code bậy, không chắp vá.
+
+Chi tiết: `report/PROMPT_21X_GLOBAL_DASHBOARD_RUNTIME_AND_DOCS_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21C-3-SAFE Dashboard campaigns feature split
 
 Ngày cập nhật: 2026-07-14

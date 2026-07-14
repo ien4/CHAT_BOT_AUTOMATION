@@ -1,5 +1,25 @@
 # FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 21X Update - Global Dashboard Runtime Bug Fix + Status Hub (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+| Hạng mục | Trạng thái | Bằng chứng | Ghi chú |
+|---|---|---|---|
+| Bug evidence | Confirmed | `Bug_21C-3.md` | `/dashboard/tenants` 500, missing `./20.js`, static CSS/JS chunks 404, webpack/vendor ENOENT. |
+| Process audit | PASS | port `3002` PID `20916/3524` | Dừng đúng dashboard Next dev server cũ thuộc workspace; không dừng backend 3001. |
+| Baseline static | PASS | dashboard typecheck/build, backend quality, Prisma validate | Source/build sạch trước clean cache. |
+| Cache clean | PASS | `.next` path verified then removed | `.next` ignored, không stage/commit. |
+| Fresh dev server | PASS | `127.0.0.1:3019` | Không dùng lại server 3002 cũ. |
+| Full route smoke | PASS | 15 route dashboard/login 200 + fake route 404 | `/dashboard/tenants` hiện 200, không còn 500. |
+| Static asset smoke | PASS | 125 assets all 200 | Không còn layout CSS/main-app/app-pages/page chunks 404. |
+| Dev log scan | PASS | log fresh server | Không có missing chunk, `MODULE_NOT_FOUND`, `reading 'call'`, webpack cache ENOENT, vendor-chunks, `_next/static` 404. |
+| Root cause | Resolved | `MIXED_DEV_SERVER_OR_PORT + STALE_NEXT_DEV_CACHE` | Không sửa source vì clean/fresh proof đủ. |
+| Status hub | Created | `PROJECT_STATUS_MASTER`, `BUG_TRACKER`, route matrix, docs map | Chưa move historical docs/report để tránh gãy link. |
+| Forbidden areas | Unchanged | diff guard cuối | Không sửa backend/schema/package/env/Docker/webhook/RAG/handoff/tenants backend. |
+
+Rule mới: mọi dashboard prompt sau phải full route smoke, static asset smoke và dev log scan sau clean `.next` + fresh server. Nếu bug xuất hiện thì dừng feature work và xử lý root cause trước.
+
 ## Prompt 21C-3-SAFE Update - Dashboard Campaigns Feature Split (PASS)
 
 Ngày cập nhật: 2026-07-14

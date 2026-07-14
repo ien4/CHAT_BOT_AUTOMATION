@@ -1,5 +1,43 @@
 # REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 21X - Global dashboard runtime bug fix + status hub (PASS)
+
+Ngày cập nhật: 2026-07-14
+
+Đây là runtime stabilization + docs organization prompt, không phải feature split mới.
+
+Kết quả:
+
+- Root cause bug 21C-3: **MIXED_DEV_SERVER_OR_PORT + STALE_NEXT_DEV_CACHE**.
+- Dấu hiệu từ `Bug_21C-3.md`: `/dashboard/tenants` 500, `Cannot find module './20.js'`, `_next/static` CSS/JS/page chunks 404, `webpack.cache` và `vendor-chunks` ENOENT.
+- Audit process phát hiện server cũ `next dev -p 3002` thuộc workspace dashboard, PID `20916/3524`; đã dừng đúng process đó.
+- Dashboard typecheck/build PASS trước và sau clean cache.
+- Backend quality và Prisma validate PASS.
+- `.next` ignored đã được xóa sau khi xác thực path nằm trong `dashboard`.
+- Fresh dev server `3019` full route smoke PASS, bao gồm `/dashboard/tenants` 200.
+- Static asset smoke PASS: 125 assets từ HTML các route đều 200.
+- Dev log scan không còn missing chunk, static 404, webpack cache ENOENT hoặc vendor-chunks.
+
+Không làm:
+
+- Không sửa dashboard source vì không có source/import/client-boundary evidence.
+- Không sửa backend/schema/package/lock/env/Docker/start scripts.
+- Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified/production ready.
+- Không move historical docs/report trong prompt này.
+
+Rule refactor mới:
+
+1. Mọi dashboard refactor sau phải clean `.next`, fresh dev server, full route smoke, static asset smoke và dev log scan.
+2. Không kết luận PASS nếu route thật 500 hoặc `_next/static` asset 404.
+3. Nếu bug tái hiện sau clean/fresh server, mới audit source import/barrel/client boundary/config và patch nhỏ đúng root cause.
+4. Nếu root cause là cache/process, không sửa source bừa.
+
+Next:
+
+1. `21Y-DOCS-ARCHIVE-MOVE` nếu muốn move docs/report vào cấu trúc mới có stubs.
+2. `21B-5-SAFE` nếu còn route backend GET read-only nhỏ thật sự an toàn.
+3. Dashboard split kế tiếp chỉ khi bug tracker sạch và smoke rule 21X được áp dụng đầy đủ.
+
 ## Prompt 21C-3-SAFE - Dashboard campaigns feature split (PASS)
 
 Ngày cập nhật: 2026-07-14

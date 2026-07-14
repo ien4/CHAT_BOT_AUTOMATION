@@ -6,6 +6,24 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21X - Global dashboard runtime + docs/report organization
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 21X đã PASS và không thay đổi source structure.
+
+- Bug `Bug_21C-3.md` được phân loại **MIXED_DEV_SERVER_OR_PORT + STALE_NEXT_DEV_CACHE**.
+- Dừng đúng dashboard Next dev server cũ thuộc workspace trên port `3002`, PID `20916/3524`.
+- Clean `.next`, rebuild, fresh dev server `3019`.
+- Full dashboard route smoke PASS: `/dashboard/tenants` hiện 200, các dashboard routes thật không 500, route giả 404 hợp lệ.
+- Static asset smoke PASS: 125 `_next/static` CSS/JS assets đều 200; không còn layout CSS/main-app/app-pages/page chunk 404.
+- Dev log scan sạch: không còn missing chunk, `MODULE_NOT_FOUND`, `webpack.cache` ENOENT, `vendor-chunks` hoặc `/dashboard/tenants 500`.
+- Tạo status hub/docs organization: `docs/PROJECT_STATUS_MASTER.md`, `docs/BUG_TRACKER.md`, `docs/DASHBOARD_ROUTE_SMOKE_MATRIX.md`, `docs/DOCS_REPORT_ORGANIZATION_MAP.md`, report indexes.
+
+Không sửa backend/schema/migration/package/dashboard source/API client/auth/config/webhook/RAG/handoff/tenants/Docker/env thật. Chưa move historical docs/report; chỉ tạo index/README để tránh gãy link. Phase 19 và Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21C-3-SAFE - Dashboard campaigns feature split
 
 Ngày cập nhật: 2026-07-14
