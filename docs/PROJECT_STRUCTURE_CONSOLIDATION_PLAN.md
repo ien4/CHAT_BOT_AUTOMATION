@@ -6,6 +6,24 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cập nhật 21C-3-SAFE - Dashboard campaigns feature split
+
+Ngày cập nhật: 2026-07-14
+
+Prompt 21C-3-SAFE đã PASS: tách `dashboard/src/app/dashboard/campaigns/page.tsx` sang `dashboard/src/features/campaigns/**`.
+
+- Page trước refactor: 196 LOC; sau refactor: 57 LOC.
+- Feature mới gồm hook `useCampaigns`, components header/loading/empty/list/form modal, `types.ts`, formatter asset label và barrel `index.ts`.
+- Route `/dashboard/campaigns`, UI text/className/layout và `campaignsApi` contract giữ nguyên.
+- Upload/create/update/delete handlers được di chuyển nguyên behavior sang hook.
+- Upload/write/delete được đánh dấu **LOCKED_NOT_EXECUTED** trong runtime smoke.
+- Validation PASS: dashboard typecheck/build, backend quality, Prisma validate.
+- Clean `.next` + fresh dev route smoke PASS trên port `3019`, không tái hiện chunk error.
+
+Không sửa backend/schema/migration/package/API client/auth/config/webhook/RAG/handoff/tenants/Docker/env thật. Phase 19 vẫn **Started**, chưa Done; Phase 21 vẫn **Started**, chưa Done.
+
+---
+
 ## Cập nhật 21C-2-SAFE - Dashboard quick-replies feature split
 
 Ngày cập nhật: 2026-07-14

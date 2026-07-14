@@ -1,5 +1,32 @@
 # PROJECT PROGRESS — BBOTECH BOT AUTOMATION
 
+## Cập nhật mới nhất - Prompt 21C-3-SAFE Dashboard campaigns feature split
+
+Ngày cập nhật: 2026-07-14
+
+Trạng thái mới nhất: **PASS**. Prompt 21C-3-SAFE đã tách `dashboard/src/app/dashboard/campaigns/page.tsx` sang feature module `dashboard/src/features/campaigns/**`, giữ nguyên route `/dashboard/campaigns`, UI text/className/layout và API behavior hiện hữu.
+
+Đã làm:
+
+- Audit trang `campaigns/page.tsx`: imports/types, state/form modal, list loading, asset manual add/remove, upload file, create/update/delete handlers, confirm/toast text, formatter asset label, loading/empty/list/form render.
+- Rút page từ **196 LOC** xuống **57 LOC**; page chỉ còn client orchestrator import hook/components và render layout cũ.
+- Tạo `useCampaigns` để giữ state/data loading/upload/create/update/delete handlers cũ.
+- Tách components header/loading/empty/list/form modal; tạo `types.ts`, formatter asset label và barrel `index.ts`.
+- Giữ nguyên `campaignsApi` hiện hữu; không sửa `dashboard/src/lib/api.ts`, `dashboard/src/lib/config/env` hoặc API payload.
+- Upload/create/update/delete được preserve nhưng runtime smoke không chạy action/mutation: **LOCKED_NOT_EXECUTED**.
+
+Validation/smoke:
+
+- Baseline trước patch PASS: dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`, root diff sạch.
+- Sau patch PASS: dashboard `npx --no-install tsc --noEmit`, dashboard `npm run typecheck`, dashboard `npm run build`, backend `npm run quality`, backend `npx prisma validate`.
+- Clean `.next` bắt buộc PASS: xóa `.next` ignored sau khi xác thực path nằm trong workspace.
+- Fresh dashboard smoke PASS trên dev server tạm port `3019`: `/login`, `/dashboard`, `/dashboard/campaigns`, `/dashboard/quick-replies`, `/dashboard/content-packages`, `/dashboard/prompts`, `/dashboard/analytics`, `/dashboard/settings` đều 200; route giả `/dashboard/__fake_21c_3__` trả 404 hợp lệ; process tạm đã dừng.
+- Chunk regression: không tái hiện `Cannot find module './*.js'`, `Cannot read properties of undefined (reading 'call')`, vendor chunk ENOENT hoặc static chunk lỗi.
+
+Không sửa backend, schema/migration/package/lock, webhook/RAG/handoff/tenants/notifications, Docker/start scripts, env thật hoặc dashboard API client/auth/config. Không gọi external provider, không gửi POST `/webhook`, không claim Meta verified hoặc production ready. Phase 19 vẫn **Started**, Phase 21 vẫn **Started**.
+
+Chi tiết: `report/PROMPT_21C_3_DASHBOARD_CAMPAIGNS_REPORT.md`.
+
 ## Cập nhật mới nhất - Prompt 21C-2-SAFE Dashboard quick-replies feature split
 
 Ngày cập nhật: 2026-07-14
