@@ -1,5 +1,18 @@
 # PROJECT STATUS MASTER — BBOTECH BOT AUTOMATION
 
+## Cap nhat 19E - Settings API client normalization
+
+Ngay cap nhat: 2026-07-15
+Prompt gan nhat: **19E**
+Trang thai: **PASS WITH NOTES**
+
+- Phase 19 van **STARTED**: settings page da normalize API client, chua split feature.
+- `dashboard/src/app/dashboard/settings/page.tsx` khong con direct `fetch()` va khong import `API_BASE_URL` truc tiep.
+- API facade moi: `settingsApi.getWebhookConfig`, `facebookMenuApi.get`, `facebookMenuApi.setup`; Facebook Pages dung facade san co.
+- Dashboard gate PASS voi typecheck/build/quality va fresh runtime smoke; `next lint` rieng bi chan do thieu ESLint config non-interactive.
+- Phase execution matrix moi: [PHASE_EXECUTION_PRIORITY_MATRIX.md](PHASE_EXECUTION_PRIORITY_MATRIX.md).
+- Khong doi Facebook `/webhook`, khong code Website Chatwoot runtime, khong sua backend/schema/env/package.
+
 Ngày cập nhật: 2026-07-14
 Prompt gần nhất: **23A**
 

@@ -1,5 +1,30 @@
 ﻿# REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt 19E - Settings API client normalization (PASS WITH NOTES)
+
+Ngay cap nhat: 2026-07-15
+
+Da lam:
+
+- Normalize direct API calls trong `dashboard/src/app/dashboard/settings/page.tsx` sang facade dung chung.
+- Them `settingsApi.getWebhookConfig`, `facebookMenuApi.get`, `facebookMenuApi.setup`.
+- Reuse `facebookPagesApi.list/create`.
+- Giam direct `fetch()` cua settings page tu 6 ve 0.
+- Giu nguyen UI/text/layout/route `/dashboard/settings`.
+
+Validation:
+
+- Dashboard `npm run typecheck`, `npm run build`, `npm run quality` PASS.
+- Fresh runtime smoke sau clean `.next` PASS: dashboard routes 200, `/` 307 expected redirect, fake route 404, 22 static assets 200, dev log scan sach.
+- Backend `npm run quality` va `npx prisma validate` PASS vi khong sua backend.
+- `next lint` rieng bi chan do thieu ESLint config non-interactive.
+
+Next:
+
+1. `19F` Settings feature split sau khi API client da normalize.
+2. `19G` page split tiep theo theo risk audit rieng.
+3. `19H` Dashboard FE audit/cleanup va Phase 19 closure criteria.
+
 ## Prompt 23A - Hybrid channel architecture decision (PASS)
 
 Ngày cập nhật: 2026-07-14
@@ -549,7 +574,7 @@ Ngày cập nhật: 2026-07-11
 Next recommended prompt:
 
 - **Prompt 21B** — Backend structure consolidation nhỏ: rút thêm route read-only/low-risk từ `api/dashboard.js` sang `presentation/http/**`, gom repository cho domain có guard rõ. KHÔNG move webhook/RAG/handoff/tenants.
-- Hoặc **Prompt 19E** — Dashboard `content-packages/page.tsx` với action migrate/external **locked**.
+- Ghi chu 2026-07-15: de xuat cu **Prompt 19E content-packages** da duoc thay the; 19E thuc te la Settings API client normalization. Prompt tiep theo nen la **19F Settings feature split**.
 - **KHÔNG** chọn `settings`/`knowledge`/`tenants` nếu chưa có external rollback plan riêng.
 
 ## Prompt 19D - Dashboard appointments feature split (PASS WITH WARNINGS)
@@ -573,7 +598,7 @@ Validation:
 
 Next:
 
-- **Prompt 19E**: cân nhắc `content-packages/page.tsx` nếu khóa rõ không chạy action migrate, hoặc dừng Phase 19 sau khi review phạm vi còn lại.
+- Ghi chu 2026-07-15: de xuat cu **Prompt 19E content-packages** da duoc thay the; 19E thuc te la Settings API client normalization. Prompt tiep theo nen la **19F Settings feature split**.
 - **Prompt 21A** chỉ nên là Project Structure Consolidation Audit/plan, không move code hàng loạt trong một prompt.
 
 ## Prompt 19C - Dashboard staff feature split (PASS)

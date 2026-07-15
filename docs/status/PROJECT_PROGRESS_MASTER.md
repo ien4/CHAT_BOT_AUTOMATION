@@ -1,5 +1,20 @@
 # PROJECT PROGRESS MASTER
 
+## Cap nhat 19E - Settings API client normalization
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **PASS WITH NOTES**
+
+- Da normalize `dashboard/src/app/dashboard/settings/page.tsx` tu 6 direct `fetch()` ve 0 direct `fetch()` bang API facade.
+- Da them `settingsApi.getWebhookConfig`, `facebookMenuApi.get`, `facebookMenuApi.setup` trong `dashboard/src/lib/api.ts`; tai su dung `facebookPagesApi.list/create`.
+- Khong split settings page trong prompt nay; UI/text/layout/route `/dashboard/settings` giu nguyen.
+- Dashboard gate PASS: `npm run typecheck`, `npm run build`, `npm run quality`, clean `.next`, fresh dev server `127.0.0.1:3019`, route/static/dev-log smoke PASS.
+- `npm run lint` rieng bi chan vi `next lint` yeu cau tao ESLint config tuong tac; khong tao config vi ngoai scope.
+- Backend baseline PASS: `npm run quality`, `npx prisma validate`; khong sua backend/schema/env/package/webhook.
+- Matrix uu tien moi: [PHASE_EXECUTION_PRIORITY_MATRIX.md](PHASE_EXECUTION_PRIORITY_MATRIX.md).
+- Report moi: `report/phase-19/PROMPT_19E_SETTINGS_API_CLIENT_NORMALIZATION_REPORT.md`.
+- Prompt tiep theo de xuat: **19F Settings feature split**.
+
 ## Cap nhat 23B - Website Chatwoot schema/env/API contract
 
 Ngay cap nhat: 2026-07-15

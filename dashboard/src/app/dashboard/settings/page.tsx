@@ -1,8 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
-import { providersApi, telegramDestinationsApi } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/config/env';
+import { facebookMenuApi, facebookPagesApi, providersApi, settingsApi, telegramDestinationsApi } from '@/lib/api';
 import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -33,8 +32,6 @@ export default function SettingsPage() {
   const [embeddingSaving, setEmbeddingSaving] = useState(false);
   const [embeddingTesting, setEmbeddingTesting] = useState<string | null>(null);
 
-    const API_BASE = API_BASE_URL;
-
   useEffect(() => { load(); }, []);
 
   const load = async () => {
@@ -46,24 +43,18 @@ export default function SettingsPage() {
     } catch { toast.error('Lỗi tải danh sách provider'); }
     // Get webhook info
     try {
-      const whRes = await fetch(`${API_BASE}/api/settings/webhook`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (whRes.ok) setWebhookInfo(await whRes.json());
+      const { data } = await settingsApi.getWebhookConfig();
+      setWebhookInfo(data);
     } catch {}
     // Get Facebook Menu info
     try {
-      const menuRes = await fetch(`${API_BASE}/api/settings/facebook-menu`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (menuRes.ok) setFbMenuInfo(await menuRes.json());
+      const { data } = await facebookMenuApi.get();
+      setFbMenuInfo(data);
     } catch {}
     // Load Facebook Pages
     try {
-      const pagesRes = await fetch(`${API_BASE}/api/facebook-pages`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (pagesRes.ok) setFbPages(await pagesRes.json());
+      const { data } = await facebookPagesApi.list();
+      setFbPages(data);
     } catch {}
     // Load Telegram destinations
     try {
@@ -229,15 +220,7 @@ export default function SettingsPage() {
   const setupFbMenu = async () => {
     setMenuLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/settings/facebook-menu`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ greeting: greetingText || undefined }),
-      });
-      const data = await res.json();
+      const { data } = await facebookMenuApi.setup({ greeting: greetingText || undefined });
       if (data.success || data.result) {
         toast.success('✅ Menu & Greeting đã được cài đặt!');
         load();
@@ -695,19 +678,13 @@ export default function SettingsPage() {
               <button onClick={() => setShowFbPageForm(false)} className="btn-secondary text-sm">Hủy</button>
               <button onClick={async () => {
                 try {
-                  await fetch(`${API_BASE}/api/facebook-pages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-                    body: JSON.stringify(fbForm),
-                  });
+                  await facebookPagesApi.create(fbForm);
                   toast.success('Đã thêm page');
                   setShowFbPageForm(false);
                   setFbForm({ pageId: '', pageName: '', accessToken: '', isActive: true });
                   // Reload
-                  const pagesRes = await fetch(`${API_BASE}/api/facebook-pages`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                  });
-                  if (pagesRes.ok) setFbPages(await pagesRes.json());
+                  const { data } = await facebookPagesApi.list();
+                  setFbPages(data);
                 } catch { toast.error('Lỗi thêm page'); }
               }} className="btn-primary text-sm">Thêm Page</button>
             </div>

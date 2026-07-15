@@ -178,6 +178,11 @@ export const handoffSettingsApi = {
     api.put('/settings/handoff', data),
 };
 
+// Settings API
+export const settingsApi = {
+  getWebhookConfig: () => api.get('/settings/webhook'),
+};
+
 // Telegram Destinations API
 export const telegramDestinationsApi = {
   list: () => api.get('/settings/telegram-destinations'),
@@ -207,6 +212,12 @@ export const facebookPagesApi = {
     api.post('/facebook-pages', data),
   update: (id: string, data: any) => api.put(`/facebook-pages/${id}`, data),
   delete: (id: string) => api.delete(`/facebook-pages/${id}`),
+};
+
+// Facebook Menu API
+export const facebookMenuApi = {
+  get: () => api.get('/settings/facebook-menu'),
+  setup: (data: { greeting?: string }) => api.post('/settings/facebook-menu', data),
 };
 
 // Channel Configs API

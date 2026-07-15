@@ -1,5 +1,11 @@
 # PROJECT PHASE BOARD
 
+## Cap nhat 19E
+
+Ngay cap nhat: 2026-07-15
+
+Phase 19 tiep tuc **STARTED** nhung co buoc tien nho: settings page da normalize API client, direct `fetch()` trong `dashboard/src/app/dashboard/settings/page.tsx` giam tu 6 ve 0. Prompt 19E khong split page. Dashboard typecheck/build/quality va fresh route/static/dev-log smoke PASS; `next lint` rieng bi chan do thieu ESLint config non-interactive.
+
 Ngày cập nhật: 2026-07-14
 
 | Phase | Tên | Trạng thái | Bằng chứng chính | Việc còn lại |

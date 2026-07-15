@@ -7,6 +7,7 @@
 | `report/phase-19/PROMPT_19B_DASHBOARD_PROMPTS_FEATURE_SPLIT_REPORT.md` | Prompts feature split |
 | `report/phase-19/PROMPT_19C_DASHBOARD_STAFF_FEATURE_SPLIT_REPORT.md` | Staff feature split |
 | `report/phase-19/PROMPT_19D_DASHBOARD_APPOINTMENTS_FEATURE_SPLIT_REPORT.md` | Appointments feature split |
+| `report/phase-19/PROMPT_19E_SETTINGS_API_CLIENT_NORMALIZATION_REPORT.md` | Settings API client normalization, chua split page |
 | `report/phase-19/PROMPT_21C_DASHBOARD_CONTENT_PACKAGES_REPORT.md` | Content packages feature split |
 | `report/phase-19/PROMPT_21C_2_DASHBOARD_QUICK_REPLIES_REPORT.md` | Quick replies feature split |
 | `report/phase-19/PROMPT_21C_3_DASHBOARD_CAMPAIGNS_REPORT.md` | Campaigns feature split |

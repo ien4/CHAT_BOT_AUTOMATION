@@ -1,5 +1,15 @@
 # CURRENT STATUS INDEX
 
+## Cap nhat 19E - Settings API client normalization
+
+Ngay cap nhat: 2026-07-15
+
+- Trang thai moi nhat: **Prompt 19E PASS WITH NOTES**.
+- Phase 19 van **STARTED**: settings page da bo direct `fetch()` nhung chua split feature.
+- Matrix uu tien hien tai: [PHASE_EXECUTION_PRIORITY_MATRIX.md](../status/PHASE_EXECUTION_PRIORITY_MATRIX.md).
+- Report 19E: `report/phase-19/PROMPT_19E_SETTINGS_API_CLIENT_NORMALIZATION_REPORT.md`.
+- Prompt tiep theo uu tien: **19F Settings feature split**.
+
 Ngày cập nhật: 2026-07-14
 
 Tài liệu này là điểm vào hiện tại trước khi đọc docs hoặc report cũ. Nếu một tài liệu khác mâu thuẫn với file này, ưu tiên file này, `docs/status/PROJECT_PROGRESS_MASTER.md` và `docs/status/PROJECT_STATUS_MASTER.md`.

@@ -1,5 +1,24 @@
 ﻿# FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt 19E Update - Settings API Client Normalization (PASS WITH NOTES)
+
+Ngay cap nhat: 2026-07-15
+
+| Hang muc | Trang thai | Bang chung | Ghi chu |
+|---|---|---|---|
+| Scope | PASS | settings page + `api.ts` | Chi normalize API client, khong split page. |
+| Direct fetch | PASS | 6 -> 0 | `settings/page.tsx` khong con `fetch()`. |
+| API facade | PASS | `settingsApi`, `facebookMenuApi` | Reuse `facebookPagesApi.list/create`. |
+| UI/route behavior | PRESERVED | `/dashboard/settings` smoke 200 | Khong doi text/layout/className co chu dich. |
+| External actions | LOCKED_NOT_EXECUTED | runtime smoke GET-only | Khong click setup menu/test provider/Facebook/Telegram mutation. |
+| Dashboard validation | PASS | typecheck/build/quality | `npm run quality` PASS. |
+| Lint | BLOCKED_BY_PROJECT_CONFIG | `next lint` interactive | Du an chua co ESLint config; khong tao config ngoai scope. |
+| Runtime gate | PASS | fresh 3019 | Route/static/dev-log smoke PASS. |
+| Backend baseline | PASS | quality + Prisma validate | Khong sua backend/schema. |
+| Forbidden areas | UNCHANGED | diff guard | Khong sua webhook, Website Chatwoot runtime, env, package, Docker. |
+
+Ket luan: Prompt 19E hoan tat normalization API client cho settings page. Phase 19 van STARTED; Prompt 19F nen tach settings feature sau buoc nay.
+
 ## Prompt 23A Update - Hybrid Channel Architecture Decision (PASS)
 
 Ngày cập nhật: 2026-07-14
@@ -431,10 +450,10 @@ Ngày cập nhật: 2026-07-11
 | Active risks mapped | Done | Plan mục 5 | start-all.bat Chatwoot, docs stale, settings direct fetch, dashboard.js. |
 | Legacy dirs flagged | Done | `src/chatwoot`, `src/adapters`, `integrations/chatwoot` rỗng | Cleanup đề xuất 21D, không xóa ở 21A. |
 | Raw SQL / destructive scan | Clean | rg scan | 0 `$queryRawUnsafe`, 0 destructive thật. |
-| Next prompt proposal | Done | Plan mục 12 | 21B backend / 19E content-packages locked. |
+| Next prompt proposal | SUPERSEDED | Plan mục 12 | De xuat cu 19E content-packages da duoc thay the; 19E thuc te la Settings API client normalization. |
 | Production readiness | Not ready | Plan mục 11 | Rollout thật chưa chạy; chỉ local/staging improved. |
 
-Kết luận: audit/plan-only hoàn tất, không đổi source runtime. Next: Prompt 21B (backend route consolidation nhỏ) hoặc 19E (content-packages locked).
+Kết luận: audit/plan-only hoàn tất, không đổi source runtime. Ghi chu 2026-07-15: de xuat cu 19E content-packages da duoc thay the; 19E thuc te la Settings API client normalization.
 
 ## Prompt 19D Update - Dashboard Appointments Feature Split (PASS WITH WARNINGS)
 

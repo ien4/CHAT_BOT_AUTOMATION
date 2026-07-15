@@ -6,6 +6,25 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cap nhat 19E - Settings API client normalization
+
+Ngay cap nhat: 2026-07-15
+
+Prompt 19E da PASS o pham vi dashboard API client:
+
+- `dashboard/src/app/dashboard/settings/page.tsx` khong con direct `fetch()`.
+- API call settings duoc dua ve `dashboard/src/lib/api.ts`.
+- Khong split feature folder trong prompt nay, nen cau truc dashboard feature chua thay doi lon.
+- Khong anh huong Phase 21 backend structure; khong sua `backend/src/api/dashboard.js`.
+- Khong sua schema/env/package/webhook/Website Chatwoot runtime.
+
+Tac dong len consolidation:
+
+- Phase 19 co tien de an toan hon de mo `19F Settings feature split`.
+- Phase 21 van **STARTED / HIGH_RISK_ONLY_REMAINING** sau 21B-6; khong mo tiep 21B thuong neu khong co prompt high-risk rieng.
+
+---
+
 ## Cập nhật 23A - Hybrid Website Chatwoot architecture decision
 
 Ngày cập nhật: 2026-07-14
@@ -425,7 +444,7 @@ Không đánh dấu Phase 21 Done sau Prompt 21S. Prompt kế tiếp nên là 21
 ## 12. Recommended next prompt
 
 - **Prompt 21B** — Backend structure consolidation nhỏ (rút route read-only từ `api/dashboard.js`), nếu muốn giảm nợ cấu trúc backend an toàn.
-- Hoặc **Prompt 19E** — Dashboard `content-packages/page.tsx` với action migrate **locked**, nếu muốn tiếp tục Phase 19.
+- Ghi chu 2026-07-15: de xuat cu **Prompt 19E content-packages** da duoc thay the; 19E thuc te la Settings API client normalization. Prompt tiep theo nen la **19F Settings feature split**.
 - **KHÔNG** chọn `settings`/`knowledge`/`tenants` nếu chưa có external rollback plan riêng.
 ## Cap nhat 23B - Website Chatwoot contract plan
 
