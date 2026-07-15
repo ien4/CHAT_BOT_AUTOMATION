@@ -130,7 +130,11 @@ Không gọi Facebook/Telegram/LLM thật. Không POST fake `page` vào `/webhoo
 
 ## 10. GitHub push result
 
-Xem mục cập nhật cuối (Phase 10 thực thi).
+- Commit: `b727d18 Harden backend logs and stabilize CI` (12 file: `ci.yml`, helper mới, 7 file log patch, report này, `BUG_TRACKER.md`, `BACKEND_CLEAN_CODE_AUDIT_MATRIX.md`).
+- Stage tường minh (không `git add .`), không force push.
+- `git push origin HEAD:main` → **thành công** (`8325c14..b727d18`).
+- Verify: `origin/main` = local `HEAD` = `b727d18`.
+- Không đụng `backend/.env`, lockfile, dashboard source, schema.
 
 ## 11. Remaining risk
 
