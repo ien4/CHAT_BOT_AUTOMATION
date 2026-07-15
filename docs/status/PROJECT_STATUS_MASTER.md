@@ -1,5 +1,19 @@
 # PROJECT STATUS MASTER — BBOTECH BOT AUTOMATION
 
+## Cap nhat BE-01 - Backend clean-code audit + CI baseline + Facebook webhook readiness
+
+Ngay cap nhat: 2026-07-15
+Prompt gan nhat: **BE-01/4**
+Trang thai: **PASS WITH WARNINGS**
+
+- Backend track hien tai chuyen sang **audit/safety hardening before App Review**: 21B route split thong thuong da dung voi `NO_SAFE_CANDIDATE`, BE-01 them audit matrix va CI baseline.
+- CI baseline moi: `.github/workflows/ci.yml`, khong secret/DB service/deploy, chi backend quality + Prisma validate va dashboard typecheck/build.
+- Facebook Messenger van di direct qua Express `GET/POST /webhook`; Website Chatwoot van **PLANNED / NOT_STARTED_RUNTIME** va khong lien quan App Review Facebook.
+- Meta App Review van **OPERATOR_PENDING**: can public HTTPS callback `/webhook`, verify token that trong Meta UI, event Messenger that va video khong lo secret/PII.
+- Backend smoke an toan PASS cho health/webhook/legacy/auth-guard; auth 200 read-route khong chay lai vi BE-01 khong doc env/secret.
+- Can doc tiep: `docs/status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md`, `docs/runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md`, `report/phase-21/PROMPT_BE_01_BACKEND_CLEAN_CODE_CI_WEBHOOK_AUDIT_REPORT.md`.
+- Next recommended: **BE-02 Backend log redaction/safety hardening** cho bot/RAG/handoff/LLM/Facebook menu/test-message logs.
+
 ## Cap nhat 19E - Settings API client normalization
 
 Ngay cap nhat: 2026-07-15

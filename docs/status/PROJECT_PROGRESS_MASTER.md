@@ -1,5 +1,20 @@
 # PROJECT PROGRESS MASTER
 
+## Cap nhat BE-01 - Backend clean-code audit + CI baseline + Facebook webhook App Review readiness
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **PASS WITH WARNINGS**
+
+- Da audit backend clean-code theo tung khu vuc va tao matrix moi: [BACKEND_CLEAN_CODE_AUDIT_MATRIX.md](BACKEND_CLEAN_CODE_AUDIT_MATRIX.md).
+- Da them CI baseline toi thieu: `.github/workflows/ci.yml` chay backend `npm run quality`, `npx prisma validate`, dashboard `npm run typecheck`, `npm run build`.
+- Da xac nhan Facebook direct callback van la `GET/POST /webhook`; `/api/settings/webhook` chi la dashboard config/read endpoint co auth.
+- Da tao checklist Meta App Review: [META_APP_REVIEW_SUBMISSION_CHECKLIST.md](../runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md).
+- Backend safe smoke hien tai PASS: `/health` 200, `GET /webhook` thieu params 403, `POST /chatwoot-webhook` 404, invalid login 401, cac read route da tach yeu cau auth 401.
+- Khong doc/in secret/env that; khong goi Meta/Facebook/Telegram/LLM; khong POST fake page object vao `/webhook`.
+- Khong sua backend runtime source vi cac log/clean-code gap nam trong bot/RAG/handoff/provider high-risk.
+- Prompt tiep theo de xuat: **BE-02 Backend log redaction/safety hardening** truoc khi App Review operator checkpoint.
+- Report moi: `report/phase-21/PROMPT_BE_01_BACKEND_CLEAN_CODE_CI_WEBHOOK_AUDIT_REPORT.md`.
+
 ## Cap nhat 19E - Settings API client normalization
 
 Ngay cap nhat: 2026-07-15

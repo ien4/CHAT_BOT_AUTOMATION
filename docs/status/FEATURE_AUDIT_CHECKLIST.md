@@ -1,5 +1,22 @@
 ﻿# FEATURE AUDIT CHECKLIST - BBOTECH BOT AUTOMATION
 
+## Prompt BE-01 Update - Backend Clean Code CI Webhook Audit (PASS WITH WARNINGS)
+
+Ngay cap nhat: 2026-07-15
+
+| Hang muc | Trang thai | Bang chung | Ghi chu |
+|---|---|---|---|
+| Backend clean-code audit | PASS_WITH_WARNINGS | `docs/status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md` | `dashboard.js` va handoff/bot/RAG con high-risk, khong patch trong BE-01. |
+| CI baseline | PASS | `.github/workflows/ci.yml` | Backend quality + Prisma validate; dashboard typecheck/build; khong secret/DB/deploy. |
+| Webhook source readiness | PASS_WITH_OPERATOR_PENDING | `GET/POST /webhook` | Source path dung; Meta verify/event that van pending. |
+| Chatwoot legacy | PASS | local smoke 404 | Khong khoi phuc `/chatwoot-webhook*`; Website Chatwoot van docs-only/planned. |
+| Safe smoke | PASS | Node fetch smoke | `/health` 200, `GET /webhook` 403, legacy 404, invalid login 401, auth guard 401. |
+| Log/security scan | WARNINGS | source scan | Logs ngoai webhook handler can BE-02 redaction: bot/RAG/handoff/LLM/Facebook menu/test-message. |
+| Packages/schema/env | UNCHANGED | diff guard | Khong sua package, lock, Prisma schema/migration, env real/env example. |
+| App Review checklist | CREATED | `docs/runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md` | Khong claim Meta verified/App Review pass/production ready. |
+
+Ket luan: BE-01 tao baseline backend safety + CI, nhung backend clean-code chua hoan tat. Prompt tiep theo nen la BE-02 log redaction/safety hardening.
+
 ## Prompt 19E Update - Settings API Client Normalization (PASS WITH NOTES)
 
 Ngay cap nhat: 2026-07-15

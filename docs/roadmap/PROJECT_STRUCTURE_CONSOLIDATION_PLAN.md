@@ -6,6 +6,26 @@ Nguồn: audit read-only + static validation (backend `npm run quality` + `prism
 
 ---
 
+## Cap nhat BE-01 - Backend clean-code audit + CI baseline
+
+Ngay cap nhat: 2026-07-15
+
+BE-01 da PASS WITH WARNINGS:
+
+- Them CI baseline `.github/workflows/ci.yml`, khong them dependency va khong sua package/lock.
+- Tao `docs/status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md` lam matrix backend high-risk moi.
+- Xac nhan Phase 21 route consolidation thong thuong van dung tai `NO_SAFE_CANDIDATE`; cac vung con lai can prompt rieng: conversations, knowledge/RAG, providers, handoff, Facebook, analytics, tenants, auth.
+- Khong move `webhook/**`, `bot/**`, `rag/**`, `tenants/**`, `telegram/**`, `facebook/**`, `notifications/**`.
+- Khong code Website Chatwoot runtime, khong tao `/integrations/website-chat/events`, khong khoi phuc `/chatwoot-webhook*`.
+
+Tac dong len consolidation:
+
+- Tiep theo nen la BE-02 log redaction/safety hardening, khong phai route split nho.
+- Neu can refactor structure, phai tach app/bootstrap side effects truoc de smoke/import an toan hon.
+- App Review Facebook uu tien giu behavior `/webhook` on dinh; chi patch redaction/safety neu co smoke ro.
+
+---
+
 ## Cap nhat 19E - Settings API client normalization
 
 Ngay cap nhat: 2026-07-15

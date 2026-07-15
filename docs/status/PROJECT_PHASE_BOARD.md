@@ -1,5 +1,11 @@
 # PROJECT PHASE BOARD
 
+## Cap nhat BE-01
+
+Ngay cap nhat: 2026-07-15
+
+BE-01 da PASS WITH WARNINGS: them CI baseline, tao backend clean-code audit matrix va Meta App Review checklist. Phase 21 van **STARTED / HIGH_RISK_ONLY_REMAINING**, nhung huong tiep theo khong phai 21B route split thong thuong; nen mo **BE-02 log redaction/safety hardening**. Phase 22 van **BLOCKED / OPERATOR_PENDING** vi chua co Meta UI verify va POST event that. Facebook `/webhook` khong doi; Website Chatwoot runtime van NOT_STARTED.
+
 ## Cap nhat 19E
 
 Ngay cap nhat: 2026-07-15

@@ -1,5 +1,23 @@
 ﻿# REFACTOR PLAN - BBOTECH BOT AUTOMATION
 
+## Prompt BE-01 - Backend clean-code audit + CI baseline + Facebook webhook readiness (PASS WITH WARNINGS)
+
+Ngay cap nhat: 2026-07-15
+
+Da lam:
+
+- Them `.github/workflows/ci.yml` voi backend `npm run quality`, `npx prisma validate`, dashboard `npm run typecheck`, `npm run build`.
+- Tao `docs/status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md` de khoa lai cac vung backend high-risk con lai.
+- Tao `docs/runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md` cho Facebook App Review callback `/webhook`, permissions, video va test data.
+- Smoke an toan tren backend process co san: `/health` 200, `GET /webhook` thieu params 403, legacy `/chatwoot-webhook` 404, invalid login 401, auth guard 401.
+- Khong sua backend runtime source, dashboard source, schema/migration, env, package/lock.
+
+Next:
+
+1. `BE-02` Backend log redaction/safety hardening cho bot/RAG/handoff/LLM/Facebook menu/test-message logs.
+2. Meta App Review operator checkpoint neu co public HTTPS `/webhook`, verify token that va event Messenger that.
+3. `BE-03` Startup side-effect split de local smoke/test khong goi external khi import/start sai cach.
+
 ## Prompt 19E - Settings API client normalization (PASS WITH NOTES)
 
 Ngay cap nhat: 2026-07-15

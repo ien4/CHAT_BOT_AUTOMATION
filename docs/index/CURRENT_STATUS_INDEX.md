@@ -1,5 +1,17 @@
 # CURRENT STATUS INDEX
 
+## Cap nhat BE-01 - Backend clean-code audit + CI baseline + Facebook webhook readiness
+
+Ngay cap nhat: 2026-07-15
+
+- Trang thai moi nhat: **Prompt BE-01 PASS WITH WARNINGS**.
+- CI baseline moi: `.github/workflows/ci.yml`.
+- Backend clean-code source of truth moi: [BACKEND_CLEAN_CODE_AUDIT_MATRIX.md](../status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md).
+- Meta App Review checklist moi: [META_APP_REVIEW_SUBMISSION_CHECKLIST.md](../runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md).
+- Report BE-01: `report/phase-21/PROMPT_BE_01_BACKEND_CLEAN_CODE_CI_WEBHOOK_AUDIT_REPORT.md`.
+- Prompt tiep theo uu tien: **BE-02 Backend log redaction/safety hardening**.
+- Khong claim Meta verified/App Review pass/production ready; operator van can verify callback `/webhook` va event Messenger that.
+
 ## Cap nhat 19E - Settings API client normalization
 
 Ngay cap nhat: 2026-07-15
@@ -26,6 +38,8 @@ Tài liệu này là điểm vào hiện tại trước khi đọc docs hoặc r
 | Dashboard route health | `docs/status/DASHBOARD_ROUTE_SMOKE_MATRIX.md` | Matrix smoke route/static assets/dev log mới nhất. |
 | Docs/report organization | `docs/index/DOCS_REPORT_ORGANIZATION_MAP.md` | Bản đồ tổ chức docs/report sau Prompt 21Y. |
 | Checklist audit/quality | `docs/status/FEATURE_AUDIT_CHECKLIST.md` | Bảng kiểm tính năng, rủi ro, smoke và kết quả audit theo phase. |
+| Backend clean-code audit | `docs/status/BACKEND_CLEAN_CODE_AUDIT_MATRIX.md` | Matrix BE-01 cho backend high-risk modules, prompt tiep theo va vung khong nen dung truoc App Review. |
+| Meta App Review checklist | `docs/runbooks/META_APP_REVIEW_SUBMISSION_CHECKLIST.md` | Checklist callback `/webhook`, permissions, video, test data va dieu khong duoc claim. |
 | Refactor roadmap | `docs/roadmap/REFACTOR_PLAN.md` | Kế hoạch refactor tiếp theo và giới hạn an toàn theo phase. |
 | Project structure consolidation | `docs/roadmap/PROJECT_STRUCTURE_CONSOLIDATION_PLAN.md` | Bản đồ cấu trúc backend/dashboard/docs và nợ còn lại của Phase 21. |
 | Facebook webhook readiness | `docs/status/PROJECT_GOALS_AND_FACEBOOK_WEBHOOK_STATUS.md` | Trạng thái source/local/staging/Meta/production của direct Facebook webhook. |
