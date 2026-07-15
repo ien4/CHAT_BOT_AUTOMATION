@@ -90,7 +90,10 @@ Không gọi external provider thật. Backend không bị sửa/khởi động 
 
 ## 9. Push result
 
-Xem mục cập nhật cuối (Phase 11 thực thi).
+- Commit: `eaea67e Stabilize dashboard dev runtime port and smoke` (7 file: `package.json`, 3 script, `LOCAL_RUN_GUIDE.md`, `BUG_TRACKER.md`, report này).
+- Stage tường minh (không `git add .`), `git diff --cached --check` OK, không force push.
+- `git push origin HEAD:main` → **thành công** (`6a54c2c..eaea67e`).
+- Verify: `origin/main` = local `HEAD` = `eaea67e`.
 
 ## 10. Remaining risk
 
