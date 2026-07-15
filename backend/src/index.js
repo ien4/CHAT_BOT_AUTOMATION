@@ -1,10 +1,6 @@
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const webhookHandler = require('./webhook/handler');
-const tenantHandoff             = require('./tenants/handoff');
-const dashboardApi = require('./api/dashboard');
+const { createApp } = require('./app');
+const tenantHandoff = require('./tenants/handoff');
 const facebookMenu = require('./facebook/menu');
 const telegramBot = require('./telegram/bot');
 const healthChecker = require('./notifications/healthChecker');
@@ -15,7 +11,11 @@ const formatters = require('./notifications/formatters');
 const getPrisma = require('./db');
 const { isProduction, isPlaceholderSecret } = require('./infrastructure/services/config');
 const prisma = getPrisma();
-const app = express();
+
+// App creation is side-effect free (see ./app). Startup side effects (DB connect,
+// seed, Facebook/Telegram/notification startup, listen) live in start() below and
+// only run when this file is the runtime entrypoint (require.main === module).
+const app = createApp();
 
 // Production auth safety: từ chối khởi động nếu secret auth yếu/thiếu.
 // Local/dev không bị ảnh hưởng (chỉ enforce khi NODE_ENV=production).
@@ -27,38 +27,6 @@ function assertProductionAuthEnv() {
     process.exit(1);
   }
 }
-
-// Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false,
-}));
-app.use(cors());
-app.use(express.json({
-  limit: '5mb',
-  verify: (req, _res, buf) => { req.rawBody = buf; },
-}));
-app.use('/uploads', express.static('uploads'));
-
-// Facebook Webhook routes (direct - legacy)
-app.get('/webhook', webhookHandler.verifyWebhook);
-app.post('/webhook', webhookHandler.handleMessage);
-
-// Dashboard API routes
-app.use('/api', dashboardApi);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  if (!res.headersSent) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 const PORT = process.env.PORT || 3001;
 
@@ -366,23 +334,34 @@ Kiến thức:
   }
 }
 
-// Global error handlers — alert quản lý khi có lỗi nghiêm trọng
-process.on('uncaughtException', async (err) => {
-  console.error('Uncaught Exception:', err);
-  try {
-    await alertQueue.alert('uncaught_exception', formatters.uncaughtException(err.message));
-  } catch (_) {}
-  process.exit(1);
-});
+// Global error handlers — alert quản lý khi có lỗi nghiêm trọng.
+// Chỉ đăng ký khi chạy như runtime entrypoint để import test/smoke không gắn
+// process handler global ngoài ý muốn.
+function registerProcessHandlers() {
+  process.on('uncaughtException', async (err) => {
+    console.error('Uncaught Exception:', err);
+    try {
+      await alertQueue.alert('uncaught_exception', formatters.uncaughtException(err.message));
+    } catch (_) {}
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', async (reason) => {
-  const msg = reason instanceof Error ? reason.message : String(reason);
-  console.error('Unhandled Rejection:', reason);
-  try {
-    await alertQueue.alert('unhandled_rejection', formatters.uncaughtException(`UnhandledRejection: ${msg}`));
-  } catch (_) {}
-});
+  process.on('unhandledRejection', async (reason) => {
+    const msg = reason instanceof Error ? reason.message : String(reason);
+    console.error('Unhandled Rejection:', reason);
+    try {
+      await alertQueue.alert('unhandled_rejection', formatters.uncaughtException(`UnhandledRejection: ${msg}`));
+    } catch (_) {}
+  });
+}
 
-start();
+// Runtime entrypoint: chỉ start server + side effects khi file được chạy trực tiếp
+// (`node src/index.js`), không khi bị require trong test/smoke.
+if (require.main === module) {
+  registerProcessHandlers();
+  start();
+}
 
 module.exports = app;
+module.exports.createApp = createApp;
+module.exports.start = start;

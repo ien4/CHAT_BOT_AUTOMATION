@@ -38,6 +38,15 @@ Da them helper `backend/src/infrastructure/services/redaction.js` (`maskId/summa
 
 Con lai (accepted/deferred low-risk): stack trace debug, ten staff noi bo, `webhook/handler.js` (da redact tu BE-01). Chi tiet: `report/phase-21/PROMPT_BE_02_CI_AND_LOG_REDACTION_REPORT.md`. CI backend job da fix thieu `DATABASE_URL` placeholder cho `prisma validate`.
 
+## 1c. BE-03 update — startup side-effect split (2026-07-15)
+
+Da tach `backend/src/index.js`:
+- `backend/src/app.js` moi: `createApp()` chi dung Express app (middleware + routes + error handler), KHONG listen/DB connect/seed/Facebook/Telegram/notification/process handler → import-safe cho test/smoke.
+- `index.js`: runtime entrypoint; toan bo startup side-effect (`prisma.$connect`, seed, `facebookMenu.setupAllPages`, `app.listen`, `telegramBot.init`, `healthChecker/dailyReport.start`, process handlers) nam trong `start()` va chi chay khi `require.main === module`.
+- `backend/scripts/check-import-app.js` + script `check:app-import`: verify import createApp khong side-effect; da them vao CI backend job.
+
+Route/middleware/`GET|POST /webhook`/`/api/*`/`/health` giu nguyen. Smoke `createApp()` tren port tam (khong external): health 200, webhook 403, chatwoot 404, guards 401, invalid login 401 → PASS. `index.js` startup side-effect risk: **giam** (chi chay o runtime entrypoint). Chi tiet: `report/phase-21/PROMPT_BE_03_STARTUP_SIDE_EFFECT_SPLIT_REPORT.md`.
+
 ## 2. Module khong nen dung truoc App Review
 
 - `backend/src/webhook/**` behavior xu ly Meta callback.

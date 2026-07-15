@@ -39,6 +39,9 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate
 
+      - name: App import-safety check
+        run: npm run check:app-import
+
   dashboard:
     name: Dashboard typecheck and build
     runs-on: ubuntu-latest
