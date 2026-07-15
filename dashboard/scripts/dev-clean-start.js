@@ -2,37 +2,60 @@
 'use strict';
 
 /**
- * dev-clean-start.js — Clean `.next` rồi in hướng dẫn start dashboard dev chuẩn.
+ * dev-clean-start.js — `npm run dev` entry: đảm bảo CHỈ MỘT Next dev sống.
  *
- * Cố ý KHÔNG tự spawn dev server và KHÔNG kill process nào: để tránh giết nhầm
- * tiến trình ngoài workspace hoặc chồng nhiều dev server. Người vận hành tự chạy
- * `npm run dev` sau bước clean này.
+ * Trình tự:
+ *   1) Dừng mọi Next dev/start cũ thuộc workspace (chống ghi chồng `.next`).
+ *   2) Clean `.next`.
+ *   3) Start `next dev -p 3019 -H 127.0.0.1` ở foreground (operator thấy log).
  *
- * - Chỉ Node core module, không dependency.
- * - Không đọc env/secret.
+ * - Chỉ Node core, không dependency. Không spawn port 3002.
  */
-const { spawnSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
+const { stopNextRuntimeProcesses } = require('./next-process-utils');
 
-const dashboardRoot = path.resolve(__dirname, '..');
-const DEV_PORT = 3019;
+const DASHBOARD_ROOT = path.resolve(__dirname, '..');
+const DEV_PORT = '3019';
 const DEV_HOST = '127.0.0.1';
 
-const result = spawnSync(process.execPath, [path.join(__dirname, 'clean-next.js')], {
-  stdio: 'inherit',
-  cwd: dashboardRoot,
-});
-if (result.status !== 0) {
-  process.exit(result.status || 1);
+// 1) Dừng Next runtime cũ thuộc workspace
+const { stopped, suspicious } = stopNextRuntimeProcesses();
+if (stopped.length > 0) console.log(`[dev] Đã dừng ${stopped.length} Next runtime cũ thuộc workspace.`);
+if (suspicious.length > 0) {
+  console.error(`[dev] ⚠️ Phát hiện ${suspicious.length} Next process nghi ngờ (không tự kill). Kiểm tra thủ công rồi chạy lại.`);
+  suspicious.forEach((p) => console.error(`  pid=${p.pid} :: ${String(p.cmd).slice(0, 120)}`));
+  process.exit(1);
 }
 
-console.log('');
-console.log('==================================================================');
-console.log(' Dashboard dev runtime đã sạch. Bước tiếp theo:');
-console.log('');
-console.log('   1) Đảm bảo KHÔNG còn dev server cũ trên port 3002 (server cũ gây stale).');
-console.log(`   2) npm run dev        → start dashboard tại http://${DEV_HOST}:${DEV_PORT}`);
-console.log('   3) npm run smoke:runtime  → smoke toàn bộ route + static assets');
-console.log('');
-console.log(` Port dev CHUẨN duy nhất: ${DEV_PORT} (không dùng 3002).`);
-console.log('==================================================================');
+// Chờ ngắn để OS giải phóng port sau khi kill (sync, không dependency)
+spawnSync(process.execPath, ['-e', 'setTimeout(()=>{}, 800)']);
+
+// 2) Clean `.next`
+const clean = spawnSync(process.execPath, [path.join(__dirname, 'clean-next.js')], {
+  stdio: 'inherit',
+  cwd: DASHBOARD_ROOT,
+});
+if (clean.status !== 0) process.exit(clean.status || 1);
+
+// 3) Start next dev foreground trên port chuẩn 3019
+const nextBin = path.join(DASHBOARD_ROOT, 'node_modules', 'next', 'dist', 'bin', 'next');
+if (!fs.existsSync(nextBin)) {
+  console.error(`[dev] Không tìm thấy next binary tại ${nextBin}. Chạy npm install trong dashboard.`);
+  process.exit(1);
+}
+
+console.log(`[dev] Start dashboard: http://${DEV_HOST}:${DEV_PORT}`);
+const child = spawn(process.execPath, [nextBin, 'dev', '-p', DEV_PORT, '-H', DEV_HOST], {
+  stdio: 'inherit',
+  cwd: DASHBOARD_ROOT,
+});
+
+const forward = (sig) => { try { child.kill(sig); } catch (_) {} };
+process.on('SIGINT', () => forward('SIGINT'));
+process.on('SIGTERM', () => forward('SIGTERM'));
+child.on('exit', (code, signal) => {
+  if (signal) process.kill(process.pid, signal);
+  else process.exit(code ?? 0);
+});

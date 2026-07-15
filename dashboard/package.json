@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3019 -H 127.0.0.1",
+    "dev": "node scripts/dev-clean-start.js",
+    "prebuild": "node scripts/assert-no-next-runtime.js",
     "build": "next build",
     "start": "next start -p 3019 -H 127.0.0.1",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "stop:runtime": "node scripts/stop-next-runtime.js",
+    "assert:no-runtime": "node scripts/assert-no-next-runtime.js",
     "clean:next": "node scripts/clean-next.js",
-    "dev:clean": "node scripts/dev-clean-start.js",
     "smoke:runtime": "node scripts/smoke-dashboard-runtime.js",
     "quality": "npm run typecheck && npm run build"
   },
