@@ -9,6 +9,7 @@
 const agent = require('./agent');
 const getPrisma = require('../db');
 const prisma = getPrisma();
+const { maskId, summarizeText } = require('../infrastructure/services/redaction');
 
 class BotEngine {
   /**
@@ -29,7 +30,7 @@ class BotEngine {
       const { tenantId = null } = options;
       const conversation = await agent.getOrCreateConversation(senderId, tenantId);
 
-      console.log(`🔘 Postback: ${payload} from ${senderId}`);
+      console.log('🔘 Postback', { senderId: maskId(senderId), payload: summarizeText(payload) });
 
       // ContentPackage browsing — no LLM needed
       if (payload.startsWith('PKG_')) {

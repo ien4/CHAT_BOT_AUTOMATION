@@ -17,6 +17,7 @@ const createChannelConfigRoutes = require('../presentation/http/routes/dashboard
 const createCampaignRoutes = require('../presentation/http/routes/dashboard/campaigns.routes');
 const createStatsRoutes = require('../presentation/http/routes/dashboard/stats.routes');
 const createAdminUsersRoutes = require('../presentation/http/routes/dashboard/adminUsers.routes');
+const { maskId, summarizeText, safeError, isPresent } = require('../infrastructure/services/redaction');
 
 const router = express.Router();
 const prisma = getPrisma();
@@ -1648,13 +1649,13 @@ router.post('/test-message', authMiddleware, platformAdminOnly, async (req, res)
     const botEngine = require('../bot/engine');
     const fakeSenderId = senderId || 'test_user_000';
 
-    console.log(`🧪 [TEST] Simulated message from ${fakeSenderId}: "${message}"`);
+    console.log('🧪 [TEST] Simulated message', { senderId: maskId(fakeSenderId), message: summarizeText(message) });
     const response = await botEngine.processMessage(fakeSenderId, message);
-    console.log(`🧪 [TEST] Bot response:`, response);
+    console.log('🧪 [TEST] Bot response', { hasResponse: isPresent(response) });
 
     res.json({ senderId: fakeSenderId, userMessage: message, botResponse: response });
   } catch (error) {
-    console.error('Test message error:', error);
+    console.error('Test message error:', safeError(error));
     res.status(500).json({ error: error.message });
   }
 });

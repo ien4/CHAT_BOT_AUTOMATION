@@ -5,6 +5,7 @@ const { CLAUDE_TOOLS, OPENAI_TOOLS, executeTool } = require('./tools');
 const { routeMessage, formatToolResult } = require('./router');
 const alertQueue = require('../notifications/alertQueue');
 const formatters = require('../notifications/formatters');
+const { maskId, isPresent } = require('../infrastructure/services/redaction');
 
 const TOOL_DEFS = { claudeTools: CLAUDE_TOOLS, openaiTools: OPENAI_TOOLS };
 
@@ -286,7 +287,7 @@ Trả lời ngắn gọn, tự nhiên, thân thiện bằng tiếng Việt${guar
       conversation = await prisma.conversation.create({
         data: { fbUserId: senderId, fbUserName: userName || 'Unknown', status: 'active', context: {}, tenantId: tenantId ?? null },
       });
-      console.log(`👤 New conversation: ${senderId} (${userName || 'Unknown'})${tenantId ? ` [tenant:${tenantId}]` : ''}`);
+      console.log('👤 New conversation', { senderId: maskId(senderId), hasUserName: isPresent(userName), tenantId: tenantId ?? null });
     }
 
     return conversation;

@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { summarizeText } = require('../infrastructure/services/redaction');
 
 /**
  * DeepSeek API Integration
@@ -116,14 +117,14 @@ class DeepSeekProvider {
             toolInput = {};
           }
 
-          console.log(`🔧 Tool call: ${toolName}`, JSON.stringify(toolInput));
+          console.log(`🔧 Tool call: ${toolName}`, summarizeText(JSON.stringify(toolInput)));
           let result;
           try {
             result = await executeTool(toolName, toolInput);
           } catch (err) {
             result = { error: err.message };
           }
-          console.log(`🔧 Tool result: ${toolName}`, JSON.stringify(result));
+          console.log(`🔧 Tool result: ${toolName}`, summarizeText(JSON.stringify(result)));
 
           workingMessages.push({
             role: 'tool',

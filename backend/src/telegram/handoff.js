@@ -8,6 +8,7 @@ const manager = require('../notifications/telegramManager');
 const alertQueue = require('../notifications/alertQueue');
 const formatters = require('../notifications/formatters');
 const telegramDestinations = require('../notifications/telegramDestinations');
+const { maskId, summarizeText, safeError } = require('../infrastructure/services/redaction');
 
 const DEBUG_LOG = path.join(__dirname, '../../../handoff-debug.log');
 function debugLog(msg) {
@@ -111,8 +112,8 @@ async function initiateHandoff(conversation, messageText) {
     where: { isOnDuty: true, isActive: true },
   });
 
-  debugLog(`[initiateHandoff] sender=${conversation.fbUserId} msg="${messageText.substring(0,40)}"`);
-  debugLog(`[initiateHandoff] onDutyStaff=${onDutyStaff.length} (${onDutyStaff.map(s => s.name).join(', ') || 'none'})`);
+  debugLog(`[initiateHandoff] sender=${maskId(conversation.fbUserId)} msgLen=${summarizeText(messageText).length}`);
+  debugLog(`[initiateHandoff] onDutyStaff=${onDutyStaff.length}`);
 
   if (onDutyStaff.length === 0) {
     debugLog('[initiateHandoff] → No staff on duty → BOT handles');
@@ -134,7 +135,7 @@ async function initiateHandoff(conversation, messageText) {
   const freeStaff = onDutyStaff.filter(s => !busyStaffIdSet.has(s.id));
   const allStaffBusy = freeStaff.length === 0;
 
-  debugLog(`[initiateHandoff] busyStaff=${busyAssignments.length} freeStaff=${freeStaff.length} (${freeStaff.map(s => s.name).join(', ') || 'NONE'}) allBusy=${allStaffBusy}`);
+  debugLog(`[initiateHandoff] busyStaff=${busyAssignments.length} freeStaff=${freeStaff.length} allBusy=${allStaffBusy}`);
 
   const displayName = conversation.fbUserName || 'Khách hàng';
   const notifiedChatIds = [];
@@ -197,8 +198,8 @@ async function initiateHandoff(conversation, messageText) {
       staffPendingMap.set(staff.telegramChatId, existing);
       notifiedChatIds.push(staff.telegramChatId);
     } catch (e) {
-      const errDetail = typeof e.response?.body === 'object' ? JSON.stringify(e.response.body) : (e.response?.body || e.message);
-      debugLog(`[initiateHandoff] DM FAILED for ${staff.name} (chatId=${staff.telegramChatId}): ${errDetail}`);
+      const errDetail = safeError(e);
+      debugLog(`[initiateHandoff] DM FAILED for staff=${maskId(staff.telegramChatId)}: ${JSON.stringify(errDetail)}`);
       console.error(`[Handoff] Failed to DM staff ${staff.name}:`, e.message);
     }
   }
@@ -460,7 +461,7 @@ async function relayStaffMessage(telegramChatId, text) {
   if (sent.error) {
     const fbErr = sent.error;
     await bot().sendMessage(telegramChatId, `❌ Gửi tin nhắn thất bại (lỗi ${fbErr.code}): ${fbErr.message.substring(0, 100)}`);
-    console.error('[Handoff] relayStaffMessage: FB error detail:', JSON.stringify(sent.error));
+    console.error('[Handoff] relayStaffMessage: FB error detail:', { code: sent.error?.code });
     return;
   }
 
@@ -672,7 +673,7 @@ async function handleTimedOutHumanSession(conversation) {
 
   try {
     const botEngine = require('../bot/engine');
-    console.log(`[Handoff] Bot tiếp quản: xử lý tin nhắn cuối của khách "${lastMessage.content.substring(0, 50)}..."`);
+    console.log('[Handoff] Bot tiếp quản: xử lý tin nhắn cuối của khách', { content: summarizeText(lastMessage.content) });
     const response = await botEngine.processMessage(conversation.fbUserId, lastMessage.content, {
       skipSaveInbound: true,
       channel: conversation.channel || 'unknown',
@@ -741,7 +742,7 @@ async function handlePendingTimeout(conversationId, originalMessage, notifiedCha
   // Bot xử lý message ban đầu
   try {
     const botEngine = require('../bot/engine');
-    console.log(`[Handoff] 🤖 Bot processing original message after timeout: "${originalMessage.substring(0, 50)}..."`);
+    console.log('[Handoff] 🤖 Bot processing original message after timeout', { message: summarizeText(originalMessage) });
     const response = await botEngine.processMessage(conversation.fbUserId, originalMessage, {
       skipSaveInbound: true,
       channel: conversation.channel || 'unknown',
@@ -749,7 +750,7 @@ async function handlePendingTimeout(conversationId, originalMessage, notifiedCha
     });
     if (response) {
       const text = typeof response === 'string' ? response : response.text;
-      console.log(`[Handoff] 🤖 Bot response: "${(text || '').substring(0, 50)}..."`);
+      console.log('[Handoff] 🤖 Bot response', { text: summarizeText(text || '') });
       await sendToCustomer(conversation, response);
     } else {
       console.warn('[Handoff] ⚠️ Bot returned empty response');
@@ -820,7 +821,7 @@ async function sendFBMessage(fbUserId, message, pageId) {
       { recipient: { id: fbUserId }, message: messageData },
       { params: { access_token: accessToken } }
     );
-    console.log(`[Handoff] ✅ FB message sent to ${fbUserId}: "${logText.substring(0, 50)}..."`);
+    console.log('[Handoff] ✅ FB message sent', { fbUserId: maskId(fbUserId), text: summarizeText(logText) });
     return response.data;
   } catch (e) {
     const fbError = e.response?.data?.error;

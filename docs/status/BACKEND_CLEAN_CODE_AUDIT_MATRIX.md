@@ -26,6 +26,18 @@ Tai lieu nay la source-of-truth ngan cho prompt backend tiep theo. BE-01 chi aud
 | `backend/prisma/**` | Schema 297 dong + migrations. | High blast radius, khong duoc dung trong BE-01. | On dinh | Trung binh | P0 guard | Migration prompt rieng neu can |
 | `.github/workflows/ci.yml` | Moi them CI baseline backend/dashboard. | CI khong co DB service/secret, chi static build/validate. | Co | Co | P0 maintain | Mo rong sau khi co test suite |
 
+## 1b. BE-02 update — log redaction hardening (2026-07-15)
+
+Da them helper `backend/src/infrastructure/services/redaction.js` (`maskId/summarizeText/safeError/redactObjectKeys/isPresent`) va giam log risk o cac vung high-risk:
+
+- `facebook/menu.js`: bo log `error.response.data` (provider body) → `safeError`.
+- `bot/engine.js`, `bot/agent.js`: mask sender id, bo ten khach, chi log length/present.
+- `llm/claude.js`, `llm/deepseek.js`: tool input/result → `summarizeText` (chi length/present).
+- `telegram/handoff.js`: mask `fbUserId`/`telegramChatId`, bo raw message content, provider error → `safeError`.
+- `api/dashboard.js`: test-message log → mask sender + summarize message.
+
+Con lai (accepted/deferred low-risk): stack trace debug, ten staff noi bo, `webhook/handler.js` (da redact tu BE-01). Chi tiet: `report/phase-21/PROMPT_BE_02_CI_AND_LOG_REDACTION_REPORT.md`. CI backend job da fix thieu `DATABASE_URL` placeholder cho `prisma validate`.
+
 ## 2. Module khong nen dung truoc App Review
 
 - `backend/src/webhook/**` behavior xu ly Meta callback.

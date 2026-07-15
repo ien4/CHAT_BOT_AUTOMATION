@@ -4,6 +4,7 @@
 const axios = require('axios');
 const getPrisma = require('../db');
 const prisma = getPrisma();
+const { safeError } = require('../infrastructure/services/redaction');
 
 /**
  * Facebook Persistent Menu & Get Started Button
@@ -60,7 +61,7 @@ class FacebookMenu {
       console.log(`✅ Messenger Profile đã được cài đặt (page: ${actualPageId})`);
       return { success: true, result: response.data };
     } catch (error) {
-      console.error('❌ Lỗi cài đặt Messenger Profile:', error.response?.data || error.message);
+      console.error('❌ Lỗi cài đặt Messenger Profile:', safeError(error));
       return { success: false, error: error.response?.data || error.message };
     }
   }
@@ -132,7 +133,7 @@ class FacebookMenu {
       console.log('✅ Messenger Profile đã được reset');
       return { success: true, result: response.data };
     } catch (error) {
-      console.error('❌ Lỗi reset profile:', error.response?.data || error.message);
+      console.error('❌ Lỗi reset profile:', safeError(error));
       return { success: false, error: error.response?.data || error.message };
     }
   }
@@ -158,7 +159,7 @@ class FacebookMenu {
       );
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('❌ Lỗi lấy profile:', error.response?.data || error.message);
+      console.error('❌ Lỗi lấy profile:', safeError(error));
       return { success: false, error: error.response?.data || error.message };
     }
   }

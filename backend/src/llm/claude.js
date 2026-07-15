@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { summarizeText } = require('../infrastructure/services/redaction');
 
 /**
  * Anthropic Claude API Integration
@@ -106,14 +107,14 @@ class ClaudeProvider {
         const toolResults = [];
 
         for (const tu of toolUses) {
-          console.log(`🔧 Tool call: ${tu.name}`, JSON.stringify(tu.input));
+          console.log(`🔧 Tool call: ${tu.name}`, summarizeText(JSON.stringify(tu.input)));
           let result;
           try {
             result = await executeTool(tu.name, tu.input);
           } catch (err) {
             result = { error: err.message };
           }
-          console.log(`🔧 Tool result: ${tu.name}`, JSON.stringify(result));
+          console.log(`🔧 Tool result: ${tu.name}`, summarizeText(JSON.stringify(result)));
 
           toolResults.push({
             type: 'tool_result',
