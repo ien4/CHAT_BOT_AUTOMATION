@@ -90,7 +90,10 @@ Thêm step `App import-safety check: npm run check:app-import` vào backend job 
 
 ## 11. Push result
 
-Xem mục cập nhật cuối (Phase 13 thực thi).
+- Commit: `c2e2af1 Split backend app creation from startup side effects` (7 file: `index.js`, `app.js`, `check-import-app.js`, `package.json`, `ci.yml`, audit matrix, report này).
+- Stage tường minh (không `git add .`), `git diff --cached --check` OK, không force push.
+- `git push origin HEAD:main` → **thành công** (`aa54718..c2e2af1`).
+- Verify: `origin/main` = local `HEAD` = `c2e2af1`.
 
 ## 12. Remaining risk
 
