@@ -47,6 +47,14 @@ Da tach `backend/src/index.js`:
 
 Route/middleware/`GET|POST /webhook`/`/api/*`/`/health` giu nguyen. Smoke `createApp()` tren port tam (khong external): health 200, webhook 403, chatwoot 404, guards 401, invalid login 401 → PASS. `index.js` startup side-effect risk: **giam** (chi chay o runtime entrypoint). Chi tiet: `report/phase-21/PROMPT_BE_03_STARTUP_SIDE_EFFECT_SPLIT_REPORT.md`.
 
+## 1d. BE-04 update — safe bootstrap flag + seed split (2026-07-15)
+
+- Them flag `BOOTSTRAP_SKIP_EXTERNAL=true`: `start()` van listen + connect DB + seed nhung BO QUA external startup (Facebook `setupAllPages`, `telegramBot.init`, `tenantHandoff.init`, `healthChecker/dailyReport.start`). Mac dinh (khong flag) giu nguyen behavior cu.
+- Tach `seedDefaults()` ra `backend/src/bootstrap/seedDefaults.js` → `index.js` mong hon (368 → ~140 dong).
+- Them `backend/scripts/smoke-safe-bootstrap.js` + script `smoke:safe-bootstrap`: spawn backend voi flag tren port tam, xac nhan external bi skip + route /health/webhook/guards OK (7/7 PASS), khong goi Facebook/Telegram that.
+- CI: khong them safe-bootstrap smoke (can DB local, CI khong co DB); giu `check:app-import`.
+- Chi tiet: `report/phase-21/PROMPT_BE_04_SAFE_BOOTSTRAP_FLAG_REPORT.md`.
+
 ## 2. Module khong nen dung truoc App Review
 
 - `backend/src/webhook/**` behavior xu ly Meta callback.
