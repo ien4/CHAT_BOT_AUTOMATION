@@ -1,5 +1,18 @@
 # PROJECT PROGRESS MASTER
 
+## Cap nhat 23B - Website Chatwoot schema/env/API contract
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **PASS / DOCS_ONLY**
+
+- 23B da chot plan schema/env/API contract cho Website Chatwoot, chua code runtime.
+- Recommended data model: generic `TenantIntegration` trong prompt migration/code sau; khong them lai `Tenant.chatwoot*`.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Endpoint contract giu theo ADR: `POST /integrations/website-chat/events`.
+- Facebook `/webhook` khong doi; `/chatwoot-webhook*` khong khoi phuc.
+- Website Chatwoot van **NOT_STARTED runtime**: chua route, schema, migration, env file, package, dashboard UI hoac smoke real.
+- 23C chi duoc bat dau neu 23B PASS va scope chi inbound skeleton disabled/mocked, khong external.
+
 Ngày cập nhật: 2026-07-14
 Prompt gần nhất: **23A — Hybrid channel architecture decision**
 Trạng thái gần nhất: **PASS**

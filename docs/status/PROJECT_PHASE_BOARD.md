@@ -17,3 +17,8 @@ Ngày cập nhật: 2026-07-14
 - Phase board này là bảng định hướng nhanh; chi tiết nằm trong `docs/status/PROJECT_STATUS_MASTER.md`.
 - Nếu cần lịch sử prompt cụ thể, đọc report trong thư mục phase tương ứng.
 - Nếu có mâu thuẫn, ưu tiên `docs/status/PROJECT_PROGRESS_MASTER.md` và `docs/index/CURRENT_STATUS_INDEX.md`.
+## Cap nhat 23B
+
+Ngay cap nhat: 2026-07-15
+
+Phase 23 van **PLANNED / CONTRACT_ACCEPTED**: 23B da chot schema/env/API contract docs-only, khuyen nghi generic `TenantIntegration`, endpoint `POST /integrations/website-chat/events`, feature flag `WEBSITE_CHAT_ENABLED=false`. Runtime Website Chatwoot van NOT_STARTED; 23C chi inbound skeleton disabled/mocked neu duoc mo.

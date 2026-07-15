@@ -1363,3 +1363,28 @@ Ngày cập nhật: 2026-07-10
 Gợi ý tiếp theo:
 
 - Prompt 19B chỉ nên bắt đầu khi sau mỗi lần split page đều chạy `npm run quality`, clean/fresh dev server nếu cần, và route smoke thật trên các route dashboard trọng yếu.
+## Cap nhat moi nhat - Prompt 23B Website Chatwoot schema/env/API contract
+
+Ngay cap nhat: 2026-07-15
+
+Trang thai moi nhat: **PASS / DOCS_ONLY**. Prompt 23B da chot ke hoach schema/env/API contract cho Website Chatwoot hybrid channel sau ADR 23A.
+
+Da lam:
+
+- Tao `docs/roadmap/WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT.md`.
+- Cap nhat ADR/plan/env policy/status/roadmap/report phase 23.
+- Khuyen nghi data model generic `TenantIntegration` cho prompt migration/code sau.
+- De xuat feature flag `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Giu endpoint contract `POST /integrations/website-chat/events`.
+
+Khong lam:
+
+- Khong sua backend/dashboard runtime source.
+- Khong sua Prisma schema hoac tao migration.
+- Khong sua `.env`, `.env.example`, `.env.local`.
+- Khong sua package/package-lock.
+- Khong goi external provider va khong gui POST `/webhook`.
+
+Trang thai: Website Chatwoot van **NOT_STARTED runtime**. Facebook `/webhook` khong doi va `/chatwoot-webhook*` khong khoi phuc.
+
+Chi tiet: `report/phase-23/PROMPT_23B_WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT_REPORT.md`.

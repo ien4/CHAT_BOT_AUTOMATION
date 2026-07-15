@@ -74,3 +74,15 @@ Trạng thái ngắn: không có bug dashboard mới sau 21Y. Các bug stale chu
 - Không khôi phục `/chatwoot-webhook*`.
 - Không claim Website Chatwoot đã hoạt động; hiện chỉ là planned optional channel.
 - Không sửa source chỉ vì docs/report được move.
+## Cap nhat 23B - Website Chatwoot contract
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **PASS / DOCS_ONLY**
+
+- 23B da chot contract schema/env/API o muc tai lieu.
+- Recommended data model: generic `TenantIntegration`, additive trong prompt sau neu duoc duyet.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Endpoint: `POST /integrations/website-chat/events`.
+- Khong sua runtime source, schema/migration, env file, env example hoac package.
+- Facebook `/webhook` giu nguyen; `/chatwoot-webhook*` khong khoi phuc.
+- Website Chatwoot runtime van **NOT_STARTED**.

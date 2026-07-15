@@ -71,3 +71,15 @@ Tài liệu này là điểm vào hiện tại trước khi đọc docs hoặc r
 | Meta verify operator checkpoint | Người vận hành giữ Ngrok session, nhập callback `/webhook`, dùng `FB_VERIFY_TOKEN` thật trong Meta Developer và xác nhận kết quả. |
 | Meta POST event smoke prompt | Chỉ chạy sau khi người vận hành xác nhận `META_VERIFY_OPERATOR_CONFIRMED=YES`; mục tiêu là gửi/nhận 1 event thật và quan sát log đã redact. |
 | Production rollout prompt | Chỉ chạy sau staging/Meta verification và POST event thật; mục tiêu là backup, migrate deploy, deploy và smoke production thật. |
+## Cap nhat 23B - Website Chatwoot contract
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **PASS / DOCS_ONLY**
+
+- Contract moi: `docs/roadmap/WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT.md`.
+- Recommended data model: generic `TenantIntegration`.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Endpoint tuong lai: `POST /integrations/website-chat/events`.
+- 23B khong sua source/schema/env/package.
+- Facebook `/webhook` khong doi; `/chatwoot-webhook*` khong khoi phuc.
+- Website Chatwoot van **NOT_STARTED runtime**.

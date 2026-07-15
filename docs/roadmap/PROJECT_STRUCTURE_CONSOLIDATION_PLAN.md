@@ -427,3 +427,15 @@ Không đánh dấu Phase 21 Done sau Prompt 21S. Prompt kế tiếp nên là 21
 - **Prompt 21B** — Backend structure consolidation nhỏ (rút route read-only từ `api/dashboard.js`), nếu muốn giảm nợ cấu trúc backend an toàn.
 - Hoặc **Prompt 19E** — Dashboard `content-packages/page.tsx` với action migrate **locked**, nếu muốn tiếp tục Phase 19.
 - **KHÔNG** chọn `settings`/`knowledge`/`tenants` nếu chưa có external rollback plan riêng.
+## Cap nhat 23B - Website Chatwoot contract plan
+
+Ngay cap nhat: 2026-07-15
+
+Prompt 23B da PASS o pham vi docs-only:
+
+- Khuyen nghi generic `TenantIntegration` cho schema additive sau, khong them lai `Tenant.chatwoot*`.
+- Khong reuse `ChannelConfig`/`TenantChannelConfig` lam noi luu credential vi cac model nay chi phu hop routing/filter nhe.
+- Feature flag de xuat `WEBSITE_CHAT_ENABLED=false`.
+- Endpoint contract `POST /integrations/website-chat/events`.
+- Khong anh huong truc tiep Phase 21B backend route consolidation.
+- Khong move webhook/RAG/handoff/tenants trong refactor thuong.

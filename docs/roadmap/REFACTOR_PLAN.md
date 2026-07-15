@@ -1689,3 +1689,23 @@ Kế hoạch tiếp theo:
 
 - Prompt 19B có thể tiếp tục tách page tiếp theo nhưng bắt buộc thêm dev server route smoke thật sau typecheck/build.
 - Nếu gặp lại chunk error tương tự: dừng dev server cũ, xóa `dashboard/.next`, chạy `npm run quality`, start dev server fresh và smoke `_not-found` + route dashboard liên quan.
+## Prompt 23B - Website Chatwoot schema/env/API contract (PASS)
+
+Ngay cap nhat: 2026-07-15
+
+Day la prompt **docs-only / plan-only**.
+
+Ket qua:
+
+- Tao `docs/roadmap/WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT.md`.
+- Recommended data model: generic `TenantIntegration`.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false`.
+- Endpoint contract: `POST /integrations/website-chat/events`.
+- Khong sua backend/dashboard source, Prisma schema/migration, env/env example, package.
+- Facebook `/webhook` giu nguyen; `/chatwoot-webhook*` khong khoi phuc.
+
+Next:
+
+1. 23C inbound skeleton disabled/mocked neu tiep tuc Website Chatwoot.
+2. 21B-6-SAFE hoac NO_SAFE_CANDIDATE neu quay lai backend route consolidation.
+3. Meta verify operator checkpoint neu co `META_VERIFY_OPERATOR_CONFIRMED=YES`.

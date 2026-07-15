@@ -1274,3 +1274,19 @@ Ngày cập nhật: 2026-07-10
 | Legacy script scan | Existing backlog | Scan còn script Chatwoot legacy trong `backend/scripts`/`start-all.bat`, không phát sinh từ 19A-FIX | Xử lý riêng nếu mở prompt DevOps cleanup, không trộn với bug fix này. |
 
 Kết luận: Prompt 19A-FIX đã đóng regression runtime/chunk và thêm yêu cầu route smoke thật cho các bước split dashboard tiếp theo.
+## Prompt 23B Update - Website Chatwoot Schema Env API Contract (PASS)
+
+Ngay cap nhat: 2026-07-15
+
+| Hang muc | Trang thai | Bang chung | Ghi chu |
+|---|---|---|---|
+| Mode | PASS | Docs-only / plan-only | Khong sua runtime source. |
+| Data model | Recommended | `TenantIntegration` | Generic, additive cho prompt sau; khong them `Tenant.chatwoot*`. |
+| Reuse channel config | Rejected as primary | Schema audit | `ChannelConfig`/`TenantChannelConfig` thieu secret/base URL/account/token. |
+| Env policy | Planned | `WEBSITE_CHAT_ENABLED`, `WEBSITE_CHAT_*` | Khong them env file trong 23B. |
+| API contract | Planned | `POST /integrations/website-chat/events` | Khong code route trong 23B. |
+| Facebook path | Preserved | `/webhook` | Khong doi. |
+| Legacy route | Preserved disabled | `/chatwoot-webhook*` | Khong khoi phuc. |
+| Runtime | NOT_STARTED | Contract docs | Chua route/schema/migration/UI/smoke real. |
+
+Ket luan: 23B du dieu kien de mo 23C neu scope 23C chi la inbound skeleton disabled/mocked, khong external.

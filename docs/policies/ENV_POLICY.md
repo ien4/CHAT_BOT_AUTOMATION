@@ -43,6 +43,7 @@ Nếu triển khai Website Chatwoot ở 23B+ thì phải phân biệt rõ:
 
 Tên biến dự kiến nếu được duyệt ở prompt sau:
 
+- `WEBSITE_CHAT_ENABLED`
 - `WEBSITE_CHAT_PROVIDER`
 - `WEBSITE_CHAT_WEBHOOK_SECRET`
 - `WEBSITE_CHAT_BASE_URL`
@@ -57,6 +58,20 @@ Quy tắc bắt buộc:
 - Không đưa token/secret vào `NEXT_PUBLIC_*`.
 - Không dùng biến Website Chatwoot để thay thế `FB_VERIFY_TOKEN`, `FB_PAGE_ACCESS_TOKEN` hoặc `FB_APP_SECRET`.
 - Nếu thêm env example sau này, phải ghi chú rõ đây là **Website chat only**, không phải Facebook callback.
+
+Quyet dinh Prompt 23B:
+
+| Env name | Scope | Secret? | Chinh sach |
+|---|---|---|---|
+| `WEBSITE_CHAT_ENABLED` | Backend | Khong | Feature flag, default off neu them o prompt sau. |
+| `WEBSITE_CHAT_PROVIDER` | Backend | Khong | Provider mac dinh; khong thay the Facebook env. |
+| `WEBSITE_CHAT_WEBHOOK_SECRET` | Backend | Co | Server-only, khong log, uu tien luu encrypted trong DB khi co `TenantIntegration`. |
+| `WEBSITE_CHAT_BASE_URL` | Backend | Co the nhay cam | Khong log raw; khong dua vao `NEXT_PUBLIC_*`. |
+| `WEBSITE_CHAT_ACCOUNT_ID` | Backend | Co the nhay cam | Khong log raw. |
+| `WEBSITE_CHAT_INBOX_ID` | Backend | Co the nhay cam | Khong log raw. |
+| `WEBSITE_CHAT_API_TOKEN` | Backend | Co | Server-only, khong log, khong commit. |
+
+Prompt 23B **khong** them cac bien nay vao `.env`, `.env.example` hoac `.env.local`; chi ghi policy.
 
 ## 3. Dashboard env
 

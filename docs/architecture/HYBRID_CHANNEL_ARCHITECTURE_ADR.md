@@ -1,7 +1,19 @@
 # HYBRID CHANNEL ARCHITECTURE ADR
 
-Ngay cap nhat: 2026-07-14
+Ngay cap nhat: 2026-07-15
 Trang thai: **ADR_ACCEPTED / DOCS_ONLY**
+
+## Cap nhat 23B
+
+Prompt 23B giu nguyen quyet dinh ADR va bo sung contract docs-only:
+
+- Recommended data model: generic `TenantIntegration`, khong reuse `ChannelConfig` lam noi luu credential va khong tao provider-specific table o buoc dau.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Endpoint contract: `POST /integrations/website-chat/events`.
+- Khong code runtime, khong tao migration, khong sua schema/env/package.
+- Facebook `/webhook` khong doi; `/chatwoot-webhook*` khong khoi phuc.
+
+Chi tiet: `docs/roadmap/WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT.md`.
 
 ## 1. Quyet dinh
 
@@ -130,7 +142,7 @@ Infrastructure:
 | Phase | Noi dung |
 |---|---|
 | Phase 23A | ADR + impact audit, docs-only. |
-| Phase 23B | Schema/env/API contract plan, docs-only hoac migration create-only neu duoc duyet. |
+| Phase 23B | Schema/env/API contract plan, docs-only. |
 | Phase 23C | Website Chatwoot inbound skeleton behind disabled feature flag. |
 | Phase 23D | Chatwoot reply adapter + redacted log smoke bang mock/local only. |
 | Phase 23E | Dashboard UI quan tri Website channel. |

@@ -1,7 +1,18 @@
 # WEBSITE CHATWOOT INTEGRATION PLAN
 
-Ngay cap nhat: 2026-07-14
+Ngay cap nhat: 2026-07-15
 Trang thai: **PLANNED / NOT_STARTED**
+
+## Cap nhat 23B
+
+Prompt 23B da chot schema/env/API contract o muc docs-only:
+
+- Contract chi tiet nam tai `docs/roadmap/WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT.md`.
+- Data model khuyen nghi cho prompt migration sau: generic `TenantIntegration`, additive, khong them lai `Tenant.chatwoot*`.
+- Feature flag de xuat: `WEBSITE_CHAT_ENABLED=false` mac dinh.
+- Endpoint tuong lai van la `POST /integrations/website-chat/events`.
+- 23C chi duoc bat dau neu 23B PASS; 23C chi inbound skeleton disabled/mocked, khong external.
+- Website Chatwoot van **NOT_STARTED runtime**.
 
 ## 1. Muc tieu
 
@@ -48,6 +59,7 @@ Ten file co the doi sau audit schema va style repo that.
 Chi neu 23B/23C duoc duyet, co the can cac bien sau. Prompt 23A khong them vao env that:
 
 - `WEBSITE_CHAT_PROVIDER`
+- `WEBSITE_CHAT_ENABLED`
 - `WEBSITE_CHAT_WEBHOOK_SECRET`
 - `WEBSITE_CHAT_BASE_URL`
 - `WEBSITE_CHAT_ACCOUNT_ID`
@@ -83,7 +95,7 @@ Endpoint nay khong duoc nam tren `/webhook`, `/chatwoot-webhook` hoac `/api/sett
 | Option | Mo ta | Uu diem | Rui ro | Trang thai 23A |
 |---|---|---|---|---|
 | Reuse existing channel config | Dung `ChannelConfig` / `TenantChannelConfig` neu phu hop | It migration hon | Co the map sai semantic Facebook/Website | Can audit |
-| Add generic integration table | Tao `TenantIntegration` generic | Mo rong duoc provider khac | Can migration va dashboard UI moi | Can plan 23B |
+| Add generic integration table | Tao `TenantIntegration` generic | Mo rong duoc provider khac | Can migration va dashboard UI moi | **Khuyen nghi sau 23B** |
 | Add provider-specific table | Tao `WebsiteChatIntegration` | Ro nghia cho website-chat | De bi khoa vao Chatwoot neu dat ten qua cu the | Can plan 23B |
 
 Khong chon migration ngay neu chua audit schema that. Neu can migration thi phai additive, rollbackable va deploy bang `prisma migrate deploy`.
@@ -114,7 +126,7 @@ Khong chon migration ngay neu chua audit schema that. Neu can migration thi phai
 | Prompt | Muc tieu |
 |---|---|
 | 23A | ADR / audit only. |
-| 23B | Schema/env/API plan. |
+| 23B | Schema/env/API plan. PASS neu docs ro va validation/gate sach. |
 | 23C | Inbound skeleton disabled. |
 | 23D | Outbound adapter mock. |
 | 23E | Dashboard UI. |
