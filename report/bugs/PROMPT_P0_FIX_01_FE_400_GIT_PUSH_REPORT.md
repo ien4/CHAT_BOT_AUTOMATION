@@ -96,15 +96,23 @@ Repo đích public → scan tree + history:
 
 ## 11. Git remote / push result
 
-Xem mục cập nhật cuối file (Phase 10/13 thực thi).
+- Trước prompt: **không có** remote `origin`.
+- Đã thêm: `origin = https://github.com/ien4/CHAT_BOT_AUTOMATION.git`.
+- `git ls-remote --heads origin`: remote **tồn tại và trống** (không branch) → không divergence, không cần force.
+- Push: `git push -u origin HEAD:main` → **thành công**, tạo branch mới `main`.
+- Verify: `origin/main` = local `HEAD` = `6683a93aea8d852ee3ba0c838069d0b18ee0f884`.
+- Không force push. Không đổi Facebook `/webhook`. Không đụng schema/env thật.
 
 ## 12. Commit hash
 
-Xem mục cập nhật cuối file.
+- Bugfix/stabilization commit: `6683a93 Document dashboard 400 runtime stabilization` (docs-only: report này + `BUG_TRACKER.md`; không source).
+- Report-finalize commit: bổ sung mục 11–13 (follow-up).
 
 ## 13. GitHub pushed branch / URL
 
-Xem mục cập nhật cuối file.
+- Repo: `https://github.com/ien4/CHAT_BOT_AUTOMATION`
+- Branch: `main`
+- Commit đầu: `6683a93` (kèm toàn bộ history hiện có; secret history scan sạch — chỉ `backend/.env.example` placeholder).
 
 ## 14. Remaining risks
 
