@@ -1709,3 +1709,29 @@ Next:
 1. 23C inbound skeleton disabled/mocked neu tiep tuc Website Chatwoot.
 2. 21B-6-SAFE hoac NO_SAFE_CANDIDATE neu quay lai backend route consolidation.
 3. Meta verify operator checkpoint neu co `META_VERIFY_OPERATOR_CONFIRMED=YES`.
+## Prompt 21B-6-FINAL - Backend read route final audit (NO_SAFE_CANDIDATE)
+
+Ngay cap nhat: 2026-07-15
+
+Ket qua:
+
+- Da audit cuoi cac route con lai trong `backend/src/api/dashboard.js`.
+- Khong con candidate GET/read-only nho du an toan de tach theo vong 21B thong thuong.
+- Khong sua source runtime, dashboard source, Prisma schema/migration, env/env example, package/lock hoac webhook.
+- Phase 21 chuyen sang **STARTED / HIGH_RISK_ONLY_REMAINING**.
+
+Ly do dung 21B thuong:
+
+- `GET /auth/me` la auth/session core.
+- Conversations/messages co PII va context manager.
+- Knowledge/content co data noi dung/RAG/upload/reindex adjacency.
+- Providers/Facebook co secret/token/external adjacency.
+- Handoff/appointments/staff gan notification/Telegram/human handoff.
+- Analytics co tagged raw SQL va query phuc tap.
+- Tenants/nested routes la tenant core va cache/registry adjacency.
+
+Next:
+
+1. Neu giam no backend tiep, mo prompt rieng cho mot vung high-risk kem test/rollback rieng.
+2. Co the quay sang Phase 19 dashboard split neu bug tracker sach va dashboard full gate duoc ap dung.
+3. Phase 23 chi tiep tuc bang 23C skeleton disabled/mocked; khong doi Facebook `/webhook`.

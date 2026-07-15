@@ -83,3 +83,13 @@ Trang thai: **PASS / DOCS_ONLY**
 - 23B khong sua source/schema/env/package.
 - Facebook `/webhook` khong doi; `/chatwoot-webhook*` khong khoi phuc.
 - Website Chatwoot van **NOT_STARTED runtime**.
+## Cap nhat 21B-6-FINAL - No safe backend read-route candidate
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **NO_SAFE_CANDIDATE**
+
+- Sau 21B-5 va 23B, audit cuoi `backend/src/api/dashboard.js` khong tim thay route GET/read-only nho nao du an toan de tach tiep.
+- Phase 21 backend route consolidation thong thuong chuyen sang **STARTED / HIGH_RISK_ONLY_REMAINING**.
+- Prompt sau khong nen tiep tuc 21B thuong; neu can giam no backend, phai mo prompt rieng cho tung vung high-risk voi smoke/rollback rieng.
+- Khong doi Facebook `/webhook`, khong code Website Chatwoot, khong khoi phuc `/chatwoot-webhook*`.
+- Report moi: `report/phase-21/PROMPT_21B_6_FINAL_BACKEND_ROUTE_AUDIT_REPORT.md`.

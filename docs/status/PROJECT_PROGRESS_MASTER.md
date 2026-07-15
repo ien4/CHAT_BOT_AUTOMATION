@@ -106,3 +106,16 @@ Trạng thái gần nhất: **PASS**
 - Không stage `.env`, `.next`, logs, temp, backup hoặc file untracked không liên quan như `Bug_21C-3.md`.
 - Không dùng `git add .`.
 - Với dashboard: clean `.next`, fresh server, full route smoke, static asset smoke, dev log scan.
+## Cap nhat 21B-6-FINAL - Backend read-route consolidation final audit
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **NO_SAFE_CANDIDATE**
+
+- Da audit lai toan bo route con lai trong `backend/src/api/dashboard.js` sau 21B-5 va 23B.
+- Khong con nhom route GET/read-only nho nao du an toan tuyet doi de tach trong vong 21B thong thuong.
+- `GET /auth/me` bi loai vi la auth/session core; cac GET con lai bi loai do PII/content, tenant core, handoff, provider/secret adjacency, Facebook/external, analytics raw SQL/query phuc tap, hoac nam canh mutation/action cung domain.
+- Khong sua backend source, dashboard source, Prisma schema/migration, env/env example, package/lock, webhook, RAG, bot, tenants, facebook, telegram hoac notifications.
+- Phase 21 chuyen sang **STARTED / HIGH_RISK_ONLY_REMAINING**: khong tiep tuc 21B thuong neu khong co prompt rieng cho vung high-risk.
+- Phase 23 van **PLANNED / NOT_STARTED runtime** sau 23B; khong code Website Chatwoot, khong tao `/integrations/website-chat/events`, khong khoi phuc `/chatwoot-webhook*`.
+- Facebook `GET/POST /webhook`, Meta verification va production status khong doi.
+- Validation/smoke/gate PASS: backend quality, Prisma validate, backend read smoke, dashboard typecheck/build, fresh dashboard route/static/dev-log gate, safety scans va broken-link check.

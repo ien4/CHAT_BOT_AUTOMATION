@@ -1290,3 +1290,21 @@ Ngay cap nhat: 2026-07-15
 | Runtime | NOT_STARTED | Contract docs | Chua route/schema/migration/UI/smoke real. |
 
 Ket luan: 23B du dieu kien de mo 23C neu scope 23C chi la inbound skeleton disabled/mocked, khong external.
+## Prompt 21B-6-FINAL Update - Backend Read Route Audit (NO_SAFE_CANDIDATE)
+
+Ngay cap nhat: 2026-07-15
+
+| Hang muc | Trang thai | Bang chung | Ghi chu |
+|---|---|---|---|
+| Candidate decision | NO_SAFE_CANDIDATE | Final route map audit | Khong con route GET/read-only nho, sach, an toan tuyet doi. |
+| Source changes | NONE | `git diff --name-status` truoc docs | Khong sua `backend/src/**` hoac `dashboard/src/**`. |
+| Route da tach truoc | Preserved | prompts/settings/quick-reply-menus/channel-configs/campaigns/stats/admin-users | Khong doi API contract. |
+| Route bi loai | Done | audit table trong report | Auth core, conversations/PII, knowledge/RAG, providers/secret, content/action, appointments/staff, handoff, Facebook, analytics, tenants core. |
+| Backend validation | PASS | `npm run quality`, `npx prisma validate` | Khong source patch. |
+| Backend smoke | PASS | process 3001 | `/health`, `GET /webhook` 403, `POST /chatwoot-webhook` 404, read routes da tach PASS. |
+| Dashboard gate | PASS | clean `.next`, fresh 3019 | 15 route that 200, fake route 404, 67 static assets 200, dev log hits 0. |
+| Safety scans | PASS WITH HISTORICAL MATCHES | `rg` scans | Raw unsafe chi README lich su; PrismaClient chi singleton; destructive matches docs/report/script warning cu. |
+| Phase 21 status | HIGH_RISK_ONLY_REMAINING | docs/status | Khong tiep tuc 21B thuong neu khong co prompt rieng. |
+| Phase 23 | NOT_STARTED runtime | 23B report | Khong code Website Chatwoot trong prompt nay. |
+
+Ket luan: Prompt 21B-6-FINAL khoa lai vong backend read-route consolidation thong thuong. Route debt con lai can prompt high-risk rieng, khong tach nho tuy tien.

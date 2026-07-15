@@ -439,3 +439,21 @@ Prompt 23B da PASS o pham vi docs-only:
 - Endpoint contract `POST /integrations/website-chat/events`.
 - Khong anh huong truc tiep Phase 21B backend route consolidation.
 - Khong move webhook/RAG/handoff/tenants trong refactor thuong.
+## Cap nhat 21B-6-FINAL - Backend read route consolidation stop point
+
+Ngay cap nhat: 2026-07-15
+
+Prompt 21B-6-FINAL da ket luan **NO_SAFE_CANDIDATE**:
+
+- Backend read-route consolidation thong thuong da toi diem dung.
+- Khong co source patch trong prompt nay.
+- `backend/src/api/dashboard.js` van con route debt, nhung phan con lai khong con thuoc nhom read-only low-risk.
+- Phase 21 la **STARTED / HIGH_RISK_ONLY_REMAINING**.
+- Khong move `webhook/**`, `rag/**`, `bot/**`, `tenants/**`, `facebook/**`, `telegram/**`, `notifications/**`.
+- Khong code Website Chatwoot va khong tao endpoint `/integrations/website-chat/events`.
+
+Huong tiep theo:
+
+- Khong mo tiep 21B thuong chi de "tach them route".
+- Neu can xu ly vung con lai, lap prompt rieng cho tung domain high-risk: conversations, knowledge/RAG, providers, handoff, Facebook, analytics, tenants hoac auth.
+- Moi prompt high-risk phai co smoke/rollback/tenant-safety rieng, khong gop nhieu domain.

@@ -86,3 +86,14 @@ Trang thai: **PASS / DOCS_ONLY**
 - Khong sua runtime source, schema/migration, env file, env example hoac package.
 - Facebook `/webhook` giu nguyen; `/chatwoot-webhook*` khong khoi phuc.
 - Website Chatwoot runtime van **NOT_STARTED**.
+## Cap nhat 21B-6-FINAL - Backend route audit
+
+Ngay cap nhat: 2026-07-15
+Trang thai: **NO_SAFE_CANDIDATE**
+
+- Phase 21 backend read-route consolidation thong thuong da toi diem dung.
+- Cac route GET da tach truoc do van giu: prompts/settings/quick-reply-menus/channel-configs/campaigns/stats/admin-users.
+- Route GET con lai trong `backend/src/api/dashboard.js` khong dat tieu chi "nho, read-only, khong PII/secret/external/raw SQL/core".
+- Phase 21 hien la **STARTED / HIGH_RISK_ONLY_REMAINING**. Chi mo prompt rieng neu can xu ly conversations, knowledge, providers, handoff, Facebook, analytics, tenants, auth core hoac domain co mutation/action.
+- Khong sua source/schema/env/package/dashboard/webhook trong 21B-6-FINAL.
+- Phase 23 giu **PLANNED / NOT_STARTED runtime**; Website Chatwoot chua code va Facebook `/webhook` khong doi.

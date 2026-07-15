@@ -22,3 +22,8 @@ Ngày cập nhật: 2026-07-14
 Ngay cap nhat: 2026-07-15
 
 Phase 23 van **PLANNED / CONTRACT_ACCEPTED**: 23B da chot schema/env/API contract docs-only, khuyen nghi generic `TenantIntegration`, endpoint `POST /integrations/website-chat/events`, feature flag `WEBSITE_CHAT_ENABLED=false`. Runtime Website Chatwoot van NOT_STARTED; 23C chi inbound skeleton disabled/mocked neu duoc mo.
+## Cap nhat 21B-6-FINAL
+
+Ngay cap nhat: 2026-07-15
+
+Phase 21 backend read-route consolidation thong thuong da tam dung voi verdict **NO_SAFE_CANDIDATE**. Phase 21 hien la **STARTED / HIGH_RISK_ONLY_REMAINING**: cac route GET con lai trong `backend/src/api/dashboard.js` deu thuoc auth core, conversations/PII, knowledge/RAG, providers/secret, content/action, appointments/staff/Telegram, handoff, Facebook/external, analytics raw SQL/query phuc tap, tenants core hoac webhook legacy info. Khong sua source; Facebook `/webhook` va Website Chatwoot status khong doi.

@@ -17,3 +17,8 @@ Ngày cập nhật: 2026-07-14
 | `report/bugs/PROMPT_21X_GLOBAL_DASHBOARD_RUNTIME_AND_DOCS_REPORT.md` | Status hub + runtime bug proof, lưu ở bugs vì root cause là runtime/cache. |
 
 Phase 21 vẫn **STARTED** vì backend route consolidation còn nợ. Riêng docs/report physical reorganization đã **DONE** sau Prompt 21Y.
+## Cap nhat 21B-6-FINAL
+
+- Report: `report/phase-21/PROMPT_21B_6_FINAL_BACKEND_ROUTE_AUDIT_REPORT.md`
+- Vai tro: Final backend read-route audit; verdict **NO_SAFE_CANDIDATE**.
+- Phase 21 hien **STARTED / HIGH_RISK_ONLY_REMAINING**. Backend route consolidation thong thuong tam dung vi khong con candidate GET/read-only nho du an toan; chi mo prompt rieng cho vung high-risk neu that su can.

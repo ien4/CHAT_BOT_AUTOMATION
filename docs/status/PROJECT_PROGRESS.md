@@ -1388,3 +1388,29 @@ Khong lam:
 Trang thai: Website Chatwoot van **NOT_STARTED runtime**. Facebook `/webhook` khong doi va `/chatwoot-webhook*` khong khoi phuc.
 
 Chi tiet: `report/phase-23/PROMPT_23B_WEBSITE_CHATWOOT_SCHEMA_ENV_API_CONTRACT_REPORT.md`.
+## Cap nhat moi nhat - Prompt 21B-6-FINAL backend route audit
+
+Ngay cap nhat: 2026-07-15
+
+Trang thai moi nhat: **NO_SAFE_CANDIDATE**. Prompt 21B-6-FINAL da ket thuc vong backend read-route consolidation thong thuong cua Phase 21.
+
+Da lam:
+
+- Preflight tren commit 23B `8e5338f Plan website chat schema env and API contract`.
+- Audit lai route map con lai trong `backend/src/api/dashboard.js`.
+- Ket luan khong con nhom GET/read-only nho, khong PII/secret/external/raw SQL/core, co guard ro va smoke duoc theo tieu chi prompt.
+- Cap nhat docs/report de Phase 21 khong con mo ho.
+
+Khong lam:
+
+- Khong sua backend source, dashboard source, Prisma schema/migration, env/env example, package/lock.
+- Khong sua Facebook `/webhook`.
+- Khong tao `/integrations/website-chat/events`.
+- Khong khoi phuc `/chatwoot-webhook*`.
+- Khong goi external provider, khong gui POST `/webhook`, khong claim Meta verified hoac production ready.
+
+Validation/smoke PASS: backend quality, Prisma validate, backend smoke toi thieu, dashboard typecheck/build, clean `.next`, fresh route/static/dev-log gate, safety scans va broken-link check.
+
+Phase 21 hien la **STARTED / HIGH_RISK_ONLY_REMAINING**. Prompt tiep theo khong nen tiep tuc 21B thuong; neu can, mo prompt rieng cho mot vung high-risk voi rollback/smoke rieng.
+
+Chi tiet: `report/phase-21/PROMPT_21B_6_FINAL_BACKEND_ROUTE_AUDIT_REPORT.md`.
