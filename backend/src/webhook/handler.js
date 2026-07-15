@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const axios = require('axios');
 const botEngine = require('../bot/engine');
 const handoff = require('../telegram/handoff');
@@ -90,6 +91,69 @@ async function lookupPage(pageEntryId) {
   return page;
 }
 
+// Chỉ warn một lần khi FB_APP_SECRET chưa cấu hình (dev/local), tránh spam log.
+let appSecretWarningLogged = false;
+
+/**
+ * Lấy FB_APP_SECRET nếu đã cấu hình thật (không rỗng/khoảng trắng).
+ * Không log giá trị.
+ * @returns {string|null}
+ */
+function getWebhookAppSecret() {
+  const secret = process.env.FB_APP_SECRET;
+  if (typeof secret === 'string' && secret.trim().length > 0) {
+    return secret;
+  }
+  return null;
+}
+
+/**
+ * So sánh hai chuỗi chữ ký theo constant-time. Fail an toàn nếu khác độ dài
+ * hoặc input không hợp lệ. Không log giá trị chữ ký.
+ * @returns {boolean}
+ */
+function safeCompareSignatures(expected, received) {
+  if (typeof expected !== 'string' || typeof received !== 'string') return false;
+  const expectedBuf = Buffer.from(expected);
+  const receivedBuf = Buffer.from(received);
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  try {
+    return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Xác thực header `x-hub-signature-256` = `sha256=<hex>` của
+ * HMAC-SHA256(req.rawBody, FB_APP_SECRET).
+ * KHÔNG log rawBody / appSecret / giá trị chữ ký.
+ * @returns {{ configured: boolean, hasSignature: boolean, valid: boolean }}
+ */
+function verifyWebhookSignature(req) {
+  const appSecret = getWebhookAppSecret();
+  if (!appSecret) {
+    return { configured: false, hasSignature: false, valid: false };
+  }
+
+  const header = typeof req.get === 'function'
+    ? req.get('x-hub-signature-256')
+    : req.headers?.['x-hub-signature-256'];
+  const hasSignature = typeof header === 'string' && header.length > 0;
+  if (!hasSignature) {
+    return { configured: true, hasSignature: false, valid: false };
+  }
+
+  const rawBody = req.rawBody;
+  if (!(Buffer.isBuffer(rawBody) || typeof rawBody === 'string')) {
+    return { configured: true, hasSignature: true, valid: false };
+  }
+
+  const expected = `sha256=${crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex')}`;
+  const valid = safeCompareSignatures(expected, header);
+  return { configured: true, hasSignature: true, valid };
+}
+
 /**
  * Verify Facebook webhook (GET request)
  */
@@ -111,6 +175,23 @@ async function verifyWebhook(req, res) {
  * Handle incoming Facebook messages (POST request)
  */
 async function handleMessage(req, res) {
+  // Xác thực chữ ký X-Hub-Signature-256 TRƯỚC khi ack 200 và trước khi xử lý event.
+  const signature = verifyWebhookSignature(req);
+  if (signature.configured) {
+    if (!signature.valid) {
+      logWebhookWarn('signature_rejected', {
+        hasSecret: true,
+        hasSignature: signature.hasSignature,
+        valid: false,
+      });
+      return res.sendStatus(403);
+    }
+  } else if (!appSecretWarningLogged) {
+    // Dev/local không có FB_APP_SECRET: giữ behavior cũ, chỉ warn một lần (không lộ secret).
+    appSecretWarningLogged = true;
+    logWebhookWarn('signature_skipped_no_secret', { hasSecret: false });
+  }
+
   const { body } = req;
 
   if (body.object !== 'page') {
