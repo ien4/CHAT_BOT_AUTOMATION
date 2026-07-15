@@ -100,9 +100,14 @@ Backend (port dự kiến **3001**, theo `backend/.env.example` `PORT=3001`):
 - `cd backend`
 - `npm run dev` (tương đương `node src/index.js`)
 
-Dashboard (port **3002**, theo `dashboard/package.json` `next dev -p 3002`):
+Dashboard (port dev CHUẨN **3019**, theo `dashboard/package.json` `next dev -p 3019 -H 127.0.0.1`):
 - `cd dashboard`
-- `npm run dev`
+- `npm run clean:next`  — xóa stale `.next` (tránh MODULE_NOT_FOUND / `_next/static` 404 / `/dashboard` 500)
+- `npm run dev`  — start dashboard tại `http://127.0.0.1:3019`
+- `npm run smoke:runtime`  — smoke toàn bộ route + static assets (dev server phải đang chạy)
+
+> Chỉ dùng port **3019**. KHÔNG dùng server cũ trên **3002** (đã bỏ khỏi `package.json`). Nếu còn process cũ giữ 3002, dừng nó rồi `npm run clean:next` trước khi `npm run dev`.
+> Nếu đổi source dashboard rồi thấy runtime lỗi chunk/module: `npm run clean:next` → `npm run dev` → `npm run smoke:runtime`.
 
 ## 6. Smoke test route đã tách
 

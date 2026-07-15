@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3002",
+    "dev": "next dev -p 3019 -H 127.0.0.1",
     "build": "next build",
-    "start": "next start -p 3002",
+    "start": "next start -p 3019 -H 127.0.0.1",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "clean:next": "node scripts/clean-next.js",
+    "dev:clean": "node scripts/dev-clean-start.js",
+    "smoke:runtime": "node scripts/smoke-dashboard-runtime.js",
     "quality": "npm run typecheck && npm run build"
   },
   "dependencies": {
