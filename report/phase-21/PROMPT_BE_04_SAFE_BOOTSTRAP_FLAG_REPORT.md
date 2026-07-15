@@ -100,7 +100,10 @@ Không thêm `smoke:safe-bootstrap` vào CI: nó cần DB local (start() vẫn `
 
 ## 12. Push result
 
-Xem mục cập nhật cuối (Phase commit/push thực thi).
+- Commit: `d84e1ee Add safe bootstrap flag and split seedDefaults` (6 file: `index.js`, `bootstrap/seedDefaults.js`, `smoke-safe-bootstrap.js`, `package.json`, audit matrix, report này).
+- Stage tường minh (không `git add .`), `git diff --cached --check` OK, không force push.
+- `git push origin HEAD:main` → **thành công** (`d89fa70..d84e1ee`).
+- Verify: `origin/main` = local `HEAD` = `d84e1ee`.
 
 ## 13. Remaining risk
 
