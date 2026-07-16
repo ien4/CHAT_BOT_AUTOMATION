@@ -433,19 +433,18 @@ function TenantHandoffTab({ tenant }: { tenant: Tenant }) {
     if (loadRef.current) return;
     loadRef.current = true;
     try {
-      const [activeRes, staffRes, botRes, staffListRes] = await Promise.all([
-        tenantsApi.handoffActive(tenant.id),
-        tenantsApi.handoffStaffStatus(tenant.id),
-        tenantsApi.handoffBotQueue(tenant.id),
-        tenantsApi.listStaff(tenant.id),
-      ]);
-      setActiveConvs(activeRes.data || []);
-      setStaffStatus(staffRes.data);
-      setBotQueue(botRes.data || []);
+      const staffListRes = await tenantsApi.listStaff(tenant.id);
+      const staff = (staffListRes.data || []).map((item: TenantStaff) => ({
+        ...item,
+        conversations: [],
+      }));
+      setActiveConvs([]);
+      setStaffStatus({ staff, todayHandoffs: 0 });
+      setBotQueue([]);
       setAllStaff(staffListRes.data || []);
       setLastRefresh(new Date());
     } catch {
-      if (!silent) toast.error('Lỗi tải dữ liệu handoff');
+      if (!silent) toast.error('Lỗi tải danh sách nhân viên tenant');
     } finally {
       setLoading(false);
       loadRef.current = false;
@@ -453,12 +452,6 @@ function TenantHandoffTab({ tenant }: { tenant: Tenant }) {
   }, [tenant.id]);
 
   useEffect(() => { load(); }, [load]);
-
-  // Auto-refresh 10s
-  useEffect(() => {
-    const interval = setInterval(() => load(true), 10_000);
-    return () => clearInterval(interval);
-  }, [load]);
 
   // Countdown
   useEffect(() => {
@@ -479,25 +472,15 @@ function TenantHandoffTab({ tenant }: { tenant: Tenant }) {
 
   // Actions
   const handleForceEnd = async (id: string) => {
-    if (!confirm('Kết thúc session human này?')) return;
-    try {
-      await tenantsApi.handoffForceEnd(tenant.id, id);
-      toast.success('Đã kết thúc session');
-      load();
-    } catch { toast.error('Lỗi kết thúc session'); }
+    void id;
+    toast.error('Tenant Handoff chưa khả dụng trong cấu hình hiện tại.');
   };
 
   const handleAssign = async () => {
     if (!assignModal || !selectedStaffId) return;
     setAssigning(true);
-    try {
-      await tenantsApi.handoffAssign(tenant.id, assignModal.convId, selectedStaffId);
-      toast.success('Đã phân công thành công');
-      setAssignModal(null);
-      setSelectedStaffId('');
-      load();
-    } catch { toast.error('Lỗi phân công'); }
-    finally { setAssigning(false); }
+    toast.error('Phân công Tenant Handoff chưa khả dụng trong cấu hình hiện tại.');
+    setAssigning(false);
   };
 
   const formatCountdown = (s: number) => {
@@ -529,15 +512,28 @@ function TenantHandoffTab({ tenant }: { tenant: Tenant }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold">Tenant Handoff đang được chuẩn bị, chưa khả dụng trong cấu hình hiện tại.</p>
+            <p className="mt-1 text-amber-800">
+              Dashboard hiện không gọi các endpoint tenant handoff vì backend chưa có contract tương ứng và luồng outbound tenant direct chưa hoàn chỉnh.
+              Nhân viên tenant vẫn có thể được quản lý ở tab Nhân viên; global handoff không bị thay đổi.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Mini header + Analytics toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <p className="text-xs text-gray-400">
-            Tự động làm mới mỗi 10s · Lần cuối: {format(lastRefresh, 'HH:mm:ss')}
+            Endpoint tenant handoff chưa được bật · Lần cuối tải danh sách nhân viên: {format(lastRefresh, 'HH:mm:ss')}
           </p>
           </div>
         <button onClick={() => load()} className="btn-secondary text-xs flex items-center gap-1 py-1">
-          <RefreshCw className="w-3.5 h-3.5" /> Làm mới
+          <RefreshCw className="w-3.5 h-3.5" /> Tải lại staff
         </button>
       </div>
 
@@ -792,11 +788,10 @@ function TenantHandoffAnalytics({ tenant }: { tenant: Tenant }) {
   const [period, setPeriod] = useState('7d');
 
   useEffect(() => {
-    setLoading(true);
-    tenantsApi.handoffAnalytics(tenant.id, period)
-      .then(r => setData(r.data))
-      .catch(() => toast.error('Lỗi tải thống kê handoff'))
-      .finally(() => setLoading(false));
+    void tenant.id;
+    void period;
+    setData(null);
+    setLoading(false);
   }, [tenant.id, period]);
 
   if (loading) {
@@ -807,8 +802,8 @@ function TenantHandoffAnalytics({ tenant }: { tenant: Tenant }) {
     return (
       <div className="text-center py-8 text-gray-400">
         <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-40" />
-        <p className="text-sm">Chưa có dữ liệu thống kê handoff trong kỳ này</p>
-        <p className="text-xs mt-1">Dữ liệu sẽ được ghi nhận khi có handoff xảy ra</p>
+        <p className="text-sm">Thống kê Tenant Handoff chưa khả dụng</p>
+        <p className="text-xs mt-1">Backend chưa có contract cho tenant handoff analytics; dashboard không gọi endpoint chưa tồn tại.</p>
       </div>
     );
   }

@@ -243,20 +243,10 @@ export const tenantsApi = {
   createStaff: (tenantId: string, data: any) => api.post(`/tenants/${tenantId}/staff`, data),
   updateStaff: (tenantId: string, staffId: string, data: any) => api.put(`/tenants/${tenantId}/staff/${staffId}`, data),
   deleteStaff: (tenantId: string, staffId: string) => api.delete(`/tenants/${tenantId}/staff/${staffId}`),
-    // Channel Configs
+  // Channel Configs
   listChannels: (tenantId: string) => api.get(`/tenants/${tenantId}/channel-configs`),
   createChannel: (tenantId: string, data: any) => api.post(`/tenants/${tenantId}/channel-configs`, data),
   deleteChannel: (tenantId: string, configId: string) => api.delete(`/tenants/${tenantId}/channel-configs/${configId}`),
-  // Handoff Monitor
-  handoffActive: (tenantId: string) => api.get(`/tenants/${tenantId}/handoff/active`),
-  handoffStaffStatus: (tenantId: string) => api.get(`/tenants/${tenantId}/handoff/staff-status`),
-  handoffBotQueue: (tenantId: string) => api.get(`/tenants/${tenantId}/handoff/bot-queue`),
-  handoffForceEnd: (tenantId: string, conversationId: string) =>
-    api.post(`/tenants/${tenantId}/handoff/${conversationId}/force-end`),
-    handoffAssign: (tenantId: string, conversationId: string, staffId: string) =>
-    api.post(`/tenants/${tenantId}/handoff/${conversationId}/assign`, { staffId }),
-  handoffAnalytics: (tenantId: string, period: string = '7d') =>
-    api.get(`/tenants/${tenantId}/handoff/analytics?period=${period}`),
 };
 
 // Admin Users API
