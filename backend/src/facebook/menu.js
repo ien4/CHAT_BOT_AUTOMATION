@@ -70,31 +70,40 @@ class FacebookMenu {
    * Helper: setup cho tất cả các page trong DB
    */
   async setupAllPages(greetingText) {
-    const pages = await prisma.facebookPage.findMany({
-      where: { isActive: true },
-      select: { pageId: true, pageName: true, accessToken: true },
-    });
-
-    const results = [];
-
-    // Luôn setup cho page mặc định (global token)
-    const defaultResult = await this.setupMessengerProfile('me', {
-      greetingText,
-      pageToken: process.env.FB_PAGE_ACCESS_TOKEN,
-    });
-    results.push({ pageId: 'default', name: 'Default', success: defaultResult.success });
-
-    // Setup cho từng page trong DB
-    for (const page of pages) {
-      if (!page.accessToken) continue;
-      const result = await this.setupMessengerProfile(page.pageId, {
-        greetingText,
-        pageToken: page.accessToken,
+    // Startup guard: external Messenger Profile setup KHÔNG được làm crash server.
+    // Lỗi token invalid/hết hạn/`me` not found/DB lookup fail → log warn redacted, không token,
+    // và trả về gracefully để index.js tiếp tục app.listen.
+    try {
+      const pages = await prisma.facebookPage.findMany({
+        where: { isActive: true },
+        select: { pageId: true, pageName: true, accessToken: true },
       });
-      results.push({ pageId: page.pageId, name: page.pageName, success: result.success });
-    }
 
-    return results;
+      const results = [];
+
+      // Luôn setup cho page mặc định (global token)
+      const defaultResult = await this.setupMessengerProfile('me', {
+        greetingText,
+        pageToken: process.env.FB_PAGE_ACCESS_TOKEN,
+      });
+      results.push({ pageId: 'default', name: 'Default', success: defaultResult.success });
+
+      // Setup cho từng page trong DB
+      for (const page of pages) {
+        if (!page.accessToken) continue;
+        const result = await this.setupMessengerProfile(page.pageId, {
+          greetingText,
+          pageToken: page.accessToken,
+        });
+        results.push({ pageId: page.pageId, name: page.pageName, success: result.success });
+      }
+
+      return results;
+    } catch (error) {
+      // safeError: không log access token / response body raw.
+      console.warn('⚠️ Bỏ qua Messenger Profile setup do lỗi external (server vẫn khởi động):', safeError(error));
+      return [];
+    }
   }
 
   // === GIỮ LẠI CÁC METHOD CŨ NHƯNG GỘP VÀO setupMessengerProfile ===

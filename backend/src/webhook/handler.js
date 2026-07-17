@@ -84,11 +84,39 @@ async function lookupPage(pageEntryId) {
   if (cached && cached.ts > Date.now() - PAGE_CACHE_TTL) {
     return cached.data;
   }
-  const page = await prisma.facebookPage.findFirst({
-    where: { pageId: String(pageEntryId), isActive: true },
+  // pageId là @unique. Lấy cả isActive + tenantId để resolver phân loại chính xác.
+  // Chỉ select field cần thiết — không kéo full record xuống tầng sâu, không log record.
+  const page = await prisma.facebookPage.findUnique({
+    where: { pageId: String(pageEntryId) },
+    select: {
+      pageId: true, accessToken: true, tenantId: true,
+      botPersona: true, knowledgeFilter: true, isActive: true,
+    },
   });
   pageCache.set(cacheKey, { data: page, ts: Date.now() });
   return page;
+}
+
+/**
+ * Resolve tenant context cho một Facebook Page ID (entry.id).
+ * Fail-closed: KHÔNG default tenant, KHÔNG fallback global token, KHÔNG dùng channel-config mapping.
+ * Nguồn tenant DUY NHẤT cho Facebook direct là FacebookPage.tenantId.
+ * @returns {{ ok: true, pageId, tenantId, accessToken, botPersona, knowledgeFilter }
+ *          | { ok: false, reason: 'PAGE_NOT_REGISTERED'|'PAGE_DISABLED'|'PAGE_TENANT_MISSING' }}
+ */
+async function resolveFacebookPageContext(entryId) {
+  const page = await lookupPage(entryId);
+  if (!page) return { ok: false, reason: 'PAGE_NOT_REGISTERED' };
+  if (page.isActive === false) return { ok: false, reason: 'PAGE_DISABLED' };
+  if (!page.tenantId) return { ok: false, reason: 'PAGE_TENANT_MISSING' };
+  return {
+    ok: true,
+    pageId: page.pageId,
+    tenantId: page.tenantId,
+    accessToken: page.accessToken,
+    botPersona: page.botPersona,
+    knowledgeFilter: page.knowledgeFilter || [],
+  };
 }
 
 // Chỉ warn một lần khi FB_APP_SECRET chưa cấu hình (dev/local), tránh spam log.
@@ -206,15 +234,27 @@ async function handleMessage(req, res) {
   logWebhookInfo('page_event_received', { entryCount: entries.length });
   for (const entry of entries) {
     const pageEntryId = entry.id; // Facebook Page ID
-    const fbPage = await lookupPage(pageEntryId);
+    const pageContext = await resolveFacebookPageContext(pageEntryId);
 
     const messaging = entry.messaging || [];
-    logWebhookInfo('entry_processing', { pageId: maskId(pageEntryId), messagingCount: messaging.length });
+    logWebhookInfo('entry_processing', {
+      pageId: maskId(pageEntryId),
+      messagingCount: messaging.length,
+      resolved: pageContext.ok,
+      reason: pageContext.ok ? undefined : pageContext.reason,
+    });
+
+    // Fail-closed ở event-level: page chưa đăng ký / thiếu tenant / disabled →
+    // không gọi Bot, không tạo Conversation, không fallback global token.
+    // Request vẫn đã ack 200 ở trên để tránh Facebook retry storm.
+    if (!pageContext.ok) {
+      logWebhookWarn('page_context_unresolved', { pageId: maskId(pageEntryId), reason: pageContext.reason });
+      continue;
+    }
+
     for (const event of messaging) {
-      // Gắn page context vào event để sendMessage dùng đúng token
-      event._pageContext = fbPage
-        ? { pageId: fbPage.pageId, accessToken: fbPage.accessToken, botPersona: fbPage.botPersona, knowledgeFilter: fbPage.knowledgeFilter }
-        : { pageId: pageEntryId, accessToken: process.env.FB_PAGE_ACCESS_TOKEN };
+      // Gắn tenant + page context (đã resolve) vào event để downstream dùng đúng tenant/token
+      event._pageContext = pageContext;
       logWebhookInfo('messaging_event_received', summarizeMessagingEvent(event));
       await processEvent(event);
     }
@@ -257,8 +297,17 @@ async function processEvent(event) {
 async function handleTextMessage(event) {
   const senderId = event.sender.id;
   const messageText = event.message.text;
+  const pageCtx = event._pageContext;
+  const tenantId = pageCtx?.tenantId;
 
   logWebhookInfo('text_event_processing', summarizeMessagingEvent(event));
+
+  // Defensive fail-closed: entry chưa resolve tenant đã bị skip ở handleMessage,
+  // nhưng vẫn chặn ở đây để không bao giờ gọi Bot/tạo Conversation thiếu tenant.
+  if (!tenantId) {
+    logWebhookWarn('text_skipped_no_tenant', { senderId: maskId(senderId), pageId: maskId(pageCtx?.pageId) });
+    return;
+  }
 
   const rateLimit = checkSenderRateLimit(senderId);
   if (!rateLimit.allowed) {
@@ -273,9 +322,11 @@ async function handleTextMessage(event) {
     return;
   }
 
-  // Đảm bảo conversation tồn tại (tạo mới nếu chưa có)
-  let conversation = await botEngine.getOrCreateConversation(senderId, null, event._pageContext?.accessToken);
-  conversation = await rememberConversationPage(conversation, event._pageContext);
+  // Đảm bảo conversation tồn tại (tạo mới nếu chưa có) — SCOPED theo tenantId.
+  // Query { fbUserId, tenantId } nên không bao giờ reuse/ghi đè conversation của tenant khác,
+  // và không backfill mù conversation legacy tenantId=null.
+  let conversation = await botEngine.getOrCreateConversation(senderId, tenantId, pageCtx?.accessToken);
+  conversation = await rememberConversationPage(conversation, pageCtx);
 
   // Lưu tin nhắn vào DB
   await botEngine.saveMessage(conversation.id, 'inbound', messageText);
@@ -318,9 +369,10 @@ async function handleTextMessage(event) {
   const response = await botEngine.processMessage(senderId, messageText, {
     skipSaveInbound: true,
     channel: 'facebook',
-    knowledgeFilter: event._pageContext?.knowledgeFilter || [],
-    botPersonaOverride: event._pageContext?.botPersona || null,
-    pageAccessToken: event._pageContext?.accessToken || null,
+    knowledgeFilter: pageCtx?.knowledgeFilter || [],
+    botPersonaOverride: pageCtx?.botPersona || null,
+    pageAccessToken: pageCtx?.accessToken || null,
+    tenantId,
   });
   if (response) {
     await sendMessage(senderId, response, event._pageContext);
@@ -392,10 +444,18 @@ async function rememberConversationPage(conversation, pageContext) {
 async function handlePostback(event) {
   const senderId = event.sender.id;
   const payload = event.postback.payload;
+  const pageCtx = event._pageContext;
+  const tenantId = pageCtx?.tenantId;
 
   logWebhookInfo('postback_event_processing', summarizeMessagingEvent(event));
 
-  const conversation = await botEngine.getOrCreateConversation(senderId);
+  // Đồng nhất message path: postback thiếu tenant → fail-closed, không gọi Bot/tạo Conversation.
+  if (!tenantId) {
+    logWebhookWarn('postback_skipped_no_tenant', { senderId: maskId(senderId), pageId: maskId(pageCtx?.pageId) });
+    return;
+  }
+
+  const conversation = await botEngine.getOrCreateConversation(senderId, tenantId, pageCtx?.accessToken);
   await botEngine.saveMessage(conversation.id, 'inbound', `[postback:${payload}]`);
 
   if (conversation.handoffStatus === 'human_active') {
@@ -410,7 +470,7 @@ async function handlePostback(event) {
     return;
   }
 
-  const response = await botEngine.processPostback(senderId, payload);
+  const response = await botEngine.processPostback(senderId, payload, { tenantId });
   if (response) {
     await sendMessage(senderId, response, event._pageContext);
   }
