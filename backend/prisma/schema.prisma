@@ -232,7 +232,10 @@ model FacebookPage {
   knowledgeFilter String[] @map("knowledge_filter")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  tenantId        String?  @map("tenant_id")
+  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId])
   @@map("facebook_pages")
 }
 
@@ -279,6 +282,7 @@ model Tenant {
   createdAt              DateTime              @default(now()) @map("created_at")
   updatedAt              DateTime              @updatedAt @map("updated_at")
   channelConfigs         TenantChannelConfig[]
+  facebookPages          FacebookPage[]
   staff                  TenantStaff[]
 
   @@map("tenants")

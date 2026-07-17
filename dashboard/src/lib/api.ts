@@ -208,7 +208,7 @@ export const handoffApi = {
 export const facebookPagesApi = {
   list: () => api.get('/facebook-pages'),
   get: (id: string) => api.get(`/facebook-pages/${id}`),
-  create: (data: { pageId: string; pageName: string; accessToken: string; isActive?: boolean; botPersona?: string; knowledgeFilter?: string[] }) =>
+  create: (data: { pageId: string; pageName: string; accessToken: string; isActive?: boolean; botPersona?: string; knowledgeFilter?: string[]; tenantId?: string | null }) =>
     api.post('/facebook-pages', data),
   update: (id: string, data: any) => api.put(`/facebook-pages/${id}`, data),
   delete: (id: string) => api.delete(`/facebook-pages/${id}`),

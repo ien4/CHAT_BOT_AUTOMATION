@@ -14,6 +14,7 @@
     "smoke:safe-bootstrap": "node scripts/smoke-safe-bootstrap.js",
     "smoke:webhook-signature": "node scripts/smoke-webhook-signature.js",
     "smoke:appointment-tenant-isolation": "node scripts/smoke-appointment-tenant-isolation.js",
+    "smoke:facebook-page-tenant-mapping": "node scripts/smoke-facebook-page-tenant-mapping.js",
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate"
   },

@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
-import { facebookMenuApi, facebookPagesApi, providersApi, settingsApi, telegramDestinationsApi } from '@/lib/api';
+import { facebookMenuApi, facebookPagesApi, providersApi, settingsApi, telegramDestinationsApi, tenantsApi } from '@/lib/api';
 import { Link, Zap, CheckCircle, XCircle, RefreshCw, TestTube, Menu, RotateCcw, Facebook, Bell, Plus, Send, Trash2, Save, X, BrainCircuit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,8 +16,9 @@ export default function SettingsPage() {
   const [fbMenuInfo, setFbMenuInfo] = useState<any>(null);
   const [greetingText, setGreetingText] = useState('');
   const [fbPages, setFbPages] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
   const [showFbPageForm, setShowFbPageForm] = useState(false);
-  const [fbForm, setFbForm] = useState({ pageId: '', pageName: '', accessToken: '', isActive: true });
+  const [fbForm, setFbForm] = useState({ pageId: '', pageName: '', accessToken: '', isActive: true, tenantId: '' });
   const [telegramDestinations, setTelegramDestinations] = useState<any[]>([]);
   const [telegramFallback, setTelegramFallback] = useState<any>(null);
   const [showTelegramForm, setShowTelegramForm] = useState(false);
@@ -55,6 +56,11 @@ export default function SettingsPage() {
     try {
       const { data } = await facebookPagesApi.list();
       setFbPages(data);
+    } catch {}
+    // Load tenants for Facebook Page ownership binding (platform admin)
+    try {
+      const { data } = await tenantsApi.list();
+      setTenants(Array.isArray(data) ? data : []);
     } catch {}
     // Load Telegram destinations
     try {
@@ -645,6 +651,9 @@ export default function SettingsPage() {
                     <span className="font-medium">{page.pageName}</span>
                     {page.isActive ? <span className="badge badge-green">Active</span> : <span className="badge badge-red">Inactive</span>}
                     <span className="text-xs text-gray-400">ID: {page.pageId}</span>
+                    {page.tenantId
+                      ? <span className="badge badge-green">{tenants.find((t: any) => t.id === page.tenantId)?.name || 'Tenant'}</span>
+                      : <span className="badge badge-red">Chưa gán tenant</span>}
                   </div>
                   {page.botPersona && <p className="text-xs text-gray-500 mt-1">🧠 Persona: {page.botPersona.substring(0, 80)}...</p>}
                 </div>
@@ -674,14 +683,23 @@ export default function SettingsPage() {
               <label className="text-xs font-medium text-gray-500">Access Token</label>
               <input type="password" value={fbForm.accessToken} onChange={e => setFbForm({...fbForm, accessToken: e.target.value})} className="input-field text-sm" placeholder="Page Access Token" />
             </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500">Tenant (chủ sở hữu)</label>
+              <select value={fbForm.tenantId} onChange={e => setFbForm({...fbForm, tenantId: e.target.value})} className="input-field text-sm">
+                <option value="">— Chưa gán (legacy, chưa context-ready cho webhook) —</option>
+                {tenants.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.name || t.slug}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex gap-2">
               <button onClick={() => setShowFbPageForm(false)} className="btn-secondary text-sm">Hủy</button>
               <button onClick={async () => {
                 try {
-                  await facebookPagesApi.create(fbForm);
+                  await facebookPagesApi.create({ ...fbForm, tenantId: fbForm.tenantId || null });
                   toast.success('Đã thêm page');
                   setShowFbPageForm(false);
-                  setFbForm({ pageId: '', pageName: '', accessToken: '', isActive: true });
+                  setFbForm({ pageId: '', pageName: '', accessToken: '', isActive: true, tenantId: '' });
                   // Reload
                   const { data } = await facebookPagesApi.list();
                   setFbPages(data);

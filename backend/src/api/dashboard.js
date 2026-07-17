@@ -1545,7 +1545,7 @@ router.get('/facebook-pages', authMiddleware, platformAdminOnly, async (req, res
       orderBy: { pageName: 'asc' },
       select: {
         id: true, pageId: true, pageName: true, isActive: true,
-        botPersona: true, knowledgeFilter: true,
+        botPersona: true, knowledgeFilter: true, tenantId: true,
         createdAt: true, updatedAt: true,
         // exclude accessToken for security
       },
@@ -1571,12 +1571,21 @@ router.get('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req,
 
 router.post('/facebook-pages', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
-    const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter } = req.body;
+    const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter, tenantId } = req.body;
     if (!pageId || !pageName || !accessToken) {
       return res.status(400).json({ error: 'pageId, pageName và accessToken là bắt buộc' });
     }
+    // tenantId optional: nếu truyền phải là tenant tồn tại; nếu thiếu → legacy null (chưa context-ready cho webhook)
+    if (tenantId) {
+      const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+      if (!tenant) return res.status(400).json({ error: 'tenantId không hợp lệ' });
+    }
     const page = await prisma.facebookPage.create({
-      data: { pageId, pageName, accessToken, isActive: isActive !== false, botPersona, knowledgeFilter: knowledgeFilter || [] },
+      data: {
+        pageId, pageName, accessToken, isActive: isActive !== false, botPersona,
+        knowledgeFilter: knowledgeFilter || [],
+        tenantId: tenantId || null,
+      },
     });
     const { accessToken: _, ...safe } = page;
     res.status(201).json({ ...safe, hasToken: true });
@@ -1588,7 +1597,7 @@ router.post('/facebook-pages', authMiddleware, platformAdminOnly, async (req, re
 
 router.put('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req, res) => {
   try {
-    const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter } = req.body;
+    const { pageId, pageName, accessToken, isActive, botPersona, knowledgeFilter, tenantId } = req.body;
     const data = {};
     if (pageId !== undefined) data.pageId = pageId;
     if (pageName !== undefined) data.pageName = pageName;
@@ -1596,6 +1605,16 @@ router.put('/facebook-pages/:id', authMiddleware, platformAdminOnly, async (req,
     if (isActive !== undefined) data.isActive = isActive;
     if (botPersona !== undefined) data.botPersona = botPersona;
     if (knowledgeFilter !== undefined) data.knowledgeFilter = knowledgeFilter;
+    if (tenantId !== undefined) {
+      // Cho phép gán tenant hoặc gỡ về null; nếu gán phải là tenant tồn tại
+      if (tenantId) {
+        const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+        if (!tenant) return res.status(400).json({ error: 'tenantId không hợp lệ' });
+        data.tenantId = tenantId;
+      } else {
+        data.tenantId = null;
+      }
+    }
 
     const page = await prisma.facebookPage.update({ where: { id: req.params.id }, data });
     const { accessToken: _, ...safe } = page;
