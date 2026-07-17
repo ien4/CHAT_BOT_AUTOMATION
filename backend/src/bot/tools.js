@@ -54,6 +54,44 @@ function isListContentPackageQuery(query) {
   return asksContent && asksList;
 }
 
+function getRequiredAppointmentTenantId(context) {
+  const contextTenantId = context?.tenantId || null;
+  const conversationTenantId = context?.conversation?.tenantId || null;
+
+  if (contextTenantId && conversationTenantId && contextTenantId !== conversationTenantId) {
+    return { ok: false, reason: 'tenant_context_mismatch' };
+  }
+
+  const tenantId = contextTenantId || conversationTenantId;
+  if (!tenantId) {
+    return { ok: false, reason: 'missing_tenant_context' };
+  }
+
+  return { ok: true, tenantId };
+}
+
+function buildAppointmentOwnerWhere(context, fbUserId) {
+  const scope = getRequiredAppointmentTenantId(context);
+  if (!scope.ok) return scope;
+
+  return {
+    ok: true,
+    tenantId: scope.tenantId,
+    where: {
+      fbUserId,
+      tenantId: scope.tenantId,
+    },
+  };
+}
+
+function appointmentTenantScopeError() {
+  return {
+    success: false,
+    found: false,
+    message: 'Khong the xu ly lich hen do thieu ngu canh tenant hop le.',
+  };
+}
+
 // Claude (Anthropic) format
 const CLAUDE_TOOLS = [
   {
@@ -169,12 +207,14 @@ async function executeTool(toolName, input, context) {
   switch (toolName) {
     case 'create_appointment': {
       const { name, phone, date, time, notes } = input;
+      const ownerScope = buildAppointmentOwnerWhere(context, conversation.fbUserId);
+      if (!ownerScope.ok) return appointmentTenantScopeError();
 
       // Dedup: don't create if same user+date already has active appointment
       if (date) {
         const existing = await prisma.appointment.findFirst({
           where: {
-            fbUserId: conversation.fbUserId,
+            ...ownerScope.where,
             date,
             status: { in: ['pending', 'confirmed'] },
           },
@@ -198,12 +238,12 @@ async function executeTool(toolName, input, context) {
           phone,
           status: 'pending',
           notes: notes || 'Đặt qua AI agent',
-          tenantId: context.tenantId || null,
+          tenantId: ownerScope.tenantId,
         },
       });
 
-      await prisma.conversation.update({
-        where: { id: conversation.id },
+      await prisma.conversation.updateMany({
+        where: { id: conversation.id, tenantId: ownerScope.tenantId },
         data: { status: 'appointment_booked' },
       });
 
@@ -216,9 +256,12 @@ async function executeTool(toolName, input, context) {
     }
 
     case 'check_appointment': {
+      const ownerScope = buildAppointmentOwnerWhere(context, conversation.fbUserId);
+      if (!ownerScope.ok) return appointmentTenantScopeError();
+
       const active = await prisma.appointment.findFirst({
         where: {
-          fbUserId: conversation.fbUserId,
+          ...ownerScope.where,
           status: { in: ['pending', 'confirmed'] },
         },
         orderBy: { createdAt: 'desc' },
@@ -238,7 +281,7 @@ async function executeTool(toolName, input, context) {
       }
 
       const cancelled = await prisma.appointment.findFirst({
-        where: { fbUserId: conversation.fbUserId, status: 'cancelled' },
+        where: { ...ownerScope.where, status: 'cancelled' },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -254,9 +297,12 @@ async function executeTool(toolName, input, context) {
     }
 
     case 'cancel_appointment': {
+      const ownerScope = buildAppointmentOwnerWhere(context, conversation.fbUserId);
+      if (!ownerScope.ok) return appointmentTenantScopeError();
+
       const active = await prisma.appointment.findFirst({
         where: {
-          fbUserId: conversation.fbUserId,
+          ...ownerScope.where,
           status: { in: ['pending', 'confirmed'] },
         },
         orderBy: { createdAt: 'desc' },
@@ -267,12 +313,22 @@ async function executeTool(toolName, input, context) {
       }
 
       const reason = input.reason || 'Khách yêu cầu hủy';
-      const appointment = await prisma.appointment.update({
-        where: { id: active.id },
+      const updateResult = await prisma.appointment.updateMany({
+        where: {
+          id: active.id,
+          ...ownerScope.where,
+          status: { in: ['pending', 'confirmed'] },
+        },
         data: {
           status: 'cancelled',
           notes: `${active.notes || ''} | Hủy: ${reason}`.trim(),
         },
+      });
+      if (updateResult.count === 0) {
+        return { success: false, message: 'Khong tim thay lich hen hop le de huy.' };
+      }
+      const appointment = await prisma.appointment.findFirst({
+        where: { id: active.id, ...ownerScope.where },
       });
       await appointmentNotifications.cancelled(appointment, reason).catch(() => {});
 
@@ -284,6 +340,8 @@ async function executeTool(toolName, input, context) {
 
     case 'reschedule_appointment': {
       const { new_date, new_time, reason } = input;
+      const ownerScope = buildAppointmentOwnerWhere(context, conversation.fbUserId);
+      if (!ownerScope.ok) return appointmentTenantScopeError();
 
       if (!new_date || !new_time) {
         return { success: false, message: 'Vui lòng cung cấp đầy đủ ngày mới và giờ mới để dời lịch.' };
@@ -291,7 +349,7 @@ async function executeTool(toolName, input, context) {
 
       const active = await prisma.appointment.findFirst({
         where: {
-          fbUserId: conversation.fbUserId,
+          ...ownerScope.where,
           status: { in: ['pending', 'confirmed'] },
         },
         orderBy: { createdAt: 'desc' },
@@ -303,7 +361,7 @@ async function executeTool(toolName, input, context) {
 
       const conflict = await prisma.appointment.findFirst({
         where: {
-          fbUserId: conversation.fbUserId,
+          ...ownerScope.where,
           date: new_date,
           status: { in: ['pending', 'confirmed'] },
           id: { not: active.id },
@@ -323,13 +381,23 @@ async function executeTool(toolName, input, context) {
         ? ` | Dời lịch: ${oldDate} ${oldTime} -> ${new_date} ${new_time} (${reason})`
         : ` | Dời lịch: ${oldDate} ${oldTime} -> ${new_date} ${new_time}`;
 
-      const appointment = await prisma.appointment.update({
-        where: { id: active.id },
+      const updateResult = await prisma.appointment.updateMany({
+        where: {
+          id: active.id,
+          ...ownerScope.where,
+          status: { in: ['pending', 'confirmed'] },
+        },
         data: {
           date: new_date,
           time: new_time,
           notes: `${active.notes || ''}${noteAppend}`.trim(),
         },
+      });
+      if (updateResult.count === 0) {
+        return { success: false, message: 'Khong tim thay lich hen hop le de doi lich.' };
+      }
+      const appointment = await prisma.appointment.findFirst({
+        where: { id: active.id, ...ownerScope.where },
       });
 
       await appointmentNotifications.rescheduled(appointment, oldDate, oldTime).catch(() => {});
@@ -345,6 +413,8 @@ async function executeTool(toolName, input, context) {
     case 'update_appointment': {
       const name = typeof input.name === 'string' ? input.name.trim() : input.name;
       const phone = typeof input.phone === 'string' ? input.phone.trim() : input.phone;
+      const ownerScope = buildAppointmentOwnerWhere(context, conversation.fbUserId);
+      if (!ownerScope.ok) return appointmentTenantScopeError();
 
       if (!name && !phone) {
         return { success: false, message: 'Vui lòng cung cấp ít nhất tên hoặc số điện thoại cần sửa.' };
@@ -352,7 +422,7 @@ async function executeTool(toolName, input, context) {
 
       const active = await prisma.appointment.findFirst({
         where: {
-          fbUserId: conversation.fbUserId,
+          ...ownerScope.where,
           status: { in: ['pending', 'confirmed'] },
         },
         orderBy: { createdAt: 'desc' },
@@ -373,9 +443,19 @@ async function executeTool(toolName, input, context) {
         changes.push(`SĐT -> ${phone}`);
       }
 
-      const appointment = await prisma.appointment.update({
-        where: { id: active.id },
+      const updateResult = await prisma.appointment.updateMany({
+        where: {
+          id: active.id,
+          ...ownerScope.where,
+          status: { in: ['pending', 'confirmed'] },
+        },
         data: updateData,
+      });
+      if (updateResult.count === 0) {
+        return { success: false, message: 'Khong tim thay lich hen hop le de cap nhat.' };
+      }
+      const appointment = await prisma.appointment.findFirst({
+        where: { id: active.id, ...ownerScope.where },
       });
       await appointmentNotifications.updated(appointment, changes).catch(() => {});
 

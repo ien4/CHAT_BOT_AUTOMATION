@@ -13,6 +13,7 @@
     "check:app-import": "node scripts/check-import-app.js",
     "smoke:safe-bootstrap": "node scripts/smoke-safe-bootstrap.js",
     "smoke:webhook-signature": "node scripts/smoke-webhook-signature.js",
+    "smoke:appointment-tenant-isolation": "node scripts/smoke-appointment-tenant-isolation.js",
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate"
   },
