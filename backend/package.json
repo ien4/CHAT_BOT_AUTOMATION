@@ -23,7 +23,8 @@
     "smoke:tenant-backfill-prisma-adapter": "node scripts/smoke-tenant-backfill-prisma-adapter.js",
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate",
-    "smoke:tenant-backfill-operational-safety": "node scripts/smoke-tenant-backfill-operational-safety.js"
+    "smoke:tenant-backfill-operational-safety": "node scripts/smoke-tenant-backfill-operational-safety.js",
+    "smoke:tenant-backfill-safe-composition": "node scripts/smoke-tenant-backfill-safe-composition.js"
   },
   "keywords": [],
   "author": "",
