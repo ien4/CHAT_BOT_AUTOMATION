@@ -20,6 +20,7 @@
     "db:tenant-backfill:execute": "node scripts/tenant-backfill-executor.js",
     "smoke:tenant-backfill-planner": "node scripts/smoke-tenant-backfill-planner.js",
     "smoke:tenant-backfill-executor": "node scripts/smoke-tenant-backfill-executor.js",
+    "smoke:tenant-backfill-prisma-adapter": "node scripts/smoke-tenant-backfill-prisma-adapter.js",
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate"
   },
