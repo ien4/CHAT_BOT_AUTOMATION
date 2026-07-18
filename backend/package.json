@@ -16,6 +16,8 @@
     "smoke:appointment-tenant-isolation": "node scripts/smoke-appointment-tenant-isolation.js",
     "smoke:facebook-page-tenant-mapping": "node scripts/smoke-facebook-page-tenant-mapping.js",
     "smoke:webhook-tenant-context": "node scripts/smoke-webhook-tenant-context.js",
+    "db:tenant-backfill:plan": "node scripts/tenant-backfill-planner.js",
+    "smoke:tenant-backfill-planner": "node scripts/smoke-tenant-backfill-planner.js",
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate"
   },
