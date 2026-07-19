@@ -27,7 +27,8 @@
     "smoke:tenant-backfill-safe-composition": "node scripts/smoke-tenant-backfill-safe-composition.js",
     "db:tenant-backfill:entrypoint:validate": "node scripts/tenant-backfill-live-entrypoint.js --mode validate",
     "smoke:tenant-backfill-live-entrypoint": "node scripts/smoke-tenant-backfill-live-entrypoint.js",
-    "smoke:tenant-backfill-completion-ledger": "node scripts/smoke-tenant-backfill-completion-ledger.js"
+    "smoke:tenant-backfill-completion-ledger": "node scripts/smoke-tenant-backfill-completion-ledger.js",
+    "smoke:tenant-backfill-fixture-blueprint": "node scripts/smoke-tenant-backfill-fixture-blueprint.js"
   },
   "keywords": [],
   "author": "",
