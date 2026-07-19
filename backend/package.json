@@ -24,7 +24,10 @@
     "prisma:validate": "prisma validate",
     "quality": "npm run syntax && npm run prisma:validate",
     "smoke:tenant-backfill-operational-safety": "node scripts/smoke-tenant-backfill-operational-safety.js",
-    "smoke:tenant-backfill-safe-composition": "node scripts/smoke-tenant-backfill-safe-composition.js"
+    "smoke:tenant-backfill-safe-composition": "node scripts/smoke-tenant-backfill-safe-composition.js",
+    "db:tenant-backfill:entrypoint:validate": "node scripts/tenant-backfill-live-entrypoint.js --mode validate",
+    "smoke:tenant-backfill-live-entrypoint": "node scripts/smoke-tenant-backfill-live-entrypoint.js",
+    "smoke:tenant-backfill-completion-ledger": "node scripts/smoke-tenant-backfill-completion-ledger.js"
   },
   "keywords": [],
   "author": "",
