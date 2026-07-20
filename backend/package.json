@@ -30,7 +30,8 @@
     "smoke:tenant-backfill-completion-ledger": "node scripts/smoke-tenant-backfill-completion-ledger.js",
     "smoke:tenant-backfill-fixture-blueprint": "node scripts/smoke-tenant-backfill-fixture-blueprint.js",
     "smoke:tenant-backfill-fixture-installer": "node scripts/smoke-tenant-backfill-fixture-installer.js",
-    "smoke:omni-channel-offline-e2e": "node scripts/smoke-omni-channel-offline-e2e.js"
+    "smoke:omni-channel-offline-e2e": "node scripts/smoke-omni-channel-offline-e2e.js",
+    "smoke:facebook-direct-webhook": "node scripts/smoke-facebook-direct-webhook.js"
   },
   "keywords": [],
   "author": "",
