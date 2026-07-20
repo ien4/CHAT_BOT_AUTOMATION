@@ -31,7 +31,8 @@
     "smoke:tenant-backfill-fixture-blueprint": "node scripts/smoke-tenant-backfill-fixture-blueprint.js",
     "smoke:tenant-backfill-fixture-installer": "node scripts/smoke-tenant-backfill-fixture-installer.js",
     "smoke:omni-channel-offline-e2e": "node scripts/smoke-omni-channel-offline-e2e.js",
-    "smoke:facebook-direct-webhook": "node scripts/smoke-facebook-direct-webhook.js"
+    "smoke:facebook-direct-webhook": "node scripts/smoke-facebook-direct-webhook.js",
+    "smoke:facebook-durable-ingress": "node scripts/smoke-facebook-durable-ingress.js"
   },
   "keywords": [],
   "author": "",

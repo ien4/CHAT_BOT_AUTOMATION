@@ -2,10 +2,19 @@ const crypto = require('crypto');
 const axios = require('axios');
 const botEngine = require('../bot/engine');
 const handoff = require('../telegram/handoff');
+const facebookIngress = require('./facebookIngress');
+const { createWebhookEventReceiptRepository } = require('./webhookEventReceiptRepository');
 
 const FB_GRAPH_URL = 'https://graph.facebook.com/v19.0';
 const getPrisma = require('../db');
 const prisma = getPrisma();
+
+// Durable event receipt repository — lazily created, only used in enforce mode.
+let eventReceiptRepo = null;
+function getEventReceiptRepo() {
+  if (!eventReceiptRepo) eventReceiptRepo = createWebhookEventReceiptRepository({ client: prisma });
+  return eventReceiptRepo;
+}
 
 // Cache FacebookPage lookup để tránh query DB mỗi event
 const pageCache = new Map();
@@ -95,6 +104,35 @@ async function lookupPage(pageEntryId) {
   });
   pageCache.set(cacheKey, { data: page, ts: Date.now() });
   return page;
+}
+
+/**
+ * Invalidate the cached security authority for a single Facebook Page after a
+ * management mutation (disable, tenant reassignment, access token rotation).
+ * The next event re-reads the DB, so a disabled/reassigned Page is never accepted
+ * from stale cache. No token/PII is logged.
+ * @param {string} pageId
+ */
+function invalidateFacebookPageCache(pageId) {
+  if (pageId === undefined || pageId === null) return false;
+  return pageCache.delete(String(pageId));
+}
+
+/**
+ * Invalidate every cached Page whose resolved tenant is the given tenantId (e.g.
+ * when a Tenant is disabled). Fail-safe: on any doubt the entry is dropped.
+ * @param {string} tenantId
+ */
+function invalidateFacebookTenantCache(tenantId) {
+  if (!tenantId) return 0;
+  let removed = 0;
+  for (const [key, entry] of pageCache.entries()) {
+    if (entry && entry.data && entry.data.tenantId === tenantId) {
+      pageCache.delete(key);
+      removed += 1;
+    }
+  }
+  return removed;
 }
 
 /**
@@ -226,6 +264,13 @@ async function handleMessage(req, res) {
     return res.sendStatus(404);
   }
 
+  // Runtime canonical mode (default off). off/shadow keep the legacy early-ACK
+  // path below; enforce reserves each event durably BEFORE acknowledging.
+  const runtimeMode = facebookIngress.resolveRuntimeMode();
+  if (runtimeMode === 'enforce') {
+    return handleMessageEnforce(req, res, body);
+  }
+
   // Always respond 200 immediately (Facebook requires this within 20s)
   res.status(200).send('EVENT_RECEIVED');
 
@@ -256,7 +301,73 @@ async function handleMessage(req, res) {
       // Gắn tenant + page context (đã resolve) vào event để downstream dùng đúng tenant/token
       event._pageContext = pageContext;
       logWebhookInfo('messaging_event_received', summarizeMessagingEvent(event));
+      // Shadow mode: build/validate canonical envelope for parity only. Best-effort,
+      // never blocks, never double-processes; no raw payload/secret logged.
+      if (runtimeMode === 'shadow') {
+        try { facebookIngress.observeVerifiedIngress(event, pageContext, { mode: 'shadow' }); } catch (_) {}
+      }
       await processEvent(event);
+    }
+  }
+}
+
+/**
+ * Enforce-mode ingress: durably RESERVE each verified, tenant-resolved event
+ * BEFORE acknowledging (NO_SUCCESS_ACK_BEFORE_DURABLE_ACCEPTANCE). Duplicates do
+ * not process; missing event identity fails closed; a DB failure before durable
+ * acceptance answers retryable (503) so Meta re-delivers. AI/tool processing runs
+ * only AFTER durable acceptance.
+ */
+async function handleMessageEnforce(req, res, body) {
+  const entries = body.entry || [];
+  const accepted = [];
+  let repo;
+  try {
+    repo = getEventReceiptRepo();
+    for (const entry of entries) {
+      const pageContext = await resolveFacebookPageContext(entry.id);
+      if (!pageContext.ok) {
+        logWebhookWarn('enforce_page_unresolved', { pageId: maskId(entry.id), reason: pageContext.reason });
+        continue;
+      }
+      const tokenAuth = facebookIngress.checkPageTokenAuthority(pageContext, 'enforce');
+      const messaging = entry.messaging || [];
+      for (const event of messaging) {
+        event._pageContext = pageContext;
+        let envelope;
+        try {
+          envelope = facebookIngress.buildVerifiedCanonical(event, pageContext, {});
+        } catch (identityErr) {
+          // Missing trustworthy event identity → fail-closed, no processing.
+          logWebhookWarn('enforce_event_identity_unavailable', { pageId: maskId(pageContext.pageId), code: identityErr && identityErr.code });
+          continue;
+        }
+        if (!tokenAuth.ok) {
+          logWebhookWarn('enforce_token_authority_ambiguous', { pageId: maskId(pageContext.pageId) });
+          continue;
+        }
+        const { reservation, ack } = await facebookIngress.acceptEventDurably({ repo, envelope });
+        logWebhookInfo('enforce_reservation', { pageId: maskId(pageContext.pageId), result: reservation.result });
+        if (ack.process) accepted.push({ event, key: envelope.idempotencyKey });
+      }
+    }
+    // Durable acceptance succeeded → acknowledge.
+    if (!res.headersSent) res.status(200).send('EVENT_RECEIVED');
+  } catch (err) {
+    // DB/repository failure before durable acceptance → retryable so Meta retries.
+    logWebhookError('enforce_durable_acceptance_failed', err);
+    if (!res.headersSent) res.sendStatus(503);
+    return;
+  }
+
+  // Process ONLY durably-accepted events, after ACK.
+  for (const item of accepted) {
+    try {
+      await processEvent(item.event);
+      await repo.markCompleted(item.key);
+    } catch (procErr) {
+      logWebhookError('enforce_processing_failed', procErr);
+      try { await repo.markRetryableFailure(item.key, 'PROCESSING_FAILED'); } catch (_) {}
     }
   }
 }
@@ -629,4 +740,6 @@ module.exports = {
   getUserProfile,
   markSeen,
   sendTypingOn,
+  invalidateFacebookPageCache,
+  invalidateFacebookTenantCache,
 };

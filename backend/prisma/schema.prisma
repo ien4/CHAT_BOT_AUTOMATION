@@ -340,3 +340,31 @@ model HandoffEvent {
   @@index([conversationId])
   @@map("handoff_events")
 }
+
+model WebhookEventReceipt {
+  id                 String    @id @default(uuid())
+  provider           String
+  integrationId      String    @map("integration_id")
+  tenantId           String    @map("tenant_id")
+  providerEventRef   String?   @map("provider_event_ref")
+  externalMessageRef String?   @map("external_message_ref")
+  eventType          String    @map("event_type")
+  direction          String
+  idempotencyKey     String    @unique @map("idempotency_key")
+  processingState    String    @default("RESERVED") @map("processing_state")
+  attemptCount       Int       @default(1) @map("attempt_count")
+  firstReceivedAt    DateTime  @default(now()) @map("first_received_at")
+  lastAttemptAt      DateTime? @map("last_attempt_at")
+  completedAt        DateTime? @map("completed_at")
+  errorCode          String?   @map("error_code")
+  correlationId      String?   @map("correlation_id")
+  retentionUntil     DateTime? @map("retention_until")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([provider])
+  @@index([integrationId])
+  @@index([tenantId])
+  @@index([processingState])
+  @@map("webhook_event_receipts")
+}
