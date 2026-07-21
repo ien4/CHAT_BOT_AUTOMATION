@@ -15,6 +15,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const webhookHandler = require('./webhook/handler');
+const { chatwootWebsiteChatRoute } = require('./webhook/chatwootRoute');
 const dashboardApi = require('./api/dashboard');
 
 function createApp() {
@@ -35,6 +36,11 @@ function createApp() {
   // Facebook Webhook routes (direct - legacy)
   app.get('/webhook', webhookHandler.verifyWebhook);
   app.post('/webhook', webhookHandler.handleMessage);
+
+  // Chatwoot Account Webhook ingress (feature-flagged, default OFF). Registered
+  // AFTER express.json's raw-body capture so req.rawBody holds the exact bytes for
+  // HMAC. When WEBSITE_CHAT_ENABLED!=='true' the handler returns 404 before any DB.
+  app.post('/integrations/website-chat/:endpointKey/events', chatwootWebsiteChatRoute);
 
   // Dashboard API routes
   app.use('/api', dashboardApi);

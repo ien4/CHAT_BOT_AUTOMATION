@@ -284,6 +284,7 @@ model Tenant {
   channelConfigs         TenantChannelConfig[]
   facebookPages          FacebookPage[]
   staff                  TenantStaff[]
+  integrations           TenantIntegration[]
 
   @@map("tenants")
 }
@@ -367,4 +368,114 @@ model WebhookEventReceipt {
   @@index([tenantId])
   @@index([processingState])
   @@map("webhook_event_receipts")
+}
+
+// ---------------------------------------------------------------------------
+// CHATWOOT-ACCOUNT-WEBHOOK-RUNTIME-SCHEMA-DESIGN-01 (additive, default OFF)
+//
+// Account-level webhook endpoint is modeled SEPARATELY from inbox→tenant binding:
+//   ProviderWebhookEndpoint  = one Chatwoot Account Webhook endpoint (+ credentials)
+//   TenantIntegration        = one inbox mapped to exactly one Tenant
+//   IntegrationIdentity      = global-unique (account+inbox) → at most one enabled
+//   IntegrationCredential    = encrypted signing secret / API token (endpoint-owned)
+//   WebhookDeliveryReceipt   = durable TRANSPORT replay (distinct from business
+//                              idempotency, which reuses WebhookEventReceipt)
+// No secret / raw payload / raw body / message content is stored in any of these.
+// endpoint is inert until isEnabled=true AND exactVersion is a real semver.
+// ---------------------------------------------------------------------------
+
+model ProviderWebhookEndpoint {
+  id                      String                   @id @default(uuid())
+  provider                String                   @default("CHATWOOT")
+  channel                 String                   @default("WEBSITE_CHAT")
+  mechanism               String                   @default("ACCOUNT_INTEGRATION_WEBHOOK")
+  deploymentKey           String                   @map("deployment_key")
+  externalAccountId       String                   @map("external_account_id")
+  publicEndpointKey       String                   @unique @map("public_endpoint_key")
+  minimumSupportedVersion String                   @default("4.13.0") @map("minimum_supported_version")
+  exactVersion            String?                  @map("exact_version")
+  authMode                String                   @default("HMAC_SIGNED_WEBHOOK") @map("auth_mode")
+  isEnabled               Boolean                  @default(false) @map("is_enabled")
+  configVersion           Int                      @default(1) @map("config_version")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  credentials             IntegrationCredential[]
+  tenantIntegrations      TenantIntegration[]
+  deliveryReceipts        WebhookDeliveryReceipt[]
+
+  @@unique([provider, deploymentKey, externalAccountId, mechanism])
+  @@index([provider])
+  @@index([isEnabled])
+  @@map("provider_webhook_endpoints")
+}
+
+model TenantIntegration {
+  id                String                  @id @default(uuid())
+  tenantId          String                  @map("tenant_id")
+  webhookEndpointId String                  @map("webhook_endpoint_id")
+  provider          String                  @default("CHATWOOT")
+  channel           String                  @default("WEBSITE_CHAT")
+  processingMode    String                  @default("AUTO_BOT") @map("processing_mode")
+  handoffPolicy     String                  @default("BOT_FIRST") @map("handoff_policy")
+  isEnabled         Boolean                 @default(false) @map("is_enabled")
+  configVersion     Int                     @default(1) @map("config_version")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  webhookEndpoint   ProviderWebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+  identity          IntegrationIdentity?
+
+  @@index([tenantId])
+  @@index([webhookEndpointId])
+  @@index([isEnabled])
+  @@map("tenant_integrations")
+}
+
+model IntegrationIdentity {
+  id                    String            @id @default(uuid())
+  tenantIntegrationId   String            @unique @map("tenant_integration_id")
+  provider              String            @default("CHATWOOT")
+  deploymentKey         String            @map("deployment_key")
+  externalAccountId     String            @map("external_account_id")
+  externalInboxId       String            @map("external_inbox_id")
+  normalizedIdentityKey String            @unique @map("normalized_identity_key")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  tenantIntegration     TenantIntegration @relation(fields: [tenantIntegrationId], references: [id], onDelete: Cascade)
+
+  @@index([provider, deploymentKey, externalAccountId])
+  @@map("integration_identities")
+}
+
+model IntegrationCredential {
+  id                String                  @id @default(uuid())
+  webhookEndpointId String                  @map("webhook_endpoint_id")
+  credentialType    String                  @map("credential_type")
+  ciphertext        String
+  keyVersion        Int                     @default(1) @map("key_version")
+  algorithmVersion  String                  @default("aes-256-gcm") @map("algorithm_version")
+  status            String                  @default("ROTATION_REQUIRED")
+  lastRotatedAt     DateTime?               @map("last_rotated_at")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  webhookEndpoint   ProviderWebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+
+  @@unique([webhookEndpointId, credentialType])
+  @@index([status])
+  @@map("integration_credentials")
+}
+
+model WebhookDeliveryReceipt {
+  id                String                  @id @default(uuid())
+  webhookEndpointId String                  @map("webhook_endpoint_id")
+  deliveryRefHash   String                  @map("delivery_ref_hash")
+  timestamp         Int?
+  receivedAt        DateTime                @default(now()) @map("received_at")
+  expiresAt         DateTime?               @map("expires_at")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  webhookEndpoint   ProviderWebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+
+  @@unique([webhookEndpointId, deliveryRefHash])
+  @@index([expiresAt])
+  @@map("webhook_delivery_receipts")
 }

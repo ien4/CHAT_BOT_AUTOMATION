@@ -33,7 +33,8 @@
     "smoke:omni-channel-offline-e2e": "node scripts/smoke-omni-channel-offline-e2e.js",
     "smoke:facebook-direct-webhook": "node scripts/smoke-facebook-direct-webhook.js",
     "smoke:facebook-durable-ingress": "node scripts/smoke-facebook-durable-ingress.js",
-    "smoke:chatwoot-webhook": "node scripts/smoke-chatwoot-webhook.js"
+    "smoke:chatwoot-webhook": "node scripts/smoke-chatwoot-webhook.js",
+    "smoke:chatwoot-runtime-design": "node scripts/smoke-chatwoot-runtime-design.js"
   },
   "keywords": [],
   "author": "",
