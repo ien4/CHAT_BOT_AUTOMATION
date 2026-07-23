@@ -34,7 +34,8 @@
     "smoke:facebook-direct-webhook": "node scripts/smoke-facebook-direct-webhook.js",
     "smoke:facebook-durable-ingress": "node scripts/smoke-facebook-durable-ingress.js",
     "smoke:chatwoot-webhook": "node scripts/smoke-chatwoot-webhook.js",
-    "smoke:chatwoot-runtime-design": "node scripts/smoke-chatwoot-runtime-design.js"
+    "smoke:chatwoot-runtime-design": "node scripts/smoke-chatwoot-runtime-design.js",
+    "smoke:chatwoot-db-concurrency": "node scripts/smoke-chatwoot-db-concurrency.js"
   },
   "keywords": [],
   "author": "",
