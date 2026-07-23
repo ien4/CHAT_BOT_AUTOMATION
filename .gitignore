@@ -50,3 +50,9 @@ backups/
 
 # Chatwoot (not deploying)
 /chatwoot/
+
+# Local-only docs & reports — untracked from main tree, local copies preserved
+# (CHATWOOT-REPO-HYGIENE-AND-DOMAIN-CONTRACT-01). Root-anchored: does NOT ignore
+# nested backend docs or repo-wide README.md.
+/docs/
+/report/
