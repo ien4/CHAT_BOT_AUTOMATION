@@ -30,6 +30,9 @@ const INGRESS_STATUS = Object.freeze({
   ENDPOINT_KEY_MALFORMED: 'CHATWOOT_ENDPOINT_KEY_MALFORMED',
   CREDENTIAL_UNAVAILABLE: 'CHATWOOT_CREDENTIAL_UNAVAILABLE',
   RUNTIME_UNAVAILABLE: 'CHATWOOT_RUNTIME_UNAVAILABLE',
+  PROCESSOR_NOT_CONFIGURED: 'CHATWOOT_PROCESSOR_NOT_CONFIGURED',
+  PROCESSOR_RESULT_INVALID: 'CHATWOOT_PROCESSOR_RESULT_INVALID',
+  HANDOFF_DEFERRED: 'CHATWOOT_HANDOFF_EXECUTION_DEFERRED',
   SAFE_ERROR: 'SAFE_ERROR',
   ACCOUNT_MISMATCH: 'CHATWOOT_ACCOUNT_MISMATCH',
   SAFE_ACK: 'SAFE_ACK',
@@ -74,7 +77,10 @@ function createChatwootIngressHandler(deps) {
   const integrationResolver = d.integrationResolver;
   const businessEventStore = d.businessEventStore;
   const handoffPolicy = d.handoffPolicy;
-  const canonicalMessageProcessor = d.canonicalMessageProcessor;
+  // Accept the processor under the canonical name or an injected-port alias
+  // (CHATWOOT-PROCESSOR-WIRING-DESIGN-01). Concrete port: chatwootProcessor.js
+  // createChatwootProcessor(...) → { processCanonicalMessage(envelope) }.
+  const canonicalMessageProcessor = d.canonicalMessageProcessor || d.messageProcessorPort || d.processor;
   const outboundCommandPort = d.outboundCommandPort;
   const auditWriter = d.auditWriter || { write() {} };
   const clock = typeof d.clock === 'function' ? d.clock : () => Math.floor(Date.now() / 1000);
@@ -82,12 +88,16 @@ function createChatwootIngressHandler(deps) {
   const maxClockSkewSeconds = typeof config.maxClockSkewSeconds === 'number'
     ? config.maxClockSkewSeconds : verifier.DEFAULT_MAX_CLOCK_SKEW_SECONDS;
 
-  // Runtime config completeness gate. When core collaborators are missing the
-  // route is enabled by flag but cannot serve → 503, never a silent fallback.
+  // Runtime config completeness gate. When core collaborators are missing — or a
+  // port is present but not the right SHAPE — the route is enabled by flag but
+  // cannot serve → 503 BEFORE any DB/parse/AI/outbound, never a silent fallback.
+  // Method-shape (not mere truthiness) is required so a malformed injected port
+  // fails closed at the gate instead of laundering a config error into COMPLETED.
   function isRuntimeConfigComplete() {
     return Boolean(endpointRepository && credentialRepository && credentialDecryptor
       && replayStore && integrationResolver && businessEventStore
-      && canonicalMessageProcessor && outboundCommandPort);
+      && canonicalMessageProcessor && typeof canonicalMessageProcessor.processCanonicalMessage === 'function'
+      && outboundCommandPort && typeof outboundCommandPort.send === 'function');
   }
 
   function audit(safe) {
@@ -355,17 +365,51 @@ function createChatwootIngressHandler(deps) {
     }
 
     // Step 16: invoke the chatbot processor EXACTLY ONCE.
+    // Defense in depth (§X): the config gate proved the port SHAPE, but if the port
+    // is not usable at call time, fail closed as RETRYABLE — NEVER markCompleted,
+    // NEVER a 200 SAFE_ACK. A config/dependency error must be redelivered, not lost.
+    if (!canonicalMessageProcessor || typeof canonicalMessageProcessor.processCanonicalMessage !== 'function') {
+      try { await businessEventStore.markRetryableFailure(idempotencyKey, INGRESS_STATUS.PROCESSOR_NOT_CONFIGURED); } catch (_e) { /* best effort */ }
+      audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, safeErrorCode: INGRESS_STATUS.PROCESSOR_NOT_CONFIGURED });
+      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: INGRESS_STATUS.PROCESSOR_NOT_CONFIGURED, aiInvoked: false, outboundSent: false };
+    }
     let processed;
     try {
       processed = await canonicalMessageProcessor.processCanonicalMessage(envelope);
     } catch (e) {
       try { await businessEventStore.markRetryableFailure(idempotencyKey, 'PROCESSOR_ERROR'); } catch (_e2) { /* best effort */ }
-      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: 'PROCESSOR_ERROR', aiInvoked: true };
+      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: 'PROCESSOR_ERROR', aiInvoked: true, outboundSent: false };
     }
 
     const processedResult = processed && processed.result;
 
-    // Step 17: emit the outbound reply command EXACTLY ONCE (only for REPLY_COMMAND).
+    // Step 17: EXACT result allowlist (§XII). Anything outside it is a contract
+    // violation → RETRYABLE, never completed, never outbound. Audit carries only the
+    // allowlisted safe code, never the raw result object.
+    if (processedResult !== 'REPLY_COMMAND' && processedResult !== 'NO_REPLY'
+      && processedResult !== 'HANDOFF_REQUEST' && processedResult !== 'PROCESSING_FAILED') {
+      try { await businessEventStore.markRetryableFailure(idempotencyKey, INGRESS_STATUS.PROCESSOR_RESULT_INVALID); } catch (_e) { /* best effort */ }
+      audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, safeErrorCode: INGRESS_STATUS.PROCESSOR_RESULT_INVALID });
+      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: INGRESS_STATUS.PROCESSOR_RESULT_INVALID, aiInvoked: true, outboundSent: false };
+    }
+
+    // Step 18a: PROCESSING_FAILED → retryable, never completed.
+    if (processedResult === 'PROCESSING_FAILED') {
+      try { await businessEventStore.markRetryableFailure(idempotencyKey, 'PROCESSING_FAILED'); } catch (_e) { /* best effort */ }
+      audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, safeErrorCode: 'PROCESSING_FAILED' });
+      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: 'PROCESSING_FAILED', aiInvoked: true, outboundSent: false };
+    }
+
+    // Step 18b: HANDOFF_REQUEST without an atomic-persistence proof (§XI). This
+    // phase has NO handoff-execution port, so the human-routing side effect has NOT
+    // happened — it MUST NOT be marked completed. Defer as RETRYABLE, zero outbound.
+    if (processedResult === 'HANDOFF_REQUEST') {
+      try { await businessEventStore.markRetryableFailure(idempotencyKey, INGRESS_STATUS.HANDOFF_DEFERRED); } catch (_e) { /* best effort */ }
+      audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, safeErrorCode: INGRESS_STATUS.HANDOFF_DEFERRED });
+      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: INGRESS_STATUS.HANDOFF_DEFERRED, aiInvoked: true, outboundSent: false, handoffState };
+    }
+
+    // Step 18c: REPLY_COMMAND → emit the outbound reply command EXACTLY ONCE.
     let outboundSent = false;
     if (processedResult === 'REPLY_COMMAND') {
       try {
@@ -386,15 +430,8 @@ function createChatwootIngressHandler(deps) {
       }
     }
 
-    // Step 18: mark the business event completed / retryable / final.
-    if (processedResult === 'PROCESSING_FAILED') {
-      try { await businessEventStore.markRetryableFailure(idempotencyKey, 'PROCESSING_FAILED'); } catch (_e) { /* best effort */ }
-      audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, safeErrorCode: 'PROCESSING_FAILED' });
-      return { httpStatus: 503, status: INGRESS_STATUS.RUNTIME_UNAVAILABLE, safeErrorCode: 'PROCESSING_FAILED', aiInvoked: true, outboundSent };
-    }
+    // Step 19: NO_REPLY, or REPLY_COMMAND after a successful outbound → COMPLETED.
     try { await businessEventStore.markCompleted(idempotencyKey); } catch (_e) { /* best effort */ }
-
-    // Step 19: safe audit (no content / PII / secret / signature).
     audit({ provider: canonical.PROVIDER, mechanism: endpoint.mechanism, eventType, direction: identity.direction, integrationId, tenantId, verificationState: 'VERIFIED', correlationId, externalMessageRef: identity.externalMessageId, deliveryRef });
 
     // Step 20: response.
@@ -403,7 +440,7 @@ function createChatwootIngressHandler(deps) {
       status: INGRESS_STATUS.ACCEPTED,
       safeErrorCode: null,
       aiInvoked: true,
-      processedResult: processedResult || 'NO_REPLY',
+      processedResult,
       outboundSent,
       handoffState,
       reserveResult,
