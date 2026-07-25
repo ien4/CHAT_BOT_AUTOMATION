@@ -1,31 +1,38 @@
 ========================================================================
-[CANH BAO] FILE NAY LA LOG LOCAL/STALE - KHONG DUNG LAM NGUON PRODUCTION.
-- Kien truc dich la No-Chatwoot: Facebook gui TRUC TIEP ve backend endpoint
-  that su la  GET/POST /webhook  (KHONG phai /chatwoot-webhook, KHONG qua Chatwoot).
-- URL cloudflared/ngrok ben duoi la tam thoi va co the doi moi lan start-all.
-- Webhook/domain production xem: docs/DEPLOYMENT_POLICY.md +
-  docs/PRODUCTION_ROLLOUT_CHECKLIST.md
+[LOCAL RUNBOOK] PUBLIC CALLBACK CANDIDATE - NOT VERIFIED
+- This file is a tracked local runbook, not production activation evidence.
+- Facebook direct webhook target is Backend Express GET/POST /webhook.
+- Website chat callback uses per-installation publicEndpointKey.
+- Do not place real endpoint keys, tokens, secrets, phone numbers, or customer PII here.
 ========================================================================
 
-Chat Automation - Current Webhook URLs (LOCAL)
-Generated at: 16/06/2026  8:55:15.21
+PUBLIC_CALLBACK_STATUS=NOT_VERIFIED
+PRODUCTION_READINESS=NOT_STARTED
 
-LOCAL
-Chatwoot: http://localhost:3000
-Backend:  http://localhost:3001
-Dashboard:http://localhost:3002
+CANONICAL APP_BASE_URL CANDIDATE
+https://chatbot-test.bboapp.xyz
 
-FACEBOOK -> CHATWOOT
-Meta Callback URL: https://wan-locally-identifier-confirmed.trycloudflare.com/bot
-Verify Token: facebook_booteam
+FACEBOOK DIRECT WEBHOOK CANDIDATE
+Callback URL: https://chatbot-test.bboapp.xyz/webhook
+Verify Token: configure via server-side FACEBOOK_VERIFY_TOKEN only
+Status: NOT_VERIFIED
 
-CHATWOOT -> BACKEND AI
-Agent Bot Name: BBOTECH
-Agent Bot URL:  https://undepreciable-donna-pronely.ngrok-free.dev/chatwoot-webhook/bbotech
-Local Docker URL alternative: http://host.docker.internal:3001/chatwoot-webhook/bbotech
+WEBSITE CHAT CALLBACK CANDIDATE
+Pattern: https://chatbot-test.bboapp.xyz/integrations/website-chat/<publicEndpointKey>/events
+Endpoint key: PLACEHOLDER_ONLY_DO_NOT_USE_REAL_KEY
+Status: NOT_VERIFIED
 
-FLOW
-Facebook Messenger -> Chatwoot /bot -> Backend /chatwoot-webhook/bbotech -> AI reply via Chatwoot
+CHATWOOT API ORIGIN
+CHATWOOT_API_ORIGIN=UNKNOWN
+Contract: use per-installation ProviderWebhookEndpoint.apiBaseUrl when available.
+Do not use the BBO callback candidate as Chatwoot API origin.
 
-NOTE
-trycloudflare.com va ngrok URL co the doi moi lan start-all. Neu Facebook mat ket noi, cap nhat Meta Callback URL bang dong o tren.
+LOCAL DEVELOPMENT ENDPOINTS
+Chatwoot UI: http://localhost:3000
+Backend API: http://localhost:3001
+Dashboard: http://localhost:3002
+
+NEXT OPERATOR CHECK
+1. Confirm APP_BASE_URL in server-only environment before public activation.
+2. Verify Meta callback with the exact configured token.
+3. Record verification evidence in tmp-runtime only.

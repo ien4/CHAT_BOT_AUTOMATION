@@ -121,7 +121,7 @@ Flow hoàn chỉnh: platform admin đổi tenant trên dropdown top bar → `sel
 
 ### Tenant webhook URL
 ```
-POST https://<ngrok>/chatwoot-webhook/<slug>
+Temporary tunnel workflow retired; use the canonical APP_BASE_URL contract.
 ```
 - HMAC-SHA256 validation với `webhookSecretEnc` (AES-256-GCM encrypted)
 - `shared` model: dùng Chatwoot của platform (CHATWOOT_BASE_URL env)

@@ -151,7 +151,7 @@ async function main() {
   console.log('\n📋 CÁC BƯỚC TIẾP THEO:');
   console.log('   1. Vào Dashboard -> Cài đặt cập nhật API key LLM');
   console.log('   2. Vào Dashboard -> Kiến thức thêm dữ liệu công ty');
-  console.log('   3. Cấu hình Facebook Webhook với URL ngrok');
+  console.log('   3. Cấu hình Facebook Webhook với URL callback public da cau hinh ben ngoai');
   console.log('   4. Test với người dùng thật trên Facebook Messenger');
 }
 
