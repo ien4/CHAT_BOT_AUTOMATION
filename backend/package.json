@@ -36,7 +36,8 @@
     "smoke:chatwoot-webhook": "node scripts/smoke-chatwoot-webhook.js",
     "smoke:chatwoot-runtime-design": "node scripts/smoke-chatwoot-runtime-design.js",
     "smoke:chatwoot-db-concurrency": "node scripts/smoke-chatwoot-db-concurrency.js",
-    "smoke:chatwoot-processor-wiring": "node scripts/smoke-chatwoot-processor-wiring.js"
+    "smoke:chatwoot-processor-wiring": "node scripts/smoke-chatwoot-processor-wiring.js",
+    "smoke:chatwoot-outbound-adapter": "node scripts/smoke-chatwoot-outbound-adapter.js"
   },
   "keywords": [],
   "author": "",

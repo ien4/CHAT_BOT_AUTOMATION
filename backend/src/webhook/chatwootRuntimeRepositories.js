@@ -53,6 +53,7 @@ function createWebhookEndpointRepository(deps) {
         mechanism: row.mechanism,
         deploymentKey: row.deploymentKey,
         externalAccountId: row.externalAccountId,
+        apiBaseUrl: row.apiBaseUrl || null,
         minimumSupportedVersion: row.minimumSupportedVersion,
         exactVersion: row.exactVersion,
         authMode: row.authMode,
@@ -74,6 +75,21 @@ function createIntegrationCredentialRepository(deps) {
     async getActiveSigningCredential(webhookEndpointId) {
       const row = await table.findUnique({
         where: { webhookEndpointId_credentialType: { webhookEndpointId, credentialType: 'WEBHOOK_SIGNING_SECRET' } },
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        webhookEndpointId: row.webhookEndpointId,
+        credentialType: row.credentialType,
+        ciphertext: row.ciphertext,
+        keyVersion: row.keyVersion,
+        algorithmVersion: row.algorithmVersion,
+        status: row.status,
+      };
+    },
+    async findActiveApiTokenCredential(webhookEndpointId) {
+      const row = await table.findUnique({
+        where: { webhookEndpointId_credentialType: { webhookEndpointId, credentialType: 'CHATWOOT_API_TOKEN' } },
       });
       if (!row) return null;
       return {
@@ -125,6 +141,7 @@ function createIntegrationIdentityResolver(deps) {
     const e = new Error('CHATWOOT_IDENTITY_CLIENT_REQUIRED'); e.code = 'CHATWOOT_IDENTITY_CLIENT_REQUIRED'; throw e;
   }
   const identityTable = client.integrationIdentity;
+  const tenantIntegrationTable = client.tenantIntegration || null;
   return {
     async resolveExactlyOneEnabledIntegration(query) {
       const q = query || {};
@@ -154,6 +171,84 @@ function createIntegrationIdentityResolver(deps) {
         processingMode: integration.processingMode,
         handoffPolicy: integration.handoffPolicy,
         tenantActive: tenant.isActive === true,
+      };
+    },
+    async resolveOutboundAuthorityByIntegrationId(integrationId) {
+      if (!tenantIntegrationTable || typeof tenantIntegrationTable.findUnique !== 'function') {
+        const e = new Error('CHATWOOT_OUTBOUND_AUTHORITY_CLIENT_REQUIRED'); e.code = 'CHATWOOT_OUTBOUND_AUTHORITY_CLIENT_REQUIRED'; throw e;
+      }
+      if (typeof integrationId !== 'string' || integrationId.trim().length === 0) return { status: 'NOT_FOUND' };
+      const row = await tenantIntegrationTable.findUnique({
+        where: { id: integrationId.trim() },
+        include: { tenant: true, webhookEndpoint: true },
+      });
+      if (!row) return { status: 'NOT_FOUND' };
+      const endpoint = row.webhookEndpoint;
+      if (row.isEnabled !== true) {
+        return {
+          status: 'INTEGRATION_DISABLED',
+          tenantIntegrationId: row.id,
+          integrationId: row.id,
+          tenantId: row.tenantId,
+          webhookEndpointId: row.webhookEndpointId,
+          provider: row.provider,
+          integrationEnabled: row.isEnabled === true,
+          integrationStatus: row.isEnabled === true,
+        };
+      }
+      if (!row.tenant || row.tenant.isActive !== true) {
+        return {
+          status: 'TENANT_DISABLED',
+          tenantIntegrationId: row.id,
+          integrationId: row.id,
+          tenantId: row.tenantId,
+          webhookEndpointId: row.webhookEndpointId,
+          provider: row.provider,
+          integrationEnabled: row.isEnabled === true,
+          integrationStatus: row.isEnabled === true,
+          tenantActive: row.tenant && row.tenant.isActive === true,
+        };
+      }
+      if (!endpoint) {
+        return {
+          status: 'ENDPOINT_NOT_FOUND',
+          tenantIntegrationId: row.id,
+          integrationId: row.id,
+          tenantId: row.tenantId,
+          webhookEndpointId: row.webhookEndpointId,
+          provider: row.provider,
+          integrationEnabled: row.isEnabled === true,
+          integrationStatus: row.isEnabled === true,
+          tenantActive: true,
+        };
+      }
+      return {
+        status: 'RESOLVED',
+        tenantIntegrationId: row.id,
+        integrationId: row.id,
+        tenantId: row.tenantId,
+        tenantActive: row.tenant.isActive === true,
+        webhookEndpointId: row.webhookEndpointId,
+        provider: row.provider,
+        channel: row.channel,
+        processingMode: row.processingMode,
+        handoffPolicy: row.handoffPolicy,
+        integrationEnabled: row.isEnabled === true,
+        integrationStatus: row.isEnabled === true,
+        endpointEnabled: endpoint.isEnabled === true,
+        endpointStatus: endpoint.isEnabled === true,
+        endpointProvider: endpoint.provider,
+        endpointChannel: endpoint.channel,
+        mechanism: endpoint.mechanism,
+        deploymentKey: endpoint.deploymentKey,
+        externalAccountId: endpoint.externalAccountId,
+        apiBaseUrl: endpoint.apiBaseUrl || null,
+        minimumSupportedVersion: endpoint.minimumSupportedVersion,
+        exactVersion: endpoint.exactVersion,
+        configVersion: {
+          integration: row.configVersion,
+          endpoint: endpoint.configVersion,
+        },
       };
     },
   };
