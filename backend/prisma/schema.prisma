@@ -426,6 +426,7 @@ model TenantIntegration {
   webhookEndpoint   ProviderWebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
   identity          IntegrationIdentity?
   outboundReceipts  OutboundDeliveryReceipt[]
+  handoffExecutions ChatwootHandoffExecution[]
 
   @@index([tenantId])
   @@index([webhookEndpointId])
@@ -500,4 +501,30 @@ model OutboundDeliveryReceipt {
   @@index([status])
   @@index([tenantIntegrationId])
   @@map("outbound_delivery_receipts")
+}
+model ChatwootHandoffExecution {
+  id                       String            @id @default(uuid())
+  tenantIntegrationId      String            @map("tenant_integration_id")
+  handoffRequestKey        String            @unique @map("handoff_request_key")
+  activeOwnershipKey       String?           @unique @map("active_ownership_key")
+  businessIdempotencyKey   String            @map("business_idempotency_key")
+  externalConversationRef  String            @map("external_conversation_ref")
+  localOwnershipState      String            @map("local_ownership_state")
+  providerExecutionState   String            @default("NOT_STARTED") @map("provider_execution_state")
+  assignmentTargetKind     String?           @map("assignment_target_kind")
+  assignmentTargetRef      String?           @map("assignment_target_ref")
+  safeReasonCode           String?           @map("safe_reason_code")
+  attemptCount             Int               @default(0) @map("attempt_count")
+  remoteEvidenceRef        String?           @map("remote_evidence_ref")
+  safeErrorCode            String?           @map("safe_error_code")
+  requestedAt              DateTime          @default(now()) @map("requested_at")
+  updatedAt                DateTime          @updatedAt @map("updated_at")
+  completedAt              DateTime?         @map("completed_at")
+  reconciliationRequiredAt DateTime?         @map("reconciliation_required_at")
+  tenantIntegration        TenantIntegration @relation(fields: [tenantIntegrationId], references: [id], onDelete: Restrict)
+
+  @@index([tenantIntegrationId, externalConversationRef], map: "chatwoot_handoff_tenant_conversation_idx")
+  @@index([localOwnershipState, updatedAt], map: "chatwoot_handoff_local_state_updated_idx")
+  @@index([providerExecutionState, updatedAt], map: "chatwoot_handoff_provider_state_updated_idx")
+  @@map("chatwoot_handoff_executions")
 }
