@@ -394,6 +394,7 @@ model ProviderWebhookEndpoint {
   publicEndpointKey       String                   @unique @map("public_endpoint_key")
   minimumSupportedVersion String                   @default("4.13.0") @map("minimum_supported_version")
   exactVersion            String?                  @map("exact_version")
+  apiBaseUrl              String?                  @map("api_base_url")
   authMode                String                   @default("HMAC_SIGNED_WEBHOOK") @map("auth_mode")
   isEnabled               Boolean                  @default(false) @map("is_enabled")
   configVersion           Int                      @default(1) @map("config_version")
@@ -424,6 +425,7 @@ model TenantIntegration {
   tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   webhookEndpoint   ProviderWebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
   identity          IntegrationIdentity?
+  outboundReceipts  OutboundDeliveryReceipt[]
 
   @@index([tenantId])
   @@index([webhookEndpointId])
@@ -478,4 +480,24 @@ model WebhookDeliveryReceipt {
   @@unique([webhookEndpointId, deliveryRefHash])
   @@index([expiresAt])
   @@map("webhook_delivery_receipts")
+}
+
+model OutboundDeliveryReceipt {
+  id                      String            @id @default(uuid())
+  tenantIntegrationId     String            @map("tenant_integration_id")
+  outboundCommandKey      String            @unique @map("outbound_command_key")
+  businessIdempotencyKey  String            @map("business_idempotency_key")
+  externalConversationRef String            @map("external_conversation_ref")
+  contentHash             String            @map("content_hash")
+  status                  String            @default("RESERVED")
+  attemptCount            Int               @default(0) @map("attempt_count")
+  remoteMessageId         String?           @map("remote_message_id")
+  safeErrorCode           String?           @map("safe_error_code")
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+  tenantIntegration       TenantIntegration @relation(fields: [tenantIntegrationId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([tenantIntegrationId])
+  @@map("outbound_delivery_receipts")
 }
