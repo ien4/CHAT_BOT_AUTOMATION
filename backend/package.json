@@ -38,7 +38,8 @@
     "smoke:chatwoot-db-concurrency": "node scripts/smoke-chatwoot-db-concurrency.js",
     "smoke:chatwoot-processor-wiring": "node scripts/smoke-chatwoot-processor-wiring.js",
     "smoke:chatwoot-outbound-adapter": "node scripts/smoke-chatwoot-outbound-adapter.js",
-    "smoke:chatwoot-handoff-durability-schema": "node scripts/smoke-chatwoot-handoff-durability-schema.js"
+    "smoke:chatwoot-handoff-durability-schema": "node scripts/smoke-chatwoot-handoff-durability-schema.js",
+    "smoke:chatwoot-handoff-execution-port": "node scripts/smoke-chatwoot-handoff-execution-port.js"
   },
   "keywords": [],
   "author": "",
