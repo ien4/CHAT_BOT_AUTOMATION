@@ -1,35 +1,29 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const { PrismaClient } = require('@prisma/client');
-const { encrypt } = require('../src/chatwoot/crypto');
+'use strict';
 
-const prisma = new PrismaClient();
+const SCRIPT_NAME = 'fix_tenant_token.js';
+const CODE = 'LEGACY_SCRIPT_QUARANTINED';
 
-async function main() {
-  // Mã hóa token đúng từ .env
-  const correctToken = process.env.CHATWOOT_API_TOKEN;
-  console.log('Token từ .env:', correctToken);
+const QUARANTINE_METADATA = Object.freeze({
+  code: CODE,
+  script: SCRIPT_NAME,
+  status: 'disabled',
+  replacement: 'approved IntegrationCredential provisioning process',
+});
 
-  const encrypted = encrypt(correctToken);
-  console.log('Encrypted:', encrypted);
-
-  // Cập nhật cho tenant bbotech
-  const updated = await prisma.tenant.update({
-    where: { slug: 'bbotech' },
-    data: { chatwootApiTokenEnc: encrypted }
-  });
-
-  console.log('✅ Đã cập nhật token cho tenant:', updated.slug);
-
-  // Xóa cache registry để tenant reload
-  const registry = require('../src/tenants/registry');
-  registry.invalidateAll();
-  console.log('✅ Đã clear registry cache');
-
-  await prisma.$disconnect();
-  console.log('\n🎉 Hoàn tất! Restart backend để áp dụng.');
+function main(io) {
+  const output = io && io.stderr ? io.stderr : process.stderr;
+  output.write(
+    CODE + ' script=' + SCRIPT_NAME
+    + ' status=disabled reason=legacy-administrative-mutation replacement=approved-IntegrationCredential-provisioning-process\n',
+  );
+  return 1;
 }
 
-main().catch(e => {
-  console.error('Lỗi:', e);
-  prisma.$disconnect();
+if (require.main === module) {
+  process.exitCode = main();
+}
+
+module.exports = Object.freeze({
+  main,
+  QUARANTINE_METADATA,
 });
